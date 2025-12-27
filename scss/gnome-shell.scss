@@ -1,3 +1,4 @@
+@use '/home/Warzen/.local/share/Color-My-Gnome/scss/brown' as *;
 
  /* This stylesheet is generated, DO NOT EDIT */
 /* Copyright 2009, 2015 Red Hat, Inc.
@@ -1528,7 +1529,7 @@ StEntry StLabel.hint-text,
 
 /* Top Bar */
 #panel {
-  color: $primary;
+  color: $clock-color; /* TIME_TARGET */
   font-weight: bold;
   font-feature-settings: 'tnum';
   font-size: 12pt;
@@ -1536,7 +1537,7 @@ StEntry StLabel.hint-text,
   box-shadow: none;
   border: none;
   height: 35px;
-  background-color: $secondary;
+  background-color: $topbar-color; /* BAR_TARGET  */
 }
 
 #panel .panel-corner {
@@ -5802,4 +5803,11 @@ StWidget.focused .app-grid-running-dot {
   background-color: transparent !important;
 }
 
+#panel .clock-display {
+  color: $clock-color; /* TIME_TARGET */
+}
 
+#panel .system-status-icon,
+#panel .panel-button StIcon {
+  color: $clock-color; /* TIME_TARGET */
+}
