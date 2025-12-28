@@ -1,6 +1,9 @@
 # Color-My-GNOME
 A simple cli tool for changing the colors of the gnome-shell and gtk apps on GNOME
 
+![output](https://github.com/user-attachments/assets/c8d13075-4571-4e77-8eb8-7a46b6ff5945)
+
+
 ## Requriements:
 ### GNOME 49 (may work on older versions)
 ### GNOME TWEAKS - [GITHUB](https://github.com/GNOME/gnome-tweaks) 
