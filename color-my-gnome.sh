@@ -7,6 +7,19 @@ mkdir -p "$TARGET_DIR"
 cd "$TARGET_DIR" || { echo "Failed to enter $TARGET_DIR"; exit 1; }
 
 
+show_color() {
+    local hex=${1#\#} # Remove the '#' if present
+    # Extract R, G, and B from hex and convert to decimal
+    local r=$((16#${hex:0:2}))
+    local g=$((16#${hex:2:2}))
+    local b=$((16#${hex:4:2}))
+    
+    # Print a colored block using background escape sequence \e[48;2;R;G;Bm
+    printf "\e[48;2;%d;%d;%dm  \e[0m #%s\n" "$r" "$g" "$b" "$hex"
+}
+
+
+
 main_scss="gnome-shell.scss"
 gtk4_scss="gtk4.scss"
 output_css="$HOME/.local/share/themes/Color-My-Gnome/gnome-shell/gnome-shell.css"
@@ -29,17 +42,20 @@ read -p "Selection [1-2]: " choice
 
 if [ "$choice" == "1" ]; then
 
-# 1. Prompt for names
+#  Prompt for names
 read -p "Enter NEW color profile name (e.g., light blue): " filename
 
 
-# 2. Format partial filename
+#  Format partial filename
 clean_name=$(echo "$filename" | sed 's/^_//;s/\.scss$//')
 partial_file="_${clean_name}.scss"
 
 
 
-# 4. Prompt for variables
+#  Prompt for variables
+CONFIRMED=false
+
+while [ "$CONFIRMED" = false ]; do
 echo "-----------------------------------------------"
 printf "set primary color or leave blank for default #3584e4 - GNOME Blue %s\n"
 read -p "\$primary: " primary
@@ -53,6 +69,26 @@ tertiary=${tertiary:-$DEF_TERTIARY}
 printf "set text color or leave blank for default #f9f9f9 - White %s\n"
 read -p "\$text: " text
 text=${text:-$DEF_TEXT}
+
+echo "-----------------------------------------------"
+echo "Theme Summary:"
+echo -n "Primary:   " && show_color "$primary"
+echo -n "Secondary: " && show_color "$secondary"
+echo -n "Tertiary:  " && show_color "$tertiary"
+echo -n "Text:      " && show_color "$text"
+echo "-----------------------------------------------"
+
+read -p "Are you happy with these colors? (y/n): " confirm_choice
+    
+    if [[ "$confirm_choice" =~ ^[Yy]$ ]]; then
+        CONFIRMED=true
+    else
+        echo -e "\nStarting over..."
+        # Optional: clear the screen to keep it clean
+        # clear 
+    fi
+done
+
 
 # New prompt for Top Bar color
 topbar_val="\$primary"
@@ -88,7 +124,7 @@ else
     USE_CUSTOM_TOPBAR=false
 fi
 
-# 2. Handle TOPBAR Color Replacement in main.scss
+#  Handle TOPBAR Color Replacement in main.scss
 if [ "$USE_CUSTOM_TOPBAR" = true ]; then
     # Replace $text with $topbar-color on the line containing the BAR_TARGET comment
     sed -i '/BAR_TARGET/s/\$primary/\$topbar-color/' "$main_scss"
@@ -131,7 +167,7 @@ else
     USE_CUSTOM_CLOCK=false
 fi
 
-# 2. Handle Clock Color Replacement in main.scss
+#  Handle Clock Color Replacement in main.scss
 if [ "$USE_CUSTOM_CLOCK" = true ]; then
     # Replace $text with $clock-color on the line containing the TIME_TARGET comment
     sed -i '/TIME_TARGET/s/\$secondary/\$clock-color/' "$main_scss"
@@ -143,7 +179,9 @@ else
 fi
 
 
-# 5. Create partial file
+
+
+#  Create partial file
 printf "\$primary: %s;\n\$secondary: %s;\n\$tertiary: %s;\n\$text: %s;\n\$tertiary-light: rgba(\$tertiary, 0.25);\n\$text-light: rgba(\$text, 0.25);\n\$topbar-color: %s;\n\$clock-color: %s;\n" \
        "$primary" "$secondary" "$tertiary" "$text" "$topbar_val" "$clock_val" > "$partial_file"
 
@@ -177,7 +215,7 @@ else
 fi
 
 
-# 6. Clean existing imports and add new one
+#  Clean existing imports and add new one
 import_statement="@use '$HOME/.local/share/Color-My-Gnome/scss/$selected_import' as *;"
 
 if [ -f "$main_scss" ]; then
@@ -201,7 +239,7 @@ echo "$import_statement" | cat - "$main_scss" > temp && mv temp "$main_scss"
 
 echo "$import_statement" | cat - "$gtk4_scss" > temp && mv temp "$gtk4_scss"
 
-# 7. Compile SCSS to CSS
+#  Compile SCSS to CSS
 echo "-----------------------------------------------"
 if command -v npx sass &> /dev/null; then
     echo "Compiling $main_scss to $output_css..."
