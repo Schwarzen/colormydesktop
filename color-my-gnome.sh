@@ -89,10 +89,49 @@ read -p "Are you happy with these colors? (y/n): " confirm_choice
     fi
 done
 
+read -p "Apply global transparency to background elements? (y/n): " trans_choice
+
+if [[ "$trans_choice" =~ ^[Yy]$ ]]; then
+    read -p "Enter alpha value (0.0 to 1.0, e.g., 0.5): " alpha
+    APPLY_TRANS=true
+else
+    APPLY_TRANS=false
+fi
+
+# Save the transparency status into a comment at the top of the partial
+if [ "$APPLY_TRANS" = true ]; then
+    trans_flag="// TRANSPARENT: true ($alpha)"
+else
+    trans_flag="// TRANSPARENT: false"
+fi
+
+if [ "$APPLY_TRANS" = true ]; then
+    echo "Applying transparency ($alpha) to main stylesheet..."
+
+    # This regex looks for $primary, $secondary, or $tertiary.
+    # It uses a 'negative lookbehind' logic (simulated in sed) 
+    # to ensure it doesn't match if 'rgba(' is already present.
+    
+    # Wrap $primary, $secondary, $tertiary if NOT already in rgba
+    # We target common background variables, excluding $text
+    for var in "primary" "secondary" "tertiary"; do
+        # regex: replace ' $var' with ' rgba($var, alpha)' 
+        # but skip if it preceded by 'rgba('
+        sed -i "/BAR_TARGET/! s/\([^a(]\)\$$var/\1rgba(\$$var, $alpha)/g" "$main_scss"
+    done
+    
+    echo "Transparency applied."
+else
+    # CLEANUP: If user chose NO, we should revert rgba($var, x) back to $var
+    for var in "primary" "secondary" "tertiary" "topbar-color" "clock-color"; do
+        sed -i "s/rgba(\$$var, [0-9.]*)/\$$var/g" "$main_scss"
+    done
+fi
+
 
 # New prompt for Top Bar color
 topbar_val="\$primary"
-read -p "Use a specific background color for the Top Bar or make the Top Bar background completely transparent? (y/n): " topbar_choice
+read -p "Use a specific background color/transparency for the Top Bar (y/n): " topbar_choice
 
 if [[ "$topbar_choice" =~ ^[Yy]$ ]]; then
     echo "-----------------------------------------------"
@@ -182,13 +221,15 @@ fi
 
 
 #  Create partial file
-printf "\$primary: %s;\n\$secondary: %s;\n\$tertiary: %s;\n\$text: %s;\n\$tertiary-light: rgba(\$tertiary, 0.25);\n\$text-light: rgba(\$text, 0.25);\n\$topbar-color: %s;\n\$clock-color: %s;\n" \
-       "$primary" "$secondary" "$tertiary" "$text" "$topbar_val" "$clock_val" > "$partial_file"
+printf "%s\n\$primary: %s;\n\$secondary: %s;\n\$tertiary: %s;\n\$text: %s;\n\$tertiary-light: rgba(\$tertiary, 0.25);\n\$text-light: rgba(\$text, 0.25);\n\$topbar-color: %s;\n\$clock-color: %s;\n" \
+    "$trans_flag" "$primary" "$secondary" "$tertiary" "$text" "$topbar_val" "$clock_val" > "$partial_file"
 
 
 selected_import="$clean_name"
 
 elif [ "$choice" == "2" ]; then
+
+
 
 
     # --- OPTION 2: SELECT EXISTING ---
@@ -213,6 +254,41 @@ elif [ "$choice" == "2" ]; then
 else
     echo "Invalid choice." && exit 1
 fi
+
+   partial_file="_${selected_import}.scss" 
+
+# --- Auto-Detect Transparency from Partial ---
+# Look for the // TRANSPARENT: line in the chosen partial
+flag_line=$(grep "TRANSPARENT:" "$partial_file")
+
+if [[ "$flag_line" == *"true"* ]]; then
+    # Extract the alpha value from the parentheses, e.g., "0.5"
+    alpha=$(echo "$flag_line" | grep -oP '\(\K[0-9.]+')
+    # Fallback to 0.8 if extraction fails
+    alpha=${alpha:-0.8}
+    APPLY_TRANS=true
+    echo "Partial: Transparency Detected ($alpha)"
+else
+    APPLY_TRANS=false
+    echo "Partial: Solid Colors Detected"
+fi
+
+#  ALWAYS Cleanup first to avoid double-wrapping
+for var in "primary" "secondary" "tertiary" "topbar-color" "clock-color"; do
+    sed -i "s/rgba(\$$var, [0-9.]*)/\$$var/g" "$main_scss"
+done
+
+# 2. Re-apply only if the flag was true
+if [ "$APPLY_TRANS" = true ]; then
+    for var in "primary" "secondary" "tertiary" "topbar-color" "clock-color"; do
+        # Skip lines with BAR_TARGET
+        sed -i "/BAR_TARGET/! s/\([^a(]\)\$$var/\1rgba(\$$var, $alpha)/g" "$main_scss"
+    done
+    echo "Main stylesheet synchronized with transparent partial."
+else
+    echo "Main stylesheet synchronized with solid partial."
+fi
+
 
 
 #  Clean existing imports and add new one
