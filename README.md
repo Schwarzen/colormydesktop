@@ -26,7 +26,8 @@ make install
 ```
 
 Color My GNOME installs into ~/.local/bin which may not be automatically included in the PATH of some distributions like Arch linux,<br>
-please add `export PATH="$HOME/.local/bin:$PATH"`<br>
+please add <br>
+`export PATH="$HOME/.local/bin:$PATH"`<br>
 to your .bashrc and run <br>
 `. ~/.bashrc`<br>
 to refresh <br>
@@ -41,10 +42,20 @@ You will then have the option to either create a new color profile or choose fro
 <img width="45%" h alt="Screenshot From 2025-12-28 15-08-27" src="https://github.com/user-attachments/assets/ce7c7a98-9ac0-4afe-b48e-431fcf4fdecd" />
 </p>
 
-Color My Gnome currently supports picking hex color values for four different elements:<br>
-Primary, Secondary, Tertiary, as well as a Text color.<br>
-There is also an option to pick a specific color for the Date/Time, the top bar icons, and the top bar background, as well as the option to make the top bar background completely transparent.<br>
-Once the theme has finished compiling open the gnome tweaks application, and change your shell theme + legacy applications theme to "Color-My-Gnome" and enjoy!<br>
+Color My GNOME currently has these features: <br>
+* Picking hex color values for <br>
+  * Primary (main color used on top bar, window bar, and main window elements)
+  * Secondary (used for window backgrounds and some accents)
+  * Tertiary (used mostly for accents and some backgrounds)
+  * Text color.<br>
+* Option to pick a specific color for the Date/Time, the top bar icons, and the top bar background
+* Transparent top bar background
+* Apply colors to Zen browser, Youtube, and vesktop <br>
+
+Once the theme has finished compiling open the gnome tweaks application, and change your shell theme to "Color-My-Gnome" and enjoy!<br>
+
+Color my GNOME is currently under development, please backup any important files and use with caution. Color my GNOME only alters the files it comes with, <br>
+and only creates files in the Zen-browser theme folder that reference the css files created by Color my GNOME.
 ## Screenshots:
 
 <p align="center">
