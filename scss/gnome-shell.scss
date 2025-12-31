@@ -920,7 +920,7 @@ StScrollBar {
 .popup-menu-content, .candidate-popup-content {
   padding: 2px;
   background-color: $primary; /* MENU_TARGET */
-  border-radius: 10px;
+  border-radius: 6px;
   border: 1px solid $primary;
   box-shadow: 0 2px 2px 0 $secondary; }
 
@@ -928,7 +928,7 @@ StScrollBar {
   background-color: transparent;
   border-color: transparent;
   box-shadow: none;
-  border-radius: 12px; }
+  border-radius: 8px; }
   .popup-menu-item:insensitive {
     background-color: transparent !important; }
   .popup-menu-item:active {
@@ -945,7 +945,7 @@ StScrollBar {
     color: st-transparentize($secondary, 0.6);
     background-color: $text; }
   .popup-menu-item:checked {
-    border-radius: 12px 12px 0 0 !important; }
+    border-radius: 8px 8px 0 0 !important; }
   .popup-menu-item .toggle-switch:ltr {
     margin-left: 4px; }
   .popup-menu-item .toggle-switch:rtl {
@@ -967,7 +967,7 @@ StScrollBar {
   icon-size: 1.091em; }
 
 .popup-sub-menu {
-  border-radius: 0 0 13px 13px;
+  border-radius: 0 0 9px 9px;
   margin-bottom: 6px;
   border: 1px solid transparent;
   background-color: $tertiary; }
@@ -993,7 +993,7 @@ StScrollBar {
       color: st-transparentize($secondary, 0.6);
       background-color: $tertiary; }
     .popup-sub-menu .popup-menu-item:last-child {
-      border-radius: 0 0 12px 12px;
+      border-radius: 0 0 8px 8px;
       border-bottom-width: 0; }
   .popup-sub-menu .popup-menu-section .popup-menu-item:last-child:hover, .popup-sub-menu .popup-menu-section .popup-menu-item:last-child:focus {
     border-radius: 0; }
@@ -1034,10 +1034,10 @@ StScrollBar {
   padding: 4px; }
 
 .datemenu-popover {
-  border-radius: 30px; }
+  border-radius: 10px; }
 
 .datemenu-calendar-column {
-  spacing: 6px; }
+  spacing: 4px; }
   .datemenu-calendar-column:ltr {
     margin-left: 6px; }
   .datemenu-calendar-column:rtl {
@@ -1047,7 +1047,7 @@ StScrollBar {
 
 .datemenu-today-button {
   color: $text;
-  padding: 9px; }
+  padding: 7px; }
 .datemenu-today-button StLabel {
     color: $text; /* todays date color */
 }
@@ -1192,7 +1192,7 @@ StScrollBar {
     margin-left: 12px; }
   .message-view .message {
     margin-bottom: 12px !important;
-    border-radius: 18px; }
+    border-radius: 12px; }
 
 .message-list-controls {
   padding: 12px;
@@ -1220,7 +1220,7 @@ StScrollBar {
 .message {
   padding: 5px;
   margin: 2;
-  border-radius: 10px;
+  border-radius: 6px;
   background-color: $primary;
   box-shadow: 0 1px 1px 0 $secondary; }
   .message:second-in-stack {
