@@ -1,5 +1,6 @@
 # Color-My-GNOME
-A simple cli tool for creating a custom colored gnome-shell and GTK app theme, allowing for easy customization of the system colors and gtk apps on GNOME
+A simple tool for creating a custom colored gnome-shell, and GTK app theme, with options for creating a vesktop, Zen-browser, and youtube themes with your colors!<br>
+Allowing for easy and uniform customization of the shell colors and gtk apps on GNOME
 
 <img src="https://github.com/user-attachments/assets/6422dd01-cafa-432b-8a62-0f71a348aa6f" width="50%"/>
 
@@ -34,8 +35,18 @@ to refresh <br>
 
 ## Usage:
 
+Open the Color-My-Gnome gui and either create a new profile, or select an existing to edit/apply. <br>
+
+<img width="35%" alt="image" src="https://github.com/user-attachments/assets/b264b047-a5d1-4c03-8eeb-70a8fe99a6d7" /> <br>
+
+Or 
+
 Run the command <br>
+
 `color-my-gnome` <br>
+
+If you prefer the cli <br>
+
 You will then have the option to either create a new color profile or choose from an existing color profile to swap to.<br>
 <p align="center">
 <img width="45%" alt="Screenshot From 2025-12-28 15-07-21" src="https://github.com/user-attachments/assets/f98563d6-a557-4e3a-af27-689fccaaf776" />
@@ -48,11 +59,15 @@ Color My GNOME currently has these features: <br>
   * Secondary (used for window backgrounds and some accents)
   * Tertiary (used mostly for accents and some backgrounds)
   * Text color.<br>
-* Option to pick a specific color for the Date/Time, the top bar icons, and the top bar background
+* Option to pick a specific color for: 
+  * the Date/Time
+  * the top bar icons
+  * the top bar background
 * Transparent top bar background
 * Apply colors to Zen browser, Youtube, and vesktop <br>
 
 Once the theme has finished compiling open the gnome tweaks application, and change your shell theme to "Color-My-Gnome" and enjoy!<br>
+Some apps may require logging out to refresh their colors. <br>
 
 Color my GNOME is currently under development, please backup any important files and use with caution. Color my GNOME only alters the files it comes with, <br>
 and only creates files in the Zen-browser theme folder that reference the css files created by Color my GNOME.
