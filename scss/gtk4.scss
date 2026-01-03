@@ -7351,9 +7351,9 @@ notebook scrolledwindow treeview.treeview-spacing {
 .nautilus-window scrolledwindow {
   background-color: $nautilus-secondary; /*nautilus secondary color */
   /* CRITICAL: Overwrite the system's inset shadow border */
-  box-shadow: inset 0 0 0 1px $nautilus-main;
+  box-shadow: inset 0 0 0 0px $nautilus-main;
   border: none; /* Removes the standard border causing the shape conflict */
-  border-radius: 12px;
+  border-radius: 4px;
   margin: 0 6px 6px 6px;
 }
 
