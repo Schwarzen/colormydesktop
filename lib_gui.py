@@ -30,41 +30,37 @@ Gtk.StyleContext.add_provider_for_display(
 class ThemeManager(Adw.ApplicationWindow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
         self.current_colors = {} 
-
-        
-
-
-        
+        self.status_labels = {}
+        # At the very top of __init__
+        self.nautilus_active = False
+        self.nautilus_hex_var = "#88c0d0"
+        self.datemenu_active = False
+        self.datemenu_hex_var = "#88c0d0"
+        # 1. WINDOW BASICS
         self.set_title("Color My Gnome")
-        self.set_default_size(400, 500)
+        self.set_default_size(400, 600)
 
-        #  Main Layout Container
+        # 2. CREATE CONTAINERS (The "Skeleton")
+        # Root is Toast -> inside is NavView -> inside is MainBox
         self.toast_overlay = Adw.ToastOverlay()
-        self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.nav_view = Adw.NavigationView()
+        self.main_page_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
-        self.toast_overlay.set_child(self.main_box) 
-        self.set_content(self.toast_overlay)       
+        # 3. ASSEMBLY (The "Hierarchy")
+        self.set_content(self.toast_overlay)           # Window shows Toast
+        self.toast_overlay.set_child(self.nav_view)    # Toast shows NavView
 
-
-        
-        
-                #  Header Bar
+        # 4. BUILD THE MAIN PAGE CONTENT
         self.header = Adw.HeaderBar()
-        self.main_box.append(self.header)
-        
-        
-        
+        self.main_page_content.append(self.header)
+
         self.page = Adw.PreferencesPage()
+        self.main_page_content.append(self.page)     
+
         self.group = Adw.PreferencesGroup()
         self.group.set_title("Theme Configuration")
-        
-    
-        self.main_box.append(self.page)
-        
-
-
+     
         # Select Profile 
         self.load_group = Adw.PreferencesGroup()
         self.load_group.set_title("Profile Management")
@@ -144,6 +140,18 @@ class ThemeManager(Adw.ApplicationWindow):
         self.trans_switch.set_active(False) # Default solid
         self.group.add(self.trans_switch)
         
+                # --- 4. THE "SWAP" BUTTON (ActionRow) ---
+        # This is a row that looks like a button but fits in a PreferencesGroup
+        self.advanced_link = Adw.ActionRow(title="Advanced Options", selectable=False)
+        self.advanced_link.add_suffix(Gtk.Image.new_from_icon_name("go-next-symbolic"))
+        self.advanced_link.set_activatable(True)
+        self.group.add(self.advanced_link)
+        # Connect the click event
+        self.advanced_link.connect("activated", lambda row: self.nav_view.push(self.adv_nav_page))
+
+        
+        
+        
                 # Button             # Create the build button
         self.build_btn = Gtk.Button(label="Build and Apply Theme")
         self.build_btn.add_css_class("suggested-action") # color
@@ -154,13 +162,208 @@ class ThemeManager(Adw.ApplicationWindow):
         self.build_btn.connect("clicked", self.on_run_build_clicked)
         
         # button to mainbox
-        self.main_box.append(self.build_btn)
+        self.main_page_content.append(self.build_btn)
         
+        self.main_nav_page = Adw.NavigationPage.new(self.main_page_content, "Theme Settings")
+        self.nav_view.add(self.main_nav_page)
+       
+        
+                # --- ADVANCED PAGE SETUP ---
+        self.adv_page_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+
+        # Add a HeaderBar so users can go back (NavigationView handles the back button)
+        self.adv_header = Adw.HeaderBar()
+        self.adv_page_content.append(self.adv_header)
+
+        # Create a Preferences Page for the advanced settings
+        self.adv_pref_page = Adw.PreferencesPage()
+        self.adv_page_content.append(self.adv_pref_page)
+
+        # Create a group for your advanced toggles
+        self.adv_group = Adw.PreferencesGroup(title="Advanced Settings")
+        self.adv_pref_page.add(self.adv_group)
+                # 1. Create a group for the grid
+        self.grid_group = Adw.PreferencesGroup(title="Quick Tweak Presets")
+        self.adv_pref_page.add(self.grid_group)
+
+        # 2. Create the FlowBox (The Grid)
+        self.flowbox = Gtk.FlowBox()
+        self.flowbox.set_valign(Gtk.Align.START)
+        self.flowbox.set_max_children_per_line(3) # Forces 3 columns
+        self.flowbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.flowbox.set_homogeneous(True) # Makes all boxes the same size
+
+        # Add the grid to the group
+        self.grid_group.add(self.flowbox)
+
+                        # 3. Helper to create a "Box" Button
+        def add_grid_item(label, default_color, css_id):
+            # 1. CREATE THE SETTINGS PAGE FOR THIS ITEM
+            sub_page_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            
+            # Sub-page Header
+            sub_header = Adw.HeaderBar()
+            sub_page_box.append(sub_header)
+            
+            # Sub-page Settings Group
+            sub_pref_page = Adw.PreferencesPage()
+            sub_page_box.append(sub_pref_page)
+            sub_group = Adw.PreferencesGroup(title=f"{label} Customization")
+            sub_pref_page.add(sub_group)
+
+            # 2. ADD THE CONTROLS (Live-Syncing)
+            # Main Toggle
+            main_row = Adw.SwitchRow(title="Use Custom Main Color")
+            sub_group.add(main_row)
+            # Set the class variable directly to the widget for easy access
+            setattr(self, f"{css_id}_switch", main_row)
+            
+            main_entry = self.create_color_entry("Main Hex", default_color, f"{css_id}-main")
+            sub_group.add(main_entry)
+            setattr(self, f"{css_id}_entry", main_entry)
+            
+            # Secondary Toggle
+            sec_row = Adw.SwitchRow(title="Use Custom Secondary Color")
+            sub_group.add(sec_row)
+            setattr(self, f"{css_id}_sec_switch", sec_row)
+            
+            sec_entry = self.create_color_entry("Secondary Hex", default_color, f"{css_id}-sec")
+            sub_group.add(sec_entry)
+            setattr(self, f"{css_id}_sec_entry", sec_entry)
+
+            # Visibility Bindings (The "Topbar Logic")
+            main_row.bind_property("active", main_entry, "visible", 0)
+            sec_row.bind_property("active", sec_entry, "visible", 0)
+
+            # 3. WRAP IN NAV PAGE
+            sub_nav_page = Adw.NavigationPage.new(sub_page_box, label)
+            self.nav_view.add(sub_nav_page)
+
+            # 4. CREATE THE GRID BOX BUTTON
+            box_button = Gtk.Button(width_request=140, height_request=140)
+            box_button.add_css_class("flat")
+            
+            btn_layout = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            btn_layout.set_margin_top(10); btn_layout.set_margin_bottom(10)
+            btn_layout.set_margin_start(10); btn_layout.set_margin_end(10)
+            
+            btn_layout.append(Gtk.Label(label=label, css_classes=["heading"]))
+            status_label = Gtk.Label(label="Default", css_classes=["caption"])
+            btn_layout.append(status_label)
+            
+            # Update status label live when switches change
+            def update_status(*args):
+                status_label.set_label("Custom" if (main_row.get_active() or sec_row.get_active()) else "Default")
+            
+            main_row.connect("notify::active", update_status)
+            sec_row.connect("notify::active", update_status)
+
+            box_button.set_child(btn_layout)
+            box_button.connect("clicked", lambda b: self.nav_view.push(sub_nav_page))
+            self.flowbox.append(box_button)
+            
+            # Store these as attributes if you need to access them for building
+            # Example: self.adv_toggles[css_id] = toggle
+
+        # 4. Add items to your grid
+        add_grid_item("Nautilus", "#88c0d0", "nautilus_custom")
+        add_grid_item("System", "#bd93f9", "system_custom")
+        
+
+        # Wrap it in a NavigationPage
+        self.adv_nav_page = Adw.NavigationPage.new(self.adv_page_content, "Advanced")
+        self.nav_view.add(self.adv_nav_page)
         
         initial_css = ""
         for cid, hcolor in self.current_colors.items():
             initial_css += f"#{cid}-preview {{ background-color: {hcolor}; border-radius: 6px; min-width: 24px; min-height: 24px; }}\n"
         dynamic_color_provider.load_from_string(initial_css)
+        
+        self.nav_view.push(self.main_nav_page)
+        
+        
+    def open_small_window(self, title, default_color, css_id): 
+        # 1. Create the sub-window
+        popup = Adw.Window(transient_for=self)
+        popup.set_default_size(320, 250)
+        popup.set_title(title)
+        
+        # 2. Layout container
+        # Using a Box with margins for a clean Libadwaita look
+        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        content_box.set_margin_top(18)
+        content_box.set_margin_bottom(18)
+        content_box.set_margin_start(18)
+        content_box.set_margin_end(18)
+        
+        # --- TOGGLE 1: NAUTILUS MAIN ---
+        main_row = Adw.ActionRow(title="Custom Main Color")
+        main_switch = Gtk.Switch(valign=Gtk.Align.CENTER, active=getattr(self, f"{css_id}_active", False))
+        main_row.add_suffix(main_switch)
+        content_box.append(main_row)
+        
+        main_entry = Gtk.Entry(text=getattr(self, f"{css_id}_hex_var", default_color), visible=False)
+        main_switch.bind_property("active", main_entry, "visible", 0)
+        content_box.append(main_entry)
+        
+        # --- TOGGLE 2: NAUTILUS SECONDARY ---
+        sec_row = Adw.ActionRow(title="Custom Secondary Color")
+        sec_switch = Gtk.Switch(valign=Gtk.Align.CENTER, active=getattr(self, f"{css_id}_sec_active", False))
+        sec_row.add_suffix(sec_switch)
+        content_box.append(sec_row)
+        
+        sec_entry = Gtk.Entry(text=getattr(self, f"{css_id}_sec_hex_var", default_color), visible=False)
+        sec_switch.bind_property("active", sec_entry, "visible", 0)
+        content_box.append(sec_entry)
+        
+        # 4. The Custom Entry (Hidden initially)
+        # We use a Gtk.Entry for the compact popup window
+        custom_entry = Gtk.Entry()
+        custom_entry.set_text(default_color)
+        custom_entry.set_placeholder_text("Enter #hex color")
+        custom_entry.set_visible(False) # Linked to switch
+        content_box.append(custom_entry)
+        
+        # --- THE MAGIC BINDING ---
+        # This automatically shows/hides the entry when the switch is flipped
+        main_switch.bind_property("active", main_entry, "visible", 0) # RIGHT
+
+        
+    
+
+        # --- APPLY LOGIC ---
+        def on_apply_clicked(btn):
+            # Determine the hex codes
+            main_hex = main_entry.get_text() or "#88c0d0"
+            sec_hex = sec_entry.get_text() or "#88c0d0"
+            
+            # HARD-CODE the save to ensure no naming mistakes
+            if css_id == "nautilus_custom":
+                self.nautilus_custom_active = main_switch.get_active()
+                self.nautilus_custom_hex_var = main_hex
+                self.nautilus_custom_sec_active = sec_switch.get_active()
+                self.nautilus_custom_sec_hex_var = sec_hex
+            
+            # Update the visual label in the grid
+            status_text = "Custom" if (main_switch.get_active() or sec_switch.get_active()) else "Default"
+            self.status_labels[css_id].set_label(status_text)
+            
+            popup.close()
+
+        apply_btn = Gtk.Button(label="Save & Apply", margin_top=12)
+        apply_btn.add_css_class("suggested-action")
+        apply_btn.connect("clicked", on_apply_clicked)
+        content_box.append(apply_btn)
+        
+        popup.set_content(content_box)
+        popup.present()
+    
+        # Close popup on click (add your actual apply logic here too)
+        apply_btn.connect("clicked", on_apply_clicked)
+        content_box.append(apply_btn)
+        
+        popup.set_content(content_box)
+        popup.present()
         
         
     
@@ -212,6 +415,45 @@ class ThemeManager(Adw.ApplicationWindow):
         
         if not selected_theme:
             return
+            
+        partial_path = os.path.expanduser(f"~/.local/share/Color-My-Gnome/scss/_{selected_theme}.scss")
+    
+        if os.path.exists(partial_path):
+            with open(partial_path, "r") as f:
+                content = f.read()
+
+            # 2. Helper to extract and sync advanced rows
+            def sync_advanced_feature(css_id, var_name):
+                import re
+                # 2026 Robust Regex: Matches '$var-name: #hex;' or '$var-name: #hex !important;'
+                # Handles hyphens and variable whitespace correctly
+                pattern = rf"\${re.escape(var_name)}:\s*(#[0-9a-fA-F]{{3,6}})"
+                match = re.search(pattern, content)
+                
+                sw = getattr(self, f"{css_id}_switch", None)
+                en = getattr(self, f"{css_id}_entry", None)
+                
+                if match and sw and en:
+                    hex_val = match.group(1).lower()
+                    primary_hex = self.primary_row.get_text().lower()
+                    
+                    # Update the text entry
+                    en.set_text(hex_val)
+                    
+                    # THE FIX: Only toggle ON if the value is different from primary
+                    # This distinguishes between 'inherited' and 'custom'
+                    if hex_val != primary_hex:
+                        sw.set_active(True)
+                    else:
+                        sw.set_active(False)
+                elif sw:
+                    # If variable is missing from the file, it's definitely OFF
+                    sw.set_active(False)
+
+            # 2. TRIGGER SYNC (Ensure these IDs match your 'add_grid_item' calls exactly)
+            sync_advanced_feature("nautilus_custom", "nautilus-main")
+            sync_advanced_feature("nautilus_custom_sec", "nautilus-secondary")
+            sync_advanced_feature("datemenu_custom", "system-datemenu")
 
         #  Update the Name field
         self.name_row.set_text(selected_theme)
@@ -370,6 +612,7 @@ class ThemeManager(Adw.ApplicationWindow):
     def on_run_build_clicked(self, button):
     # Get primary hex and ensure it is a string
         primary_color = str(self.primary_row.get_text() or "#3584e4")
+        secondary_color = str(self.secondary_row.get_text() or "#3584e4")
         text_color = str(self.text_row.get_text() or "#f9f9f9")
 
      
@@ -382,6 +625,18 @@ class ThemeManager(Adw.ApplicationWindow):
             clock_val = str(self.clock_row.get_text())
         else:
             clock_val = text_color
+            
+            # 1. Logic for Nautilus Main
+        # If the advanced toggle is OFF, fallback to Primary
+        n_main_sw = getattr(self, "nautilus_custom_switch")
+        n_main_entry = getattr(self, "nautilus_custom_entry")
+        
+        n_sec_sw = getattr(self, "nautilus_custom_sec_switch")
+        n_sec_entry = getattr(self, "nautilus_custom_sec_entry")
+
+        # Get values: If active, take entry text. If not, take primary.
+        n_main_val = n_main_entry.get_text() if n_main_sw.get_active() else primary_color
+        n_sec_val = n_sec_entry.get_text() if n_sec_sw.get_active() else secondary_color
 
      
         if not topbar_val.strip(): topbar_val = primary_color
@@ -400,8 +655,11 @@ class ThemeManager(Adw.ApplicationWindow):
             clock_val,
             "1" if self.trans_switch.get_active() else "0",
             "0.8",
-            "1" if self.icon_sync_switch.get_active() else "0"  # ${13}
-        ]
+            "1" if self.icon_sync_switch.get_active() else "0",  # ${13}
+            n_main_val, # $14
+            "#3584e4",  # $15 (Datemenu fallback)
+            n_sec_val   # $16
+        ]                                                                                                   
         
         button.set_sensitive(False)
         

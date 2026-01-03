@@ -371,6 +371,10 @@ if [ "$choice" == "1" ]; then
     B_TEXT="${5:-#f9f9f9}"
     B_TOPBAR="${8:-$B_PRIMARY}"  # Fallback to primary if empty
     B_CLOCK="${10:-$B_TEXT}"     # Fallback to text if empty
+        # Capture the new arguments ($14 and $15)
+    B_NAUTILUS="${14:-$3}" # Fallback to Primary ($2) if empty
+    B_DATEMENU="${15:-$2}" # Fallback to Primary ($2) if empty
+    B_NAUT_SEC="${16:-$3}"
 
 
     {
@@ -382,6 +386,9 @@ if [ "$choice" == "1" ]; then
 	printf '$text-light: %s;\n' "rgba(\$text, 0.25)"
         printf '$topbar-color: %s;\n' "$B_TOPBAR"
         printf '$clock-color: %s;\n' "$B_CLOCK"
+	printf '$nautilus-main: %s;\n' "$B_NAUTILUS"
+	printf '$nautilus-secondary: %s;\n' "$B_NAUT_SEC"
+        printf '$system-datemenu: %s;\n' "$B_DATEMENU"
     } > "$partial_file"
 
     echo "Status: Theme partial updated at $partial_file"

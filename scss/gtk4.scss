@@ -1,3 +1,4 @@
+@use 'brown' as *;
 
 
 /*##SYSTEM_COLORS
@@ -4248,7 +4249,7 @@ treeview.view > header > button:hover, .nautilus-window .nautilus-grid-view chil
 .nautilus-window .nautilus-list-view child.has-open-popup.activatable, columnview.view > header > button.has-open-popup,
 treeview.view > header > button.has-open-popup, row.activatable:hover, row.activatable.has-open-popup {
   color: $text;
-  background-color: rgba($secondary, 0.05);
+  background-color: rgba($nautilus-secondary, 0.05);
   box-shadow: none;
 }
 
@@ -4267,7 +4268,7 @@ treeview.view > header > button:active, row.activatable:active {
 .nautilus-window .nautilus-grid-view child.activatable:selected,
 .nautilus-window .nautilus-list-view child.activatable:selected, columnview.view > header > button:selected,
 treeview.view > header > button:selected, row.activatable:selected {
-  background-color: rgba($secondary, 0.06);
+  background-color: rgba($nautilus-secondary, 0.06);
 }
 
 .nautilus-window .nautilus-grid-view child.activatable:selected:hover,
@@ -5645,7 +5646,7 @@ popover.entry-completion > contents {
 }
 
 .nautilus-window.view {
-  background-color: $primary;
+  background-color: $nautilus-main;
 }
 
 .nautilus-window headerbar > widget > windowtitle {
@@ -5653,8 +5654,23 @@ popover.entry-completion > contents {
   margin: 6px;
 }
 
+.nautilus-window headerbar {
+    background-color: $nautilus-main; /* nautilus top bar*/
+    color: $text;
+}
+
+.nautilus-window headerbar windowhandle {
+    background-color: $nautilus-main;
+}
+
+.nautilus-window headerbar .linked button,
+.nautilus-window headerbar button {
+    background-color: rgba($nautilus-main, 0.5); /* Use a shade of your secondary color */
+    color: $text;
+}
+
 .nautilus-window .sidebar-pane {
-  background-color: $primary;
+  background-color: $nautilus-main; /* nautilus main top */
   color: $text;
 }
 
@@ -5674,7 +5690,7 @@ popover.entry-completion > contents {
 
 
 .nautilus-window .sidebar-pane:backdrop {
-  background-color: $primary;
+  background-color: $nautilus-main;
   transition: none;
 }
 
@@ -7319,7 +7335,7 @@ notebook scrolledwindow treeview.treeview-spacing {
 }
 
 .nautilus-window placessidebar > scrolledwindow {
-  background-color: $primary;
+  background-color: $nautilus-main; /* nautilus main color */
   color: $text;
   border-radius: 0;
   /* margin: 0 6px 0 0; */
@@ -7329,11 +7345,29 @@ notebook scrolledwindow treeview.treeview-spacing {
   color: rgba(251, 241, 199, 0.5);
 }
 
+/* 1. Target the actual container holding the grid/list */
 .nautilus-window .nautilus-grid-view,
-.nautilus-window .nautilus-list-view {
-background-color: $secondary;
+.nautilus-window .nautilus-list-view,
+.nautilus-window scrolledwindow {
+  background-color: $nautilus-secondary; /*nautilus secondary color */
+  /* CRITICAL: Overwrite the system's inset shadow border */
+  box-shadow: inset 0 0 0 1px $nautilus-main;
+  border: none; /* Removes the standard border causing the shape conflict */
   border-radius: 12px;
   margin: 0 6px 6px 6px;
+}
+
+/* 2. Kill the primary-colored background that 'leaks' through the margins */
+/* In 2026, the area 'behind' your margin is often the app's main background */
+.nautilus-window overlaysplitview > box.vertical {
+  background-color: transparent; /* Or set to $nautilus_main to hide leaks */
+}
+
+/* 3. The Separator between sidebar and main content */
+.nautilus-window overlaysplitview > separator {
+  background-color: $nautilus-main;
+  background-image: none;
+  min-width: 1px;
 }
 
 calendar-view {
@@ -8125,7 +8159,7 @@ overlay-split-view > shadow.down {
 }
 
 .content-pane {
-  background-color: $primary;
+  background-color: $nautilus-main;
   color: $text;
   border-top-right-radius: 12px;
   box-shadow: inset 0 1px rgba(251, 241, 199, 0.15);
@@ -8490,5 +8524,8 @@ read if you used those and something break with a version upgrade you're on your
 @define-color popover_fg_color #{$text};
 @define-color shade_color #{$text};
 @define-color scrollbar_outline_color #{$text};
+
+
+
 
 
