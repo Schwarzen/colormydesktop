@@ -557,43 +557,52 @@ if [ "$GUI_ICON_SYNC" == "1" ]; then
 
     echo "Status: Syncing Papirus icons to theme colors..."
 
-    # 1. Ensure local copy exists
+    #  Ensure local copy exists
     if [ ! -d "$LOCAL_PAPIRUS" ]; then
         mkdir -p "$LOCAL_ICONS"
         cp -r "$SYSTEM_PAPIRUS" "$LOCAL_PAPIRUS"
         sed -i "s/Name=Papirus/Name=$CUSTOM_THEME/" "$LOCAL_PAPIRUS/index.theme"
     fi
 
-#  Target ALL blue-themed SVGs (including downloads, pictures, etc.)
-    find "$LOCAL_PAPIRUS" -name "*blue*.svg" | while read -r blue_file; do
-        # Create 'cmg' version of the specific file (e.g., folder-blue-downloads.svg -> folder-cmg-downloads.svg)
-        cmg_file="${blue_file//blue/cmg}"
-        
-        # Reset and Copy
-        \cp -f "$blue_file" "$cmg_file"
-        
-        #  THE MEGA-SED
-        sed -i \
-            "s/#5294e2/$primary/gI; s/fill:#5294e2/fill:$primary/gI; s/stop-color:#5294e2/stop-color:$primary/gI; \
-             s/#84afea/$text/gI; s/fill:#84afea/fill:$text/gI; s/stop-color:#84afea/stop-color:$text/gI; \
-             s/#2e6bb4/$secondary/gI; s/fill:#2e6bb4/fill:$secondary/gI; s/stop-color:#2e6bb4/stop-color:$secondary/gI; \
-             s/#4877b1/$primary/gI; s/fill:#4877b1/fill:$primary/gI; s/stop-color:#4877b1/stop-color:$primary/gI" \
-            "$cmg_file"
+#  CLEANUP: Delete any accidental multi-extension files before starting
+find "$LOCAL_PAPIRUS" -name "*.svg.svg*" -delete
 
-        #   Swap the symlink
-        # 'folder.svg' is usually a symlink to 'folder-blue.svg'. 
-        #  change it to point to 'folder-cmg.svg'.
-        base_name=$(basename "$blue_file" "-blue.svg")
-        dir_name=$(dirname "$blue_file")
-        
-        # Point the standard icon (e.g. folder.svg) to new custom one
-        ln -sf "${base_name}-cmg.svg" "${dir_name}/${base_name}.svg"
-    done
+echo "Syncing Papirus Icons (Targeting blue icons)..."
 
-    # 3. Final Refresh
-    gsettings set org.gnome.desktop.interface icon-theme "Papirus-Custom"
-    gtk-update-icon-cache -f -t "$LOCAL_PAPIRUS"
+#  THE LOOP
+#  exclude any files already containing 'cmg' to prevent recursion
+find "$LOCAL_PAPIRUS" -type f -name "*blue*.svg" ! -name "*cmg*" | while read -r blue_file; do
     
+    # Precise replacement: only replace 'blue' at the end of the filename, not in paths
+    # This prevents the .svg.svg.svg issue
+    cmg_file="${blue_file%-blue.svg}-cmg.svg"
+    
+    # If the file hasn't changed, don't waste time copying
+  
+    cp -f "$blue_file" "$cmg_file"
+    
+    # THE MEGA-SED (Scoped to the new CMG file)
+    sed -i \
+        "s/#5294e2/$primary/gI; s/fill:#5294e2/fill:$primary/gI; s/stop-color:#5294e2/stop-color:$primary/gI; \
+         s/#84afea/$text/gI; s/fill:#84afea/fill:$text/gI; s/stop-color:#84afea/stop-color:$text/gI; \
+         s/#2e6bb4/$secondary/gI; s/fill:#2e6bb4/fill:$secondary/gI; s/stop-color:#2e6bb4/stop-color:$secondary/gI; \
+         s/#4877b1/$primary/gI; s/fill:#4877b1/fill:$primary/gI; s/stop-color:#4877b1/stop-color:$primary/gI" \
+        "$cmg_file"
+
+    #  SYMLINK 
+    #  get the directory and the base name without the extension
+    dir_name=$(dirname "$blue_file")
+    # Get filename without '-blue.svg'
+    base_name=$(basename "$blue_file" "-blue.svg")
+    
+    # Redirect the generic symlink (e.g. folder.svg) to our custom file (e.g. folder-cmg.svg)
+    # This must be done inside the directory to avoid path errors
+    (cd "$dir_name" && ln -sf "${base_name}-cmg.svg" "${base_name}.svg")
+
+done
+
+echo "Icon sync complete. Refreshing icon cache..."
+gtk-update-icon-cache -f -t "$HOME/.local/share/icons/Papirus-Custom" 2>/dev/null || true
     # Force Nautilus to reload the new symlink targets
     nautilus -q > /dev/null 2>&1
     echo "Status: Icons synced successfully with custom profile."
