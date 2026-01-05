@@ -3,17 +3,23 @@
 APP_DATA_DIR  = $(HOME)/.local/share/Color-My-Gnome
 VENV_DIR      = $(APP_DATA_DIR)/.venv
 VENV_PYTHON   = $(VENV_DIR)/bin/python3
+VENV_BIN      = $(VENV_DIR)/bin
 VENV_NPM      = $(VENV_DIR)/bin/npm
 VENV_NODEENV  = $(VENV_DIR)/bin/nodeenv
+SASS	      = $(VENV_DIR)/bin/sass
 
 # Destinations
 SCSS_DATA_DIR = $(APP_DATA_DIR)/scss
 BIN_DIR       = $(HOME)/.local/bin
 DESKTOP_FILE  = $(HOME)/.local/share/applications/Color-My-Gnome.desktop
 
-.PHONY: install setup clean uninstall
+.PHONY: all build-styles install setup  clean uninstall
 
 # --- MAIN INSTALL TARGET ---
+build-styles:
+	# Call the binary directly by its full path
+	SASS_BIN=$(SASS) bash ./color-my-gnome.sh
+
 install: setup
 	@echo "Installing SCSS partials..."
 	@mkdir -p $(SCSS_DATA_DIR)
@@ -46,8 +52,19 @@ setup:
 	# Recreate venv in the persistent path
 	@python3 -m venv $(VENV_DIR)
 	@$(VENV_DIR)/bin/pip install --upgrade pip PyGObject nodeenv
-	@$(VENV_NODEENV) -p
-	@$(VENV_NPM) install sass --prefix $(APP_DATA_DIR)
+	@echo "Installing standalone Dart Sass to venv..."
+	curl -L -o sass.tar.gz https://github.com/sass/dart-sass/releases/download/1.97.1/dart-sass-1.97.1-linux-x64.tar.gz
+	tar -xzf sass.tar.gz
+	mv dart-sass/sass $(VENV_BIN)/sass
+	mv dart-sass/src $(VENV_DIR)/bin/
+	chmod +x $(VENV_DIR)/bin/sass
+	rm -rf dart-sass sass.tar.gz
+	@echo "Sass installed!"
+
+
+
+
+
 	# Copy icon to stable location
 
 

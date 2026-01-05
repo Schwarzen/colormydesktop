@@ -9,6 +9,7 @@ DEF_TXT="#f9f9f9"      # White
 main_scss="gnome-shell.scss"
 temp_scss=$(mktemp --suffix=".scss")
 
+
 gtk4_scss="gtk4.scss"
 output_css="$HOME/.local/share/themes/Color-My-Gnome/gnome-shell/gnome-shell.css"
 output_gtk4_css="$HOME/.config/gtk-4.0/gtk.css"
@@ -51,6 +52,23 @@ GUI_TRANS_TOGGLE="${11}"
 GUI_ALPHA="${12}"
 GUI_ICON_SYNC="${13}"
 
+VENV="$HOME/.local/share/Color-My-Gnome/.venv/bin"
+
+# 1. Detect environment
+if [ -f "/.flatpak-info" ]; then
+    # We are in a Flatpak! Use the path in the sandbox.
+    SASS="/app/bin/sass"
+else
+    # We are native and have a local venv!
+    SASS="$VENV/sass"
+
+fi
+
+# 2. Safety check
+if [ ! -x "$SASS" ]; then
+   echo "Error: Sass compiler not found at $SASS"
+   exit 1
+ fi
 
 
 
@@ -664,22 +682,22 @@ if command -v npx sass &> /dev/null; then
 
     echo "Created userChrome.css and userContent.css in $ZEN_CHROME_DIR"
         echo "Compiling YouTube styles..."
-        npx sass "$youtube_scss" "$output_youtube" --style expanded
-	npx sass "$zen_scss" "$output_zen" --style expanded
-	npx sass "$vencord_scss" "$output_vencord" --style expanded
+        $SASS "$youtube_scss" "$output_youtube" --style expanded
+	$SASS "$zen_scss" "$output_zen" --style expanded
+	$SASS "$vencord_scss" "$output_vencord" --style expanded
     else
         echo "Skipping YouTube styles."
     fi
 
     #  Always compile Main and GTK styles
     echo "Compiling $temp_scss to $output_css..."
-    npx sass "$temp_scss" "$output_css" --style expanded
+    $SASS "$temp_scss" "$output_css" --style expanded
     
     echo "Compiling to $output_gtk4_css..."
-    npx sass "$gtk4_scss" "$output_gtk4_css" --style expanded
+    $SASS "$gtk4_scss" "$output_gtk4_css" --style expanded
     
     echo "Compiling to $output_gtk4dark_css..."
-    npx sass "$gtk4_scss" "$output_gtk4dark_css" --style expanded
+    $SASS "$gtk4_scss" "$output_gtk4dark_css" --style expanded
 
     echo "DEBUG: Name=$1, Primary=$2, TopbarHex=$8, ClockHex=${10}"
        
