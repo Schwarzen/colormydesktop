@@ -1,8 +1,12 @@
 Apache Color-My-Gnome
-Copyright 2025 Schwarzen
+Copyright 2026 Schwarzen
 
 This product includes software developed by Schwarzen and targets 
 the GNOME Shell environment.
+
+This product includes software developed by third parties:
+
+- Dart Sass (MIT License): See licenses/dart-sass-license
 
 -------------------------------------------------------------------
 COMPONENT: CSS System Skeleton
