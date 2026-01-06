@@ -35,8 +35,9 @@ to refresh <br>
 
 Open the Color-My-Gnome gui and either create a new profile, or select an existing to edit/apply. <br>
 
+
 <p>
-      <img width="60%" src="https://github.com/user-attachments/assets/bb3afd83-e8f2-448e-8904-896779f72e03" />
+      <img width="60%" src="https://github.com/user-attachments/assets/5e5bb232-40fd-45fc-9805-c16279d8c3d6" />
 </p>
 Or 
 
