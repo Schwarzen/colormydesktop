@@ -10,13 +10,13 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, GLib
 
 # --- CONFIGURATION ---
-SCSS_DIR = os.path.expanduser("~/.local/share/Color-My-Gnome/scss")
+SCSS_DIR = os.path.expanduser("~/.local/share/Color-My-Desktop/scss")
 if os.environ.get("FLATPAK_ID"):
     # Inside Flatpak, your script is at /app/bin/
-    BASH_SCRIPT = "/app/bin/color-my-gnome-backend"
+    BASH_SCRIPT = "/app/bin/Color-My-Desktop-backend"
 else:
     # Native install location
-    BASH_SCRIPT = os.path.expanduser("~/.local/bin/color-my-gnome")
+    BASH_SCRIPT = os.path.expanduser("~/.local/bin/Color-My-Desktop")
 themes = [f[1:-5] for f in os.listdir(SCSS_DIR) if f.startswith('_') and f.endswith('.scss')]
 
 preview_css_provider = Gtk.CssProvider()
@@ -44,7 +44,7 @@ class ThemeManager(Adw.ApplicationWindow):
         self.datemenu_active = False
         self.datemenu_hex_var = "#88c0d0"
      
-        self.set_title("Color My Gnome")
+        self.set_title("Color My Desktop")
         self.set_default_size(400, 600)
 
    
@@ -185,7 +185,7 @@ class ThemeManager(Adw.ApplicationWindow):
         # button to mainbox
         self.main_page_content.append(self.build_btn)
         
-        self.main_nav_page = Adw.NavigationPage.new(self.main_page_content, "Color My Gnome")
+        self.main_nav_page = Adw.NavigationPage.new(self.main_page_content, "Color My Desktop")
         self.nav_view.add(self.main_nav_page)
        
         
@@ -437,7 +437,7 @@ class ThemeManager(Adw.ApplicationWindow):
         if not selected_theme:
             return
             
-        partial_path = os.path.expanduser(f"~/.local/share/Color-My-Gnome/scss/_{selected_theme}.scss")
+        partial_path = os.path.expanduser(f"~/.local/share/Color-My-Desktop/scss/_{selected_theme}.scss")
     
         if os.path.exists(partial_path):
             with open(partial_path, "r") as f:
@@ -779,7 +779,7 @@ class ThemeManager(Adw.ApplicationWindow):
 
 class MyApp(Adw.Application):
     def __init__(self):
-        super().__init__(application_id="com.user.ColorMyGnome")
+        super().__init__(application_id="com.user.ColorMyDesktop")
     
         self.connect("activate", self.on_activate)
 

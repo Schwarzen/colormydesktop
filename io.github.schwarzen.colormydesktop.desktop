@@ -1,12 +1,12 @@
 [Desktop Entry]
-Name=Color My Gnome
+Name=Color My Desktop
 Comment=Personalize your GNOME desktop colors
 # In Flatpak, Exec must point to the 'command' defined in your YAML
-Exec=color-my-gnome
-Icon=org.gnome.ColorMyGnome
+Exec=color-my-desktop
+Icon=io.github.schwarzen.colormydesktop
 Terminal=false
 Type=Application
 Categories=GNOME;GTK;Settings;
 StartupNotify=true
 # This ID must match your App ID exactly
-X-Flatpak=org.gnome.ColorMyGnome
+X-Flatpak=io.github.schwarzen.colormydesktop

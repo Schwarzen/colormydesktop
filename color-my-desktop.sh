@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TARGET_DIR="$HOME/.local/share/Color-My-Gnome/scss"
+TARGET_DIR="$HOME/.local/share/Color-My-Desktop/scss"
 # Set your default values here
 DEF_P="#3584e4"   # GNOME Blue
 DEF_S="#241f31" # Dark Gray
@@ -11,26 +11,26 @@ temp_scss=$(mktemp --suffix=".scss")
 
 
 gtk4_scss="gtk4.scss"
-output_css="$HOME/.local/share/themes/Color-My-Gnome/gnome-shell/gnome-shell.css"
+output_css="$HOME/.local/share/themes/Color-My-Desktop/gnome-shell/gnome-shell.css"
 output_gtk4_css="$HOME/.config/gtk-4.0/gtk.css"
 output_gtk4dark_css="$HOME/.config/gtk-4.0/gtk-dark.css"
-SCSS_DIR="$HOME/.local/share/Color-My-Gnome/scss"
-youtube_scss="$HOME/.local/share/Color-My-Gnome/scss/youtube.scss"
-output_youtube="$HOME/.local/share/Color-My-Gnome/scss/youtube.css"
-zen_scss="$HOME/.local/share/Color-My-Gnome/scss/zen.scss"
-output_zen="$HOME/.local/share/Color-My-Gnome/scss/zen.css"
-vencord_scss="$HOME/.local/share/Color-My-Gnome/scss/vencord.theme.scss"
+SCSS_DIR="$HOME/.local/share/Color-My-Desktop/scss"
+youtube_scss="$HOME/.local/share/Color-My-Desktop/scss/youtube.scss"
+output_youtube="$HOME/.local/share/Color-My-Desktop/scss/youtube.css"
+zen_scss="$HOME/.local/share/Color-My-Desktop/scss/zen.scss"
+output_zen="$HOME/.local/share/Color-My-Desktop/scss/zen.css"
+vencord_scss="$HOME/.local/share/Color-My-Desktop/scss/vencord.theme.scss"
 output_vencord="$HOME/.config/vesktop/themes/vencord.theme.css"
 
 ZEN_BASE_MANUAL="$HOME/.zen"
 ZEN_BASE_FLATPAK="$HOME/.var/app/app.zen_browser.zen/zen"
 
-CSS_IMPORT_LINE="@import url(\"file://$HOME/.local/share/Color-My-Gnome/scss/youtube.css\");
+CSS_IMPORT_LINE="@import url(\"file://$HOME/.local/share/Color-My-Desktop/scss/youtube.css\");
 @-moz-document domain(youtube.com) {
 
 }"
 
-CSS_IMPORT_LINE2="@import url(\"file://$HOME/.local/share/Color-My-Gnome/scss/zen.css\");"
+CSS_IMPORT_LINE2="@import url(\"file://$HOME/.local/share/Color-My-Desktop/scss/zen.css\");"
 
 DIRS=(
     "$ZEN_CHROME_DIR"
@@ -52,7 +52,7 @@ GUI_TRANS_TOGGLE="${11}"
 GUI_ALPHA="${12}"
 GUI_ICON_SYNC="${13}"
 
-VENV="$HOME/.local/share/Color-My-Gnome/.venv/bin"
+VENV="$HOME/.local/share/Color-My-Desktop/.venv/bin"
 
 # 1. Detect environment
 if [ -f "/.flatpak-info" ]; then
@@ -512,7 +512,7 @@ fi
 
 
 #  Clean existing imports and add new one
-import_statement="@use '$HOME/.local/share/Color-My-Gnome/scss/$selected_import' as *;"
+import_statement="@use '$HOME/.local/share/Color-My-Desktop/scss/$selected_import' as *;"
 
 if [ -f "$temp_scss" ]; then
     # Delete any line that starts with @import, regardless of the filename

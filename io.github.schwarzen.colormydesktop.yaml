@@ -1,8 +1,8 @@
-id: org.gnome.ColorMyGnome
+id: io.github.schwarzen.colormydesktop
 runtime: org.gnome.Platform
 runtime-version: '49' # GNOME ver
 sdk: org.gnome.Sdk
-command: color-my-gnome
+command: color-my-desktop
 branch: beta 
 modules:
   - name: python-deps
@@ -24,16 +24,16 @@ modules:
 
 
 
-  - name: color-my-gnome
+  - name: color-my-desktop
     buildsystem: simple
     build-commands:
       - make -f Makefile.flatpak
       - make -f Makefile.flatpak install PREFIX=/app
     sources:
       - type: git
-        url: https://github.com/Schwarzen/Color-My-Gnome
-        tag: v0.9.3
-        commit: dc547c70b53d15c6033b1180546e42dfe2ef8372
+        url: https://github.com/Schwarzen/Color-My-Desktop
+        tag: v0.9.4
+        commit: b043855558677ad454c1aba18d1a029682011805
 
 finish-args:
   - --share=ipc
@@ -45,7 +45,7 @@ finish-args:
   - --filesystem=home/.local/share/themes:create
   - --filesystem=home/.local/share/icons/Papirus-Custom:create
   - --filesystem=/usr/share/icons/Papirus:create
-  - --filesystem=home/.local/share/Color-My-Gnome/scss:create
+  - --filesystem=home/.local/share/Color-My-Desktop/scss:create
   - --filesystem=xdg-config/vesktop/themes/vencord.theme.css:create
   - --filesystem=home/.zen:create
 

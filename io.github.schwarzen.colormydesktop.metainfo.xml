@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
  
-  <id>org.gnome.ColorMyGnome</id>
+  <id>io.github.schwarzen.colormydesktop</id>
   
  
   <metadata_license>CC0-1.0</metadata_license>
@@ -25,7 +25,7 @@
   </description>
 
 
-  <url type="homepage">https://github.com/Schwarzen/Color-My-Gnome</url>
+  <url type="homepage">https://github.com/Schwarzen/Color-My-Desktop</url>
 
 
   
@@ -36,23 +36,23 @@
 <screenshots>
   <screenshot type="default">
     <caption>Main Menu</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Gnome/assets/Screenshot%20From%202026-01-06%2023-18-46.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/Screenshot%20From%202026-01-06%2023-18-46.png</image>
   </screenshot>
 
   <screenshot>
     <caption>Date menu colors</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Gnome/assets/ss3.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss3.png</image>
   </screenshot>
     
     
   <screenshot>
     <caption>Quick settings menu colors</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Gnome/assets/ss4.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss4.png</image>
   </screenshot>
   
     <screenshot>
     <caption>Nautilus themed with custom accent color 2</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Gnome/assets/ss2.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss2.png</image>
   </screenshot>
     
 
@@ -73,7 +73,7 @@
 
   <content_rating type="oars-1.1" />
 
-  <launchable type="desktop-id">org.gnome.ColorMyGnome.desktop</launchable>
+  <launchable type="desktop-id">io.github.schwarzen.colormydesktop.desktop</launchable>
   
 
   <branding>

@@ -2,13 +2,13 @@
 PREFIX ?= /app
 BIN_DIR = $(PREFIX)/bin
 DATA_DIR = $(PREFIX)/share
-APP_ID = org.gnome.ColorMyGnome
+APP_ID = io.github.schwarzen.colormydesktop
 
 install:
 	# 1. Install binaries
 	install -d $(BIN_DIR)
-	install -m 755 lib_gui.py $(BIN_DIR)/color-my-gnome
-	install -m 755 color-my-gnome.sh $(BIN_DIR)/color-my-gnome-backend
+	install -m 755 lib_gui.py $(BIN_DIR)/color-my-desktop
+	install -m 755 color-my-desktop.sh $(BIN_DIR)/color-my-desktop-backend
 
 	# 2. Install Desktop File (Makes it appear in menus)
 	install -d $(DATA_DIR)/applications

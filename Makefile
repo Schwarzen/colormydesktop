@@ -1,6 +1,6 @@
 # --- CONFIGURATION ---
 # Use a stable, persistent directory for the app's environment
-APP_DATA_DIR  = $(HOME)/.local/share/Color-My-Gnome
+APP_DATA_DIR  = $(HOME)/.local/share/Color-My-Desktop
 VENV_DIR      = $(APP_DATA_DIR)/.venv
 VENV_PYTHON   = $(VENV_DIR)/bin/python3
 VENV_BIN      = $(VENV_DIR)/bin
@@ -11,14 +11,14 @@ SASS	      = $(VENV_DIR)/bin/sass
 # Destinations
 SCSS_DATA_DIR = $(APP_DATA_DIR)/scss
 BIN_DIR       = $(HOME)/.local/bin
-DESKTOP_FILE  = $(HOME)/.local/share/applications/Color-My-Gnome.desktop
+DESKTOP_FILE  = $(HOME)/.local/share/applications/Color-My-Desktop.desktop
 
 .PHONY: all build-styles install setup  clean uninstall
 
 # --- MAIN INSTALL TARGET ---
 build-styles:
 	# Call the binary directly by its full path
-	SASS_BIN=$(SASS) bash ./color-my-gnome.sh
+	SASS_BIN=$(SASS) bash ./color-my-desktop.sh
 
 install: setup
 	@echo "Installing SCSS partials..."
@@ -29,12 +29,12 @@ install: setup
 	@mkdir -p $(BIN_DIR)
 	# Copy files to the stable APP_DATA_DIR so they never disappear
 	cp lib_gui.py $(APP_DATA_DIR)/lib_gui.py
-	install -m 755 color-my-gnome.sh $(BIN_DIR)/color-my-gnome
+	install -m 755 color-my-desktop.sh $(BIN_DIR)/color-my-desktop
 
 	@echo "Creating desktop launcher..."
 	@echo "[Desktop Entry]" > $(DESKTOP_FILE)
 	@echo "Type=Application" >> $(DESKTOP_FILE)
-	@echo "Name=Color My Gnome" >> $(DESKTOP_FILE)
+	@echo "Name=Color My Desktop" >> $(DESKTOP_FILE)
 	@echo "Comment=GNOME Theme Manager" >> $(DESKTOP_FILE)
 	# Point to the STABLE venv and STABLE script location
 	@echo "Exec=$(VENV_PYTHON) $(APP_DATA_DIR)/lib_gui.py" >> $(DESKTOP_FILE)
@@ -43,7 +43,7 @@ install: setup
 	@echo "Categories=Settings;GNOME;GTK;" >> $(DESKTOP_FILE)
 
 	@update-desktop-database $(HOME)/.local/share/applications
-	@echo "Installation successful! You can now launch Color-My-Gnome from the app list."
+	@echo "Installation successful! You can now launch Color-My-Desktop from the app list."
 
 # --- SETUP: VENV + NODE + SASS ---
 setup:
@@ -73,18 +73,18 @@ clean:
 	@echo "Removing installation..."
 	rm -rf $(VENV_DIR)
 	rm -f $(DESKTOP_FILE)
-	rm -f $(BIN_DIR)/color-my-gnome.sh
+	rm -f $(BIN_DIR)/color-my-desktop.sh
 	rm -f $(BIN_DIR)/lib_gui.py
 
 uninstall:
-	@echo "Removing Color My Gnome installation..."
+	@echo "Removing Color My Desktop installation..."
 	# Remove the data folder (SCSS partials and local Sass)
-	rm -rf $(HOME)/.local/share/Color-My-Gnome
+	rm -rf $(HOME)/.local/share/Color-My-Desktop
 	# Remove the scripts
-	rm -f $(HOME)/.local/bin/color-my-gnome.sh
+	rm -f $(HOME)/.local/bin/color-my-desktop.sh
 	rm -f $(HOME)/.local/bin/lib_gui.py
 	# Remove the launcher
-	rm -f $(HOME)/.local/share/applications/color-my-gnome.desktop
+	rm -f $(HOME)/.local/share/applications/color-my-desktop.desktop
 	# Update the desktop database so the icon disappears
 	@update-desktop-database $(HOME)/.local/share/applications
 	@echo "Uninstall complete."
