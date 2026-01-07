@@ -1,5 +1,5 @@
 Public API Declaration (SemVer 2.0.0)
-As of Version 0.9.0, Color My Gnome defines its Public API through its Command Line Interface (CLI) and its Configuration Schema. Changes to these elements will dictate version increments.
+As of Version 0.9.0, Color My Desktop defines its Public API through its Command Line Interface (CLI) and its Configuration Schema. Changes to these elements will dictate version increments.
 1. Command Line Interface (The "Script Contract")
 The CLI is the primary way third-party scripts and the Python GUI interact with the backend. The positional argument order is considered stable within a minor version.
 <pre>
@@ -28,10 +28,10 @@ $16     Nautilus Sec      Hex         $3                    Nautilus main file v
 
 
 3. Configuration Schema (The "Partial Contract")
-The structure of the .scss files stored in ~/.local/share/Color-My-Gnome/scss/ is part of the Public API.
+The structure of the .scss files stored in ~/.local/share/Color-My-Desktop/scss/ is part of the Public API.
 
     Stable Variables: $primary, $secondary, $tertiary, $text, $topbar-color, $clock-color, $nautilus-main, $nautilus-secondary.
     Stability Guarantee: Renaming these variables is considered a breaking change. Adding new variables to the partial file is considered a backward-compatible addition.
 
 4. Developer Hooks (Internal API)
-The interaction between lib_gui.py and color-my-gnome.sh is considered an Internal API. While it is comprehensive, it is subject to change without notice in the 0.x.x phase to facilitate rapid development.
+The interaction between lib_gui.py and color-my-desktop.sh is considered an Internal API. While it is comprehensive, it is subject to change without notice in the 0.x.x phase to facilitate rapid development.
