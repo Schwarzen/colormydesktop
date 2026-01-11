@@ -9,12 +9,12 @@
 
   <project_license>Apache-2.0 AND MIT</project_license>
 
-  <name>Color My Gnome</name>
+  <name>Color My Desktop</name>
   <summary>Personalize your GNOME desktop colors with custom generated themes</summary>
 
   <description>
     <p>
-      Color My Gnome is a tool designed to give you full control over 
+      Color My Desktop is a tool designed to give you full control over 
       your GTK4, Gnome-shell, Nautilus, and even Discord/Vesktop aesthetics.
     </p>
     <ul>
@@ -59,6 +59,9 @@
 </screenshots>
   
 
+ <provides>
+    <binary>color-my-desktop</binary>
+  </provides>
   
 <releases>
   <release version="0.9.3" date="2026-01-06">
@@ -73,8 +76,8 @@
 
   <content_rating type="oars-1.1" />
 
+
   <launchable type="desktop-id">io.github.schwarzen.colormydesktop.desktop</launchable>
-  
 
   <branding>
     <color type="primary">#b276ae</color> 

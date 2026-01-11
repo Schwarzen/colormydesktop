@@ -12,7 +12,7 @@ from gi.repository import Gtk, Adw, Gdk, GLib
 # --- CONFIGURATION ---
 SCSS_DIR = os.path.expanduser("~/.local/share/Color-My-Desktop/scss")
 if os.environ.get("FLATPAK_ID"):
-    # Inside Flatpak, your script is at /app/bin/
+    # Inside Flatpak, the script is at /app/bin/
     BASH_SCRIPT = "/app/bin/color-my-desktop-backend"
 else:
     # Native install location
@@ -36,6 +36,11 @@ Gtk.StyleContext.add_provider_for_display(
 class ThemeManager(Adw.ApplicationWindow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+            # sorting for default theme
+        raw_themes = [f[1:-5] for f in os.listdir(SCSS_DIR) if f.startswith('_') and f.endswith('.scss')]
+        raw_themes.sort()
+        themes = ["Default"] + raw_themes
+
         self.current_colors = {} 
         self.status_labels = {}
     
@@ -66,16 +71,21 @@ class ThemeManager(Adw.ApplicationWindow):
         self.group = Adw.PreferencesGroup()
         self.group.set_title("Theme Configuration")
      
-        # Select Profile 
-        self.load_group = Adw.PreferencesGroup()
-        self.load_group.set_title("Profile Management")
+    #    SETUP GROUPS
+        self.load_group = Adw.PreferencesGroup(title="Profile Management")
         self.page.add(self.load_group)
 
-       
+        # CREATE DROPDOWN WIDGETS - EXISTING 
         self.theme_list = Gtk.StringList.new(themes)
         self.combo_row = Adw.ComboRow(title="Load Existing Profile")
         self.combo_row.set_model(self.theme_list)
+        self.combo_row.set_selected(0) # Force "Default" selection
+        
+
         self.load_group.add(self.combo_row)
+
+        # CONNECT SIGNALS LAST
+        self.combo_row.connect("notify::selected", self.on_theme_select)
 
         # COLOR GROUP (The Hex Entries) ---
         self.color_group = Adw.PreferencesGroup()
@@ -104,29 +114,47 @@ class ThemeManager(Adw.ApplicationWindow):
         self.page.add(self.group)
         
         
-        # --- TOP BAR SECTION ---
-        self.topbar_switch = Adw.SwitchRow(title="Custom Topbar Color")
-        self.group.add(self.topbar_switch)
-
-        self.topbar_row = self.create_color_entry("Top Bar Color", "#3584e4","topbar-color")
+        # --- GNOME SHELL TOGGLE ---
+        self.gnome_switch = Adw.SwitchRow()
+        self.gnome_switch.set_title("Apply to gnome-shell")
+        self.gnome_switch.set_active(False)
+        self.group.add(self.gnome_switch)        
         
-        self.topbar_row.set_visible(False) # Hidden initially
-        self.group.add(self.topbar_row)
+                # --- KDE PLASMA TOGGLE ---
+        self.plasma_switch = Adw.SwitchRow()
+        self.plasma_switch.set_title("Apply to KDE Plasma")
+        self.plasma_switch.set_active(False)
+        self.group.add(self.plasma_switch)    
+        
+        # --- GTK4 TOGGLE ---
+        self.gtk4_switch = Adw.SwitchRow()
+        self.gtk4_switch.set_title("Apply to GTK4 apps")
+        self.gtk4_switch.set_active(False)
+        self.group.add(self.gtk4_switch) 
+        
+        
+        # --- ZEN BROWSER TOGGLE ---
+        self.zen_switch = Adw.SwitchRow()
+        self.zen_switch.set_title("Apply to Zen Browser &amp; YouTube")
+        self.zen_switch.set_active(False)
+        self.group.add(self.zen_switch)
+        
+                # --- YOUTUBE TOGGLE ---
+        self.youtube_switch = Adw.SwitchRow()
+        self.youtube_switch.set_title("Apply to YouTube")
+        self.youtube_switch.set_active(False)
+        self.group.add(self.youtube_switch)
+        
+                # --- VESKTOP TOGGLE ---
+        self.vesktop_switch = Adw.SwitchRow()
+        self.vesktop_switch.set_title("Apply to Vesktop")
+        self.vesktop_switch.set_active(False)
+        self.group.add(self.vesktop_switch)
 
-        # This links the toggle to the row's visibility
-        self.topbar_switch.bind_property("active", self.topbar_row, "visible", 0)
 
-        # --- CLOCK SECTION ---
-        self.clock_switch = Adw.SwitchRow(title="Custom Clock Color")
-        self.group.add(self.clock_switch)
 
-        self.clock_row = self.create_color_entry("Clock Color", "#f9f9f9","clock-color")
-       
-        self.clock_row.set_visible(False) # Hidden initially
-        self.group.add(self.clock_row)
 
-        # This links the toggle to the row's visibility
-        self.clock_switch.bind_property("active", self.clock_row, "visible", 0)
+
         
         # --- PAPIRUS ICON SYNC TOGGLE ---
         self.icon_sync_switch = Adw.SwitchRow()
@@ -134,17 +162,6 @@ class ThemeManager(Adw.ApplicationWindow):
         self.icon_sync_switch.set_active(False) # Default off
         self.group.add(self.icon_sync_switch)
 
-        # --- ZEN BROWSER TOGGLE ---
-        self.zen_switch = Adw.SwitchRow()
-        self.zen_switch.set_title("Apply to Zen Browser &amp; YouTube")
-        self.zen_switch.set_active(True)
-        self.group.add(self.zen_switch)
-        # --- TRANSPARENCY TOGGLE ---
-        self.trans_switch = Adw.SwitchRow()
-        self.trans_switch.set_title("Enable Global Transparency")
-        self.trans_switch.set_active(False) # Default solid
-        self.group.add(self.trans_switch)
-        
                 #  SWAP BUTTON (ActionRow) ---
         # This is a row that looks like a button but fits in a PreferencesGroup
         self.advanced_link = Adw.ActionRow(title="Advanced Options", selectable=False)
@@ -196,17 +213,15 @@ class ThemeManager(Adw.ApplicationWindow):
         self.adv_header = Adw.HeaderBar()
         self.adv_page_content.append(self.adv_header)
 
-        # Create a Preferences Page for the advanced settings
-        self.adv_pref_page = Adw.PreferencesPage()
+        self.adv_pref_page = Adw.PreferencesPage(
+            title="Advanced",
+            icon_name="preferences-system-symbolic"
+        )
         self.adv_page_content.append(self.adv_pref_page)
-
-        # Create a group for your advanced toggles
-        self.adv_group = Adw.PreferencesGroup(title="Advanced Settings")
-        self.adv_pref_page.add(self.adv_group)
-                #  Create a group for the grid
-        self.grid_group = Adw.PreferencesGroup(title="Quick Tweak Presets")
+        
+        self.grid_group = Adw.PreferencesGroup()
+        #  Add the group to the page
         self.adv_pref_page.add(self.grid_group)
-
         #  Create the FlowBox (The Grid)
         self.flowbox = Gtk.FlowBox()
         self.flowbox.set_valign(Gtk.Align.START)
@@ -217,8 +232,9 @@ class ThemeManager(Adw.ApplicationWindow):
         # Add the grid to the group
         self.grid_group.add(self.flowbox)
 
-                        # 3. Helper to create a "Box" Button
+                        # Helper to create a "Box" Button
         def add_grid_item(label, default_color, css_id):
+      
             # CREATE THE SETTINGS PAGE FOR THIS ITEM
             sub_page_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             
@@ -230,31 +246,73 @@ class ThemeManager(Adw.ApplicationWindow):
             sub_pref_page = Adw.PreferencesPage()
             sub_page_box.append(sub_pref_page)
             sub_group = Adw.PreferencesGroup(title=f"{label} Customization")
+            sub_page_box.append(sub_group)
             sub_pref_page.add(sub_group)
+            
+            #  SPECIFIC FOR GNOME-SHELL ONLY
+            if css_id == "system_custom":
+                # Create a special toggle, e.g., for Blur effect or Panel transparency
+     
+                # --- TOP BAR SECTION ---
+                self.topbar_switch = Adw.SwitchRow(title="Custom Topbar Color")
+                
+                sub_group.add(self.topbar_switch)
 
-            #  ADD THE CONTROLS (Live-Syncing)
-            # Main Toggle
-            main_row = Adw.SwitchRow(title="Use Custom Main Color")
-            sub_group.add(main_row)
-            # Set the class variable directly to the widget for easy access
-            setattr(self, f"{css_id}_switch", main_row)
-            
-            main_entry = self.create_color_entry("Main Hex", default_color, f"{css_id}-main")
-            sub_group.add(main_entry)
-            setattr(self, f"{css_id}_entry", main_entry)
-            
-            # Secondary Toggle
-            sec_row = Adw.SwitchRow(title="Use Custom Secondary Color")
-            sub_group.add(sec_row)
-            setattr(self, f"{css_id}_sec_switch", sec_row)
-            
-            sec_entry = self.create_color_entry("Secondary Hex", default_color, f"{css_id}-sec")
-            sub_group.add(sec_entry)
-            setattr(self, f"{css_id}_sec_entry", sec_entry)
+                self.topbar_row = self.create_color_entry("Top Bar Color", "#3584e4","topbar-color")
+                
+                self.topbar_row.set_visible(False) # Hidden initially
+                sub_group.add(self.topbar_row)
 
-            # Visibility Bindings (The "Topbar Logic")
-            main_row.bind_property("active", main_entry, "visible", 0)
-            sec_row.bind_property("active", sec_entry, "visible", 0)
+                # This links the toggle to the row's visibility
+                self.topbar_switch.bind_property("active", self.topbar_row, "visible", 0)
+                
+                    
+                # Save a reference to it on 'self' for your theme-building logic
+                # setattr(self, "shell_blur_switch", shell_special_row)
+                
+                                # --- CLOCK SECTION ---
+                self.clock_switch = Adw.SwitchRow(title="Custom Clock Color")
+                sub_group.add(self.clock_switch)
+
+                self.clock_row = self.create_color_entry("Clock Color", "#f9f9f9","clock-color")
+               
+                self.clock_row.set_visible(False) # Hidden initially
+                sub_group.add(self.clock_row)
+
+                # This links the toggle to the row's visibility
+                self.clock_switch.bind_property("active", self.clock_row, "visible", 0)
+                
+                                # --- TRANSPARENCY TOGGLE ---
+                self.trans_switch = Adw.SwitchRow()
+                self.trans_switch.set_title("Enable Global Transparency")
+                self.trans_switch.set_active(False) # Default solid
+                sub_group.add(self.trans_switch)
+        
+            # SPECIFIC FOR NAUTILUS/FILES 
+            if css_id == "nautilus_custom":
+                #  ADD THE CONTROLS (Live-Syncing)
+                # Main Toggle
+                naut_switch = Adw.SwitchRow(title="Use Custom Main Color")
+                sub_group.add(naut_switch)
+                # Set the class variable directly to the widget for easy access
+                setattr(self, f"{css_id}_switch", naut_switch)
+                
+                naut_row = self.create_color_entry("Main Hex", default_color, f"{css_id}-main")
+                sub_group.add(naut_row)
+                setattr(self, f"{css_id}_entry", naut_row)
+                
+                # Secondary Toggle
+                naut_switch_sec = Adw.SwitchRow(title="Use Custom Secondary Color")
+                sub_group.add(naut_switch_sec)
+                setattr(self, f"{css_id}_sec_switch", naut_switch_sec)
+                
+                naut_row_sec = self.create_color_entry("Secondary Hex", default_color, f"{css_id}-sec")
+                sub_group.add(naut_row_sec)
+                setattr(self, f"{css_id}_naut_row_sec", naut_row_sec)
+
+                # Visibility Bindings (The "Topbar Logic")
+                naut_switch.bind_property("active", naut_row, "visible", 0)
+                naut_switch_sec.bind_property("active", naut_row_sec, "visible", 0)
 
             # WRAP IN NAV PAGE
             sub_nav_page = Adw.NavigationPage.new(sub_page_box, label)
@@ -274,10 +332,27 @@ class ThemeManager(Adw.ApplicationWindow):
             
             # Update status label live when switches change
             def update_status(*args):
-                status_label.set_label("Custom" if (main_row.get_active() or sec_row.get_active()) else "Default")
+                # Try to get the switches from 'self' using the dynamic names you set earlier
+                main_sw = getattr(self, f"{css_id}_switch", None)
+                sec_sw = getattr(self, f"{css_id}_sec_switch", None)
+                
+                # Check if they exist AND if they are active
+                is_main_active = main_sw.get_active() if main_sw else False
+                is_sec_active = sec_sw.get_active() if sec_sw else False
+                
+                # Update label
+                status_label.set_label("Custom" if (is_main_active or is_sec_active) else "Default")
             
-            main_row.connect("notify::active", update_status)
-            sec_row.connect("notify::active", update_status)
+                        # Inside add_grid_item, after the conditional 'if' block
+            if getattr(self, f"{css_id}_switch", None):
+                self.__dict__[f"{css_id}_switch"].connect("notify::active", update_status)
+
+            if getattr(self, f"{css_id}_sec_switch", None):
+                self.__dict__[f"{css_id}_sec_switch"].connect("notify::active", update_status)
+
+            # Run once initially to set the correct label on load
+            update_status()
+
 
             box_button.set_child(btn_layout)
             box_button.connect("clicked", lambda b: self.nav_view.push(sub_nav_page))
@@ -288,7 +363,7 @@ class ThemeManager(Adw.ApplicationWindow):
 
         #  Add items to your grid
         add_grid_item("Nautilus", "#88c0d0", "nautilus_custom")
-        add_grid_item("System", "#bd93f9", "system_custom")
+        add_grid_item("Gnome-shell", "#bd93f9", "system_custom")
         
 
         # Wrap it in a NavigationPage
@@ -317,107 +392,85 @@ class ThemeManager(Adw.ApplicationWindow):
         content_box.set_margin_start(18)
         content_box.set_margin_end(18)
         
-        # --- TOGGLE 1: NAUTILUS MAIN ---
-        main_row = Adw.ActionRow(title="Custom Main Color")
-        main_switch = Gtk.Switch(valign=Gtk.Align.CENTER, active=getattr(self, f"{css_id}_active", False))
-        main_row.add_suffix(main_switch)
-        content_box.append(main_row)
-        
-        main_entry = Gtk.Entry(text=getattr(self, f"{css_id}_hex_var", default_color), visible=False)
-        main_switch.bind_property("active", main_entry, "visible", 0)
-        content_box.append(main_entry)
-        
-        # --- TOGGLE 2: NAUTILUS SECONDARY ---
-        sec_row = Adw.ActionRow(title="Custom Secondary Color")
-        sec_switch = Gtk.Switch(valign=Gtk.Align.CENTER, active=getattr(self, f"{css_id}_sec_active", False))
-        sec_row.add_suffix(sec_switch)
-        content_box.append(sec_row)
-        
-        sec_entry = Gtk.Entry(text=getattr(self, f"{css_id}_sec_hex_var", default_color), visible=False)
-        sec_switch.bind_property("active", sec_entry, "visible", 0)
-        content_box.append(sec_entry)
-        
-        #  The Custom Entry (Hidden initially)
-        # We use a Gtk.Entry for the compact popup window
-        custom_entry = Gtk.Entry()
-        custom_entry.set_text(default_color)
-        custom_entry.set_placeholder_text("Enter #hex color")
-        custom_entry.set_visible(False) # Linked to switch
-        content_box.append(custom_entry)
-        
-        # --- THE MAGIC BINDING ---
-        # This automatically shows/hides the entry when the switch is flipped
-        main_switch.bind_property("active", main_entry, "visible", 0) # RIGHT
-
-        
+  
     
 
-        # --- APPLY LOGIC ---
-        def on_apply_clicked(btn):
-            # Determine the hex codes
-            main_hex = main_entry.get_text() or "#88c0d0"
-            sec_hex = sec_entry.get_text() or "#88c0d0"
-            
-            # HARD-CODE the save to ensure no naming mistakes
-            if css_id == "nautilus_custom":
-                self.nautilus_custom_active = main_switch.get_active()
-                self.nautilus_custom_hex_var = main_hex
-                self.nautilus_custom_sec_active = sec_switch.get_active()
-                self.nautilus_custom_sec_hex_var = sec_hex
-            
-            # Update the visual label in the grid
-            status_text = "Custom" if (main_switch.get_active() or sec_switch.get_active()) else "Default"
-            self.status_labels[css_id].set_label(status_text)
-            
-            popup.close()
+    def is_valid_hex(self, color):
+        # Strip whitespace to avoid simple input errors
+        color = color.strip()
+        
+        # 1. Matches SCSS variables (e.g., $primary-color)
+        if re.match(r'^\$[A-Za-z0-9_-]+$', color):
+            return True
+        
+        # 2. Matches your original Hex requirements (#RRGGBB or RRGGBB)
+        # Note: Gdk.RGBA.parse also handles #hex, but your original regex 
+        # handles hex without the '#' prefix, which Gdk does not.
+        if re.match(r'^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$', color):
+            return True
 
-        apply_btn = Gtk.Button(label="Save & Apply", margin_top=12)
-        apply_btn.add_css_class("suggested-action")
-        apply_btn.connect("clicked", on_apply_clicked)
-        content_box.append(apply_btn)
-        
-        popup.set_content(content_box)
-        popup.present()
-    
-        # Close popup on click (add your actual apply logic here too)
-        apply_btn.connect("clicked", on_apply_clicked)
-        content_box.append(apply_btn)
-        
-        popup.set_content(content_box)
-        popup.present()
-        
+        # 3. Fallback to Gdk.RGBA.parse (Handles rgba(0,0,0,0), hsl, names, etc.)
+        rgba = Gdk.RGBA()
+        return rgba.parse(color)
         
     
     def create_color_entry(self, label, default_hex, css_id):
         row = Adw.EntryRow(title=label)
         row.set_text(default_hex)
-        self.current_colors[css_id] = default_hex # Store initial color
+        row.default_val = default_hex
+        self.current_colors[css_id] = default_hex
 
+        # Setup Preview Box as before
         preview = Gtk.Image.new_from_icon_name("color-select-symbolic")
         preview.set_pixel_size(24)
         preview.add_css_class("color-preview-box")
         preview.set_name(f"{css_id}-preview")
         row.add_suffix(preview)
 
-        def update_preview(entry, pspec):
-            hex_code = entry.get_text()
-            rgba = Gdk.RGBA()
-            if rgba.parse(hex_code):
-                #  Update this specific color in registry
-                self.current_colors[css_id] = hex_code
+        # 1. VISUAL VALIDATION ONLY (On Leave)
+        def on_leave(controller):
+            current_text = row.get_text().strip()
+            if not self.is_valid_hex(current_text):
+                # Mark it red so the user knows it's wrong, but don't delete it
+                row.add_css_class("error")
+            else:
+                row.remove_css_class("error")
                 
-                # Rebuild the ENTIRE CSS string for all registered boxes
+                # Standardize hex if it's a plain hex string
+                if re.match(r'^([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$', current_text):
+                    row.set_text(f"#{current_text}")
+                    
+        focus_ctrl = Gtk.EventControllerFocus()
+        focus_ctrl.connect("leave", on_leave)
+        row.add_controller(focus_ctrl)
+
+        # LOGIC PROTECTION (In Preview Update)
+        def update_preview(entry, pspec):
+            hex_code = entry.get_text().strip()
+            
+            # check if GTK can actually DRAW this color (No $ variables allowed for preview)
+            rgba = Gdk.RGBA()
+            if rgba.parse(hex_code) or (hex_code.startswith('#') and len(hex_code) in [4, 7, 9]):
+                
+                # Only if it's a "drawable" color, update the background registry
+                clean_hex = hex_code if hex_code.startswith('#') else f"#{hex_code}"
+                self.current_colors[css_id] = clean_hex
+                
+                # Rebuild the CSS string
                 full_css = ""
                 for cid, hcolor in self.current_colors.items():
-                    full_css += f"#{cid}-preview {{ background-color: {hcolor}; border-radius: 6px; min-width: 24px; min-height: 24px; }}\n"
+                    # Only add to CSS if it's not a $ variable
+                    if not hcolor.startswith('$'):
+                        full_css += f"#{cid}-preview {{ background-color: {hcolor}; border-radius: 6px; min-width: 24px; min-height: 24px; }}\n"
                 
-                #  Load the full set into the global provider
-                # This ensures no box loses its color when another updates
                 dynamic_color_provider.load_from_string(full_css)
+            else:
+                pass
+
 
         row.connect("notify::text", update_preview)
-        # Initial call is handled after all rows are created to ensure all are in registry
         return row
+
 
         # --- DATA EXTRACTION LOGIC ---
     def get_scss_value(self, filename, variable):
@@ -430,200 +483,88 @@ class ThemeManager(Adw.ApplicationWindow):
 
     
     def on_theme_select(self, combo_row, gparamspec):
-        # Get the current selected string
         selected_index = combo_row.get_selected()
-        selected_theme = self.theme_list.get_string(selected_index)
         
-        if not selected_theme:
+        #  Guard: Ignore index 0 ('Default') or errors
+        if selected_index <= 0:
             return
-            
-        partial_path = os.path.expanduser(f"~/.local/share/Color-My-Desktop/scss/_{selected_theme}.scss")
-    
+                
+        selected_theme = self.theme_list.get_string(selected_index)
+        if not selected_theme or selected_theme == "Default":
+            return
+
+        #  Construct the path INSIDE the function
+        # Use  defined SCSS_DIR variable or the absolute path
+        partial_path = os.path.join(SCSS_DIR, f"_{selected_theme}.scss")
+        
+        print(f"Loading {selected_theme} from {partial_path}...")
+        
         if os.path.exists(partial_path):
             with open(partial_path, "r") as f:
                 content = f.read()
 
-            #  Helper to extract and sync advanced rows
-            def sync_advanced_feature(css_id, var_name):
-                import re
-           
-                pattern = rf"\${re.escape(var_name)}:\s*(#[0-9a-fA-F]{{3,6}})"
-                match = re.search(pattern, content)
-                
-                sw = getattr(self, f"{css_id}_switch", None)
-                en = getattr(self, f"{css_id}_entry", None)
-                
-                if match and sw and en:
-                    hex_val = match.group(1).lower()
-                    primary_hex = self.primary_row.get_text().lower()
+                #  Helper to extract and sync advanced rows
+                def sync_advanced_feature(css_id, var_name):
+                    import re
+               
+                    pattern = rf"\${re.escape(var_name)}:\s*(#[0-9a-fA-F]{{3,6}})"
+                    match = re.search(pattern, content)
                     
-                    # Update the text entry
-                    en.set_text(hex_val)
+                    sw = getattr(self, f"{css_id}_switch", None)
+                    en = getattr(self, f"{css_id}_entry", None)
                     
-          
-                    if hex_val != primary_hex:
-                        sw.set_active(True)
-                    else:
+                    if match and sw and en:
+                        hex_val = match.group(1).lower()
+                        primary_hex = self.primary_row.get_text().lower()
+                        
+                        # Update the text entry
+                        en.set_text(hex_val)
+                        
+              
+                        if hex_val != primary_hex:
+                            sw.set_active(True)
+                        else:
+                            sw.set_active(False)
+                    elif sw:
+                     
                         sw.set_active(False)
-                elif sw:
-                 
-                    sw.set_active(False)
 
-            #  TRIGGER SYNC 
-            sync_advanced_feature("nautilus_custom", "nautilus-main")
-            sync_advanced_feature("nautilus_custom_sec", "nautilus-secondary")
-            sync_advanced_feature("datemenu_custom", "system-datemenu")
+                #  TRIGGER SYNC 
+                sync_advanced_feature("nautilus_custom", "nautilus-main")
+                sync_advanced_feature("nautilus_custom_sec", "nautilus-secondary")
+          
 
-        #  Update the Name field
-        self.name_row.set_text(selected_theme)
-        
-        # Update EACH color row specifically
-        # Using existing get_scss_value logic
-        self.primary_row.set_text(self.get_scss_value(selected_theme, "primary"))
-        self.secondary_row.set_text(self.get_scss_value(selected_theme, "secondary"))
-        self.tertiary_row.set_text(self.get_scss_value(selected_theme, "tertiary"))
-        self.text_row.set_text(self.get_scss_value(selected_theme, "text"))
-        
-        tb_val = self.get_scss_value(selected_theme, "topbar-color")
-        if tb_val:
-            self.topbar_row.set_text(tb_val)
-            self.topbar_switch.set_active(True)
-        else:
-            # If the file doesn't have it, reset to a safe default but don't clear it!
-            self.topbar_row.set_text("#3584e4") 
-            self.topbar_switch.set_active(False)
-        clock_val = self.get_scss_value(selected_theme, "clock-color")
-        if clock_val:
-            self.clock_row.set_text(clock_val)
-            self.clock_switch.set_active(True)
-        else:
-            # If the file doesn't have it, reset to a safe default but don't clear it!
-            self.clock_row.set_text("#3584e4") 
-            self.clock_switch.set_active(False)
-        # If you have the switch: self.topbar_switch.set_active(True)
-    # Assuming 'selected' is the string from your dropdown/ComboRow
-    def update_gui_from_file(self, selected):
-        # Auto-fill standard color rows
-        # In PyGObject, we store rows in a dictionary: self.color_rows = {"primary": row_object, ...}
-        for var, row in self.color_rows.items():
-            val = self.get_scss_value(selected, var)
-            if val:
-                row.set_text(val)  # Replaces delete(0, tk.END) and insert(0, val)
-
-        #  Check for Topbar Color
-        tb_val = self.get_scss_value(selected, "topbar-color")
-        
-        if tb_val:
-            self.topbar_row.set_text(tb_val) # Set the hex code
-            self.topbar_switch.set_active(True) # Turn the toggle ON
-            self.topbar_row.set_visible(True)   # Show the row (replaces toggle_topbar)
-        else:
-            self.topbar_switch.set_active(False) # Turn the toggle OFF
-            self.topbar_row.set_visible(False)   # Hide the row
-
-        
-
-
-        cl_val = self.get_scss_value(selected, "clock-color")
-
-        if cl_val:
-            # Set the text in the Adw.EntryRow
-            self.clock_row.set_text(cl_val)
+            #  Update the Name field
+            self.name_row.set_text(selected_theme)
             
-            # Toggle the SwitchRow to "On"
-            self.clock_switch.set_active(True)
+            # Update EACH color row specifically
+            # Using existing get_scss_value logic
+            self.primary_row.set_text(self.get_scss_value(selected_theme, "primary"))
+            self.secondary_row.set_text(self.get_scss_value(selected_theme, "secondary"))
+            self.tertiary_row.set_text(self.get_scss_value(selected_theme, "tertiary"))
+            self.text_row.set_text(self.get_scss_value(selected_theme, "text"))
             
-            # Show the row (GTK4 handles the layout animation automatically)
-            self.clock_row.set_visible(True)
-        else:
-            # Toggle the SwitchRow to "Off"
-            self.clock_switch.set_active(False)
+
             
-            # Hide the row
-            self.clock_row.set_visible(False)
-        # --- Top Bar Section ---
-        #  The Toggle Switch
-        self.topbar_switch = Adw.SwitchRow()
-        self.topbar_switch.set_title("Custom Topbar")
-        self.topbar_switch.set_active(False) # Default to 0
-        self.group.add(self.topbar_switch)
-
-        #  The Color Entry Row
-        self.topbar_row = Adw.EntryRow()
-        self.topbar_row.set_title("Topbar Color")
-        self.topbar_row.set_text("#3584e4") # Default value
-        self.group.add(self.topbar_row)
-
-        # 
-        # This binds the 'visible' property of the entry row to 
-        # the 'active' property of the switch.
-        self.topbar_switch.bind_property(
-            "active", 
-            self.topbar_row, 
-            "visible", 
-            GObject.BindingFlags.SYNC_CREATE
-        )
-
-
-        # --- Clock Section ---
-        #  The Toggle Switch
-        self.clock_switch = Adw.SwitchRow()
-        self.clock_switch.set_title("Custom Clock Color")
-        self.clock_switch.set_active(False) # Default to 0/False
-        self.group.add(self.clock_switch)
-
-        #  The Color Entry Row
-        self.clock_row = Adw.EntryRow()
-        self.clock_row.set_title("Clock Color Hex")
-        self.clock_row.set_text("#3584e4") # Default value
-        self.group.add(self.clock_row)
-
-        #  
-        # This replaces the entire 'toggle_clock' function logic.
-        # It binds the 'active' state of the switch to the 'visible' state of the row.
-        self.clock_switch.bind_property(
-            "active", 
-            self.clock_row, 
-            "visible", 
-            GObject.BindingFlags.SYNC_CREATE
-        )
-
-        # ---  THE DROPDOWN (ComboRow) ---
-        # Create the dropdown row
-        self.combo_row = Adw.ComboRow()
-        self.combo_row.set_title("Load Existing Profile")
-
-        # Scan SCSS_DIR for files
-        themes = [f[1:-5] for f in os.listdir(SCSS_DIR) if f.startswith('_') and f.endswith('.scss')]
-
-        # GTK4 uses a StringList to hold the dropdown items
-        self.theme_list = Gtk.StringList.new(themes)
-        self.combo_row.set_model(self.theme_list)
-
-        # Connect the selection event (Replaces <<ComboboxSelected>>)
-        # 'notify::selected' triggers whenever the user picks a new item
-        self.combo_row.connect("notify::selected", self.on_theme_select)
-        self.group.add(self.combo_row)
-
-        # ---  THE ENTRY ROWS ---
-        self.color_rows = {} # To store rows for later access
-
-        # Define the fields 
-        fields = [("New Name", "name"), ("Primary", "primary"), 
-                  ("Secondary", "secondary"), ("Tertiary", "tertiary"), ("Text", "text")]
-
-        for label, var in fields:
-            row = Adw.EntryRow()
-            row.set_title(label)
-            
-            # Store references so we can pull text later
-            if var == "name":
-                self.name_row = row
+            tb_val = self.get_scss_value(selected_theme, "topbar-color")
+            if tb_val:
+                self.topbar_row.set_text(tb_val)
+                self.topbar_switch.set_active(True)
             else:
-                self.color_rows[var] = row
-                
-            self.group.add(row)
-        
+                # If the file doesn't have it, reset to a safe default but don't clear it!
+                self.topbar_row.set_text("#3584e4") 
+                self.topbar_switch.set_active(False)
+            clock_val = self.get_scss_value(selected_theme, "clock-color")
+            if clock_val:
+                self.clock_row.set_text(clock_val)
+                self.clock_switch.set_active(True)
+            else:
+                # If the file doesn't have it, reset to a safe default but don't clear it!
+                self.clock_row.set_text("#3584e4") 
+                self.clock_switch.set_active(False)
+            # If you have the switch: self.topbar_switch.set_active(True)
+    # Assuming 'selected' is the string from your dropdown/ComboRow
+
         
         # --- RUN BASH SCRIPT ---
 
@@ -650,14 +591,14 @@ class ThemeManager(Adw.ApplicationWindow):
             #  Logic for Nautilus Main
         # If the advanced toggle is OFF, fallback to Primary
         n_main_sw = getattr(self, "nautilus_custom_switch")
-        n_main_entry = getattr(self, "nautilus_custom_entry")
+        n_naut_row = getattr(self, "nautilus_custom_entry")
         
         n_sec_sw = getattr(self, "nautilus_custom_sec_switch")
-        n_sec_entry = getattr(self, "nautilus_custom_sec_entry")
+        n_naut_row_sec = getattr(self, "nautilus_custom_naut_row_sec")
 
         # Get values: If active, take entry text. If not, take primary.
-        n_main_val = n_main_entry.get_text() if n_main_sw.get_active() else primary_color
-        n_sec_val = n_sec_entry.get_text() if n_sec_sw.get_active() else secondary_color
+        n_main_val = n_naut_row.get_text() if n_main_sw.get_active() else primary_color
+        n_sec_val = n_naut_row_sec.get_text() if n_sec_sw.get_active() else secondary_color
 
      
         if not topbar_val.strip(): topbar_val = primary_color
@@ -679,7 +620,12 @@ class ThemeManager(Adw.ApplicationWindow):
             "1" if self.icon_sync_switch.get_active() else "0",  # ${13}
             n_main_val, # $14
             "#3584e4",  # $15 (Datemenu fallback)
-            n_sec_val   # $16
+            n_sec_val,  # $16
+            "1" if self.gnome_switch.get_active() else "0", # $17
+            "1" if self.gtk4_switch.get_active() else "0", # $18
+            "1" if self.plasma_switch.get_active() else "0", # $19
+            "1" if self.youtube_switch.get_active() else "0", # 20
+            "1" if self.vesktop_switch.get_active() else "0", # 21
         ]   
         
         self.log_container.set_visible(True)
@@ -692,6 +638,7 @@ class ThemeManager(Adw.ApplicationWindow):
         thread.start()
         
         button.set_sensitive(False)
+        
         
         
         
@@ -752,7 +699,7 @@ class ThemeManager(Adw.ApplicationWindow):
 
 
     def show_success_toast(self, theme_name, button):
-        """Standard 2025 UI update logic."""
+        """UI update logic."""
         toast = Adw.Toast.new(f"Theme '{theme_name}' applied!")
         self.toast_overlay.add_toast(toast)
         button.set_sensitive(True) 
@@ -761,7 +708,7 @@ class ThemeManager(Adw.ApplicationWindow):
 
 
     def show_error_dialog(self, message):
-        """Modern 2025 replacement for Adw.MessageDialog."""
+        """ replacement for Adw.MessageDialog."""
      #  Create the AlertDialog
         dialog = Adw.AlertDialog.new(
             "Error",       

@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "iianimosityii@gmail.com",
+                "Name": "Schwarzen"
+            }
+        ],
+        "Category": "",
+        "Description": "Color-My-Desktop KDE targets",
+        "EnabledByDefault": true,
+        "Id": "Color-My-Desktop",
+        "License": "Apache 2.0",
+        "Name": "Color-My-Desktop",
+        "Version": "6.18.0",
+        "Website": "io.github.com"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
+

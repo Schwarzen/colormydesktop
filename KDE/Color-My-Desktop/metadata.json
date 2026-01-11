@@ -1,0 +1,19 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "iianimosityii@gmail.com",
+                "Name": "Schwarzen"
+            }
+        ],
+        "Description": "Color-My-Desktop",
+        "Id": "Color-My-Desktop",
+        "License": "Apache 2.0",
+        "Name": "Color-My-Desktop",
+        "Website": "io.github.schwarzen"
+    },
+    "Keywords": "Desktop;Workspace;Appearance;Look and Feel;",
+    "X-Plasma-APIVersion": "2",
+    "X-Plasma-MainScript": "default"
+}

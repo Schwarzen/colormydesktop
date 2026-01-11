@@ -10,6 +10,7 @@ SASS	      = $(VENV_DIR)/bin/sass
 
 # Destinations
 SCSS_DATA_DIR = $(APP_DATA_DIR)/scss
+KDE_DIR = $(APP_DATA_DIR)/KDE
 BIN_DIR       = $(HOME)/.local/bin
 DESKTOP_FILE  = $(HOME)/.local/share/applications/Color-My-Desktop.desktop
 
@@ -24,6 +25,13 @@ install: setup
 	@echo "Installing SCSS partials..."
 	@mkdir -p $(SCSS_DATA_DIR)
 	install -m 644 scss/*.scss $(SCSS_DATA_DIR)
+
+	@echo "Installing KDE data recursively..."
+	mkdir -p $(KDE_DIR)
+	cp -r KDE/* $(KDE_DIR)/
+	# Set directories to 755 (required to enter them) and files to 644
+	find $(KDE_DIR) -type d -exec chmod 755 {} +
+	find $(KDE_DIR) -type f -exec chmod 644 {} +
 
 	@echo "Installing scripts to $(BIN_DIR)..."
 	@mkdir -p $(BIN_DIR)

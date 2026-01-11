@@ -3,7 +3,7 @@ PREFIX ?= /app
 BIN_DIR = $(PREFIX)/bin
 DATA_DIR = $(PREFIX)/share
 APP_ID = io.github.schwarzen.colormydesktop
-
+LICENSE_DIR = $(DATA_DIR)/licenses/$(APP_ID)
 install:
 	# 1. Install binaries
 	install -d $(BIN_DIR)
@@ -19,8 +19,10 @@ install:
 	install -m 644 $(APP_ID).metainfo.xml $(DATA_DIR)/metainfo/
 
 	# 4. Install Icon (Must be 128x128 PNG or scalable SVG)
-	install -d $(DATA_DIR)/icons/hicolor/scalable/apps
-	install -m 644 $(APP_ID).png $(DATA_DIR)/icons/hicolor/scalable/apps/
+	install -d $(DATA_DIR)/icons/hicolor/128x128/apps
+	install -m 644 $(APP_ID).png $(DATA_DIR)/icons/hicolor/128x128/apps/
 
-
+	install -d $(DESTDIR)$(LICENSE_DIR)
+	install -m 644 LICENSE $(DESTDIR)$(LICENSE_DIR)/
+	install -m 644 license/MIT-LICENSE $(DESTDIR)$(LICENSE_DIR)/
 

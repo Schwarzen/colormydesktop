@@ -21,6 +21,12 @@ zen_scss="$HOME/.local/share/Color-My-Desktop/scss/zen.scss"
 output_zen="$HOME/.local/share/Color-My-Desktop/scss/zen.css"
 vencord_scss="$HOME/.local/share/Color-My-Desktop/scss/vencord.theme.scss"
 output_vencord="$HOME/.config/vesktop/themes/vencord.theme.css"
+KDEcore="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop"
+output_KDE="$HOME/.local/share/plasma/look-and-feel"
+KDEtheme="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop-Plasma"
+output_KDEtheme="$HOME/.local/share/plasma/desktoptheme"
+KDEcolors="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop-Scheme.colors"
+output_KDEcolors="$HOME/.local/share/color-schemes/Color-My-Desktop-Scheme.colors"
 
 ZEN_BASE_MANUAL="$HOME/.zen"
 ZEN_BASE_FLATPAK="$HOME/.var/app/app.zen_browser.zen/zen"
@@ -51,6 +57,11 @@ GUI_CLOCK_HEX="${10}"      # Check if this is truly the color
 GUI_TRANS_TOGGLE="${11}"
 GUI_ALPHA="${12}"
 GUI_ICON_SYNC="${13}"
+GUI_GNOME_TOGGLE="${17}"
+GUI_GTK4_TOGGLE="${18}"
+GUI_KDE_TOGGLE="${19}"
+GUI_YT_TOGGLE="${20}"
+GUI_VESKTOP_TOGGLE="${21}"
 
 VENV="$HOME/.local/share/Color-My-Desktop/.venv/bin"
 
@@ -633,20 +644,20 @@ fi
 if [ -n "$PROFILE_NAME" ]; then
     # --- GUI MODE ---
     if [ "$GUI_ZEN_TOGGLE" == "1" ]; then
-        apply_youtube="y"
+        apply_zen="y"
     else
-        apply_youtube="n"
+        apply_zen="n"
     fi
 else
 
-    read -p "Would you like to apply the Zen Browser, Vesktop and YouTube style? (y/n): " apply_youtube
+    read -p "Would you like to apply the Zen Browser (y/n): " apply_zen
 
     fi
 
-if command -v $SASS &> /dev/null; then
+
     
     #  Compile YouTube CSS if user said 'y'
-    if [[ "$apply_youtube" =~ ^[Yy]$ ]]; then
+    if [[ "$apply_zen" =~ ^[Yy]$ ]]; then
 	echo "Checking for Zen Browser profiles..."
     if [ -d "$ZEN_BASE_FLATPAK" ]; then
         ZEN_BASE="$ZEN_BASE_FLATPAK"
@@ -681,29 +692,178 @@ if command -v $SASS &> /dev/null; then
     printf "%s\n" "$CSS_IMPORT_LINE" > "$ZEN_CHROME_DIR/userContent.css"
 
     echo "Created userChrome.css and userContent.css in $ZEN_CHROME_DIR"
-        echo "Compiling YouTube styles..."
-        $SASS "$youtube_scss" "$output_youtube" --style expanded
-	$SASS "$zen_scss" "$output_zen" --style expanded
-	$SASS "$vencord_scss" "$output_vencord" --style expanded
-    else
-        echo "Skipping YouTube styles."
+    echo "Compiling YouTube styles..."
+    $SASS "$zen_scss" "$output_zen" --style expanded
+
     fi
 
-    #  Always compile Main and GTK styles
+if [ -n "$PROFILE_NAME" ]; then
+    # --- GUI MODE ---
+    if [ "$GUI_YT_TOGGLE" == "1" ]; then
+        apply_yt="y"
+    else
+        apply_yt="n"
+    fi
+else
+
+    read -p "Would you like to apply the colors to the Youtube webpage (Zen only) (y/n): " apply_yt
+
+       fi
+
+       if [[ "$apply_yt" =~ ^[Yy]$ ]]; then
+	
+
+           $SASS "$youtube_scss" "$output_youtube" --style expanded
+	   
+    else
+	echo "Skipping youtube"
+
+	fi
+
+
+
+if [ -n "$PROFILE_NAME" ]; then
+    # --- GUI MODE ---
+ if [ "$GUI_VESKTOP_TOGGLE" == "1" ]; then
+     apply_vesktop="y"
+ else
+     apply_vesktop="n"
+ fi
+ 
+    else
+
+	read -p "Would you like to apply the colors to Vesktop/Vencord (y/n): " apply_vesktop
+	
+
+    fi
+
+       if [[ "$apply_vesktop" =~ ^[Yy]$ ]]; then
+
+
+	
+
+	$SASS "$vencord_scss" "$output_vencord" --style expanded
+    else
+        echo "Skipping Vesktop  styles."
+    fi
+
+    #   compile Main and GTK styles
+
+
+ if [ -n "$PROFILE_NAME" ]; then
+    # --- GUI MODE ---
+ if [ "$GUI_GNOME_TOGGLE" == "1" ]; then
+     apply_gnome="y"
+ else
+     apply_gnome="n"
+ fi
+
+    
+    else
+
+	    read -p "Would you like to apply the theme to the gnome-shell? (y/n): " apply_gnome
+
+    fi
+
+
+    
+    #  Compile GNOME CSS if user said 'y'
+    if [[ "$apply_gnome" =~ ^[Yy]$ ]]; then
+	
     echo "Compiling $temp_scss to $output_css..."
     $SASS "$temp_scss" "$output_css" --style expanded
+
+    else
+	echo "Skipping gnome-shell"
+
+    fi
+
+
+
+ if [ -n "$PROFILE_NAME" ]; then
+    # --- GUI MODE ---
+ if [ "$GUI_KDE_TOGGLE" == "1" ]; then
+     apply_kde="y"
+ else
+     apply_kde="n"
+ fi
+
     
+    else
+
+	    read -p "Would you like to apply the theme to KDE ? (y/n): " apply_kde
+
+    fi
+
+    
+    #  Compile KDE if user said 'y'
+ if [[ "$apply_kde" =~ ^[Yy]$ ]]; then\
+
+	
+     primary_rgb = $(hex_to_rgb "$primary")
+
+     secondary_rgb = $(hex_to_rgb "$secondary")
+       tertiary_rgb = $(hex_to_rgb "$tertiary")
+     
+     text_rgb = $(hex_to_rgb "$text")
+     
+        echo "Compiling KDE theme"
+	cp -r "$KDEcore" "$output_KDE"
+	cp -r "$KDEtheme" "$output_KDEtheme"
+	cp -r "$KDEcolors" "$output_KDEcolors"
+
+	sed -i "s/text/$text/g; s/primary/$primary/g; s/secondary/$secondary/g; s/tertiary/$tertiary/g" "$output_KDEcolors"
+	sed -i "s/text/$text/g; s/primary/$primary/g; s/secondary/$secondary/g;  s/tertiary/$tertiary/g" "$output_KDEtheme/Color-My-Desktop-Plasma/colors"
+	sed '/^\(Name\|Id\)/!d' "$output_KDEtheme/Color-My-Desktop-Plasma/metadata.json"
+
+	sed -i "s/breeze-dark/Color-My-Desktop/g" "$output_KDEtheme/Color-My-Desktop-Plasma/metadata.json"
+	sed -i "s/Breeze Dark/Color-My-Desktop/g" "$output_KDEtheme/Color-My-Desktop-Plasma/metadata.json"
+
+    else
+	echo "Skipping KDE"
+
+    fi
+
+
+ if [ -n "$PROFILE_NAME" ]; then
+    # --- GUI MODE ---
+ if [ "$GUI_GTK4_TOGGLE" == "1" ]; then
+     apply_gtk4="y"
+ else
+     apply_gtk4="n"
+ fi
+
+    
+    else
+
+	    read -p "Would you like to apply the theme to GTK4 apps? (y/n): " apply_gtk4
+
+ fi
+
+
+    #  Compile GTK4 CSS if user said 'y'
+    if [[ "$apply_gtk4" =~ ^[Yy]$ ]]; then
+	
+ 
     echo "Compiling to $output_gtk4_css..."
     $SASS "$gtk4_scss" "$output_gtk4_css" --style expanded
     
     echo "Compiling to $output_gtk4dark_css..."
     $SASS "$gtk4_scss" "$output_gtk4dark_css" --style expanded
 
+    else
+	echo "Skipping GTK4 apps"
+
+	fi
+
     echo "DEBUG: Name=$1, Primary=$2, TopbarHex=$8, ClockHex=${10}"
        
-else
-    echo "Error: 'sass' compiler not found. Install with: npm install -g sass"
-fi
+
+
+
+
+
+
 
 # Remove temp file
 rm "$temp_scss"
