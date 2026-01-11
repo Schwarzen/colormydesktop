@@ -1,6 +1,6 @@
 # Color-My-Desktop
-A simple tool for creating, managing, and applying custom color palettes to a custom gnome-shell theme, and GTK apps theme, with options for creating/applying vesktop, Zen-browser, and youtube themes with your colors,<br>
-allowing for easy and uniform customization of the shell colors and gtk/(some)non gtk - apps on GNOME
+An easy to use tool for creating, managing, and applying custom color palettes to an auto generated gnome-shell/ KDE-Plasma / GTK apps theme. With options for creating/applying Vesktop, Zen-browser, and Youtube themes with your colors,<br>
+allowing for easy and uniform customization of your desktop environment.
 
 <img src="https://github.com/user-attachments/assets/6422dd01-cafa-432b-8a62-0f71a348aa6f" width="60%"/>
 
@@ -8,12 +8,18 @@ allowing for easy and uniform customization of the shell colors and gtk/(some)no
 
 
 ## Requriements:
+
+### GNOME
  * GNOME 49 (may work on older versions)
  * GNOME TWEAKS
     *  [GITHUB](https://github.com/GNOME/gnome-tweaks) 
     * Ubuntu/Debian: `sudo apt install gnome-tweaks`
  * GNOME User Themes extension
-    * [GNOME Extensions](https://extensions.gnome.org/extension/19/user-themes/) 
+    * [GNOME Extensions](https://extensions.gnome.org/extension/19/user-themes/)
+  
+### KDE
+
+ * KDE-Plasma 6
 
 ## Install:
 
@@ -56,15 +62,16 @@ Color My Desktop currently has these features: <br>
   * Secondary (used for window backgrounds and some accents)
   * Tertiary (used mostly for accents and some backgrounds)
   * Text color.<br>
-* Option to pick a specific color for: 
-  * the Date/Time
-  * the top bar icons
-  * the top bar background
+* Apply colors to / create themes for
+   * GNOME
+   * KDE-Plasma
+   * Zen-browser
+   * Youtube (Zen browser only)
+   * Vesktop
+   * Papirus Icons
+   * GTK4 Apps
     
-* Transparent top bar background
-* Apply colors to Zen browser, Youtube, and vesktop <br>
-* Apply colors to Papirus icons (requires Papirus Icons) <br>
-* Apply specific colors to nautilus elements <br>
+
 
 
 
