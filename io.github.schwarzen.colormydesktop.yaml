@@ -40,15 +40,22 @@ finish-args:
   - --share=ipc
   - --socket=fallback-x11
   - --socket=wayland
-  - --socket=session-bus
 
+
+  # GTK & App-specific config
   - --filesystem=xdg-config/gtk-4.0:create
-  - --filesystem=home/.local/share/themes:create
-  - --filesystem=home/.local/share/icons/Papirus-Custom:create
-  - --filesystem=/usr/share/icons/Papirus:create
-  - --filesystem=home/.local/share/Color-My-Desktop/scss:create
-  - --filesystem=xdg-config/vesktop/themes/vencord.theme.css:create
+  - --filesystem=xdg-config/vesktop/themes:create
   - --filesystem=home/.zen:create
+
+  # Consolidating XDG Data paths
+  - --filesystem=xdg-data/themes:create
+  - --filesystem=xdg-data/color-schemes:create
+  - --filesystem=xdg-data/plasma:create
+  - --filesystem=xdg-data/Color-My-Desktop:create
+  
+  # External Icons (Keep specific to avoid broad access)
+  - --filesystem=xdg-data/icons/Papirus-Custom:create
+  - --filesystem=/usr/share/icons/Papirus:ro
 
 
   

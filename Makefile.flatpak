@@ -1,14 +1,30 @@
-# Ensure these variables are at the top of your Makefile
 PREFIX ?= /app
 BIN_DIR = $(PREFIX)/bin
 DATA_DIR = $(PREFIX)/share
 APP_ID = io.github.schwarzen.colormydesktop
 LICENSE_DIR = $(DATA_DIR)/licenses/$(APP_ID)
+KDE_INSTALL_DIR = $(PREFIX)/share/color-my-desktop/KDE
 install:
 	# 1. Install binaries
 	install -d $(BIN_DIR)
 	install -m 755 lib_gui.py $(BIN_DIR)/color-my-desktop
 	install -m 755 color-my-desktop.sh $(BIN_DIR)/color-my-desktop-backend
+
+	#  Install scss
+	install -d $(PREFIX)/share/color-my-desktop/scss
+	install -m 644 scss/*.scss $(PREFIX)/share/color-my-desktop/scss/
+
+	# Install KDE themes
+	install -d $(KDE_INSTALL_DIR)
+	#  Copy the directory structure recursively
+	cp -r KDE/* $(KDE_INSTALL_DIR)/
+	#  Fix permissions for the Flatpak environment
+	# Folders need 755 (executable) to be searchable/accessible
+	find $(KDE_INSTALL_DIR) -type d -exec chmod 755 {} +
+	# Files should be 644 (read-only in /app, ready to copy later)
+	find $(KDE_INSTALL_DIR) -type f -exec chmod 644 {} +
+
+
 
 	# 2. Install Desktop File (Makes it appear in menus)
 	install -d $(DATA_DIR)/applications
@@ -24,5 +40,5 @@ install:
 
 	install -d $(DESTDIR)$(LICENSE_DIR)
 	install -m 644 LICENSE $(DESTDIR)$(LICENSE_DIR)/
-	install -m 644 license/MIT-LICENSE $(DESTDIR)$(LICENSE_DIR)/
+	install -m 644 licenses/dart-sass-license $(DESTDIR)$(LICENSE_DIR)/
 

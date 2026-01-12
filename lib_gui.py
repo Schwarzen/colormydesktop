@@ -1,13 +1,23 @@
 #!/usr/bin/env python3
-import gi
 import os
 import re
 import subprocess
 import threading
+import shutil
+import sys
 
+BUNDLED_DATA = "/app/share/color-my-desktop"
+HOST_DATA = os.path.expanduser("~/.local/share/Color-My-Desktop")
+
+
+
+# Run this BEFORE any gi.repository imports
+
+
+import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, Gdk, GLib
+from gi.repository import Gtk, Adw, Gdk, GLib, Gio
 
 # --- CONFIGURATION ---
 SCSS_DIR = os.path.expanduser("~/.local/share/Color-My-Desktop/scss")
@@ -17,7 +27,7 @@ if os.environ.get("FLATPAK_ID"):
 else:
     # Native install location
     BASH_SCRIPT = os.path.expanduser("~/.local/bin/color-my-desktop")
-themes = [f[1:-5] for f in os.listdir(SCSS_DIR) if f.startswith('_') and f.endswith('.scss')]
+
 
 preview_css_provider = Gtk.CssProvider()
 Gtk.StyleContext.add_provider_for_display(
@@ -33,14 +43,45 @@ Gtk.StyleContext.add_provider_for_display(
     Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
 )
 
+
+
+
+
+
 class ThemeManager(Adw.ApplicationWindow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.sync_flatpak_data()
             # sorting for default theme
         raw_themes = [f[1:-5] for f in os.listdir(SCSS_DIR) if f.startswith('_') and f.endswith('.scss')]
         raw_themes.sort()
         themes = ["Default"] + raw_themes
+        
+    def sync_flatpak_data(self):
+        """Copies bundled templates from /app to the user's writable ~/.local"""
+        import shutil
+                    # Standard paths in a 2026 Flatpak environment
+        SCSS_SOURCE = "/app/share/color-my-desktop/scss"
+        SCSS_TARGET = os.path.expanduser("~/.local/share/Color-My-Desktop/scss")
+        KDE_SOURCE = "/app/share/color-my-desktop/KDE"
+        KDE_TARGET = os.path.expanduser("~/.local/share/Color-My-Desktop/KDE")
+        
+        os.makedirs(SCSS_TARGET, exist_ok=True)
+        os.makedirs(KDE_TARGET, exist_ok=True)
+        # Sync SCSS Folder
+        
+        if os.path.exists(SCSS_SOURCE):
+            os.makedirs(SCSS_TARGET, exist_ok=True)
+            for file in os.listdir(SCSS_SOURCE):
+                shutil.copy(os.path.join(SCSS_SOURCE, file), SCSS_TARGET)
 
+        # Sync KDE Folder
+        if os.path.exists(KDE_SOURCE):
+            os.makedirs(KDE_TARGET, exist_ok=True)
+            # dirs_exist_ok=True is essential for 2026 updates
+            shutil.copytree(KDE_SOURCE, KDE_TARGET, dirs_exist_ok=True)
+
+        themes = [f[1:-5] for f in os.listdir(SCSS_DIR) if f.startswith('_') and f.endswith('.scss')]
         self.current_colors = {} 
         self.status_labels = {}
     
@@ -726,21 +767,55 @@ class ThemeManager(Adw.ApplicationWindow):
 
 class MyApp(Adw.Application):
     def __init__(self):
-        super().__init__(application_id="com.user.ColorMyDesktop")
+        super().__init__(application_id="io.github.schwarzen.colormydesktop",
+                         flags=Gio.ApplicationFlags.FLAGS_NONE)
     
-        self.connect("activate", self.on_activate)
+    def do_startup(self):
+        Adw.Application.do_startup(self)
 
-    def on_activate(self, app):
-   
-        self.win = ThemeManager(application=app)
+        # SOURCE: Bundle inside the Flatpak
+        BUNDLED_DATA = "/app/share/color-my-desktop"
+        
+        # DESTINATION: The shared host folder mapped via --filesystem=xdg-data/Color-My-Desktop:create
+        # In a Flatpak, XDG_DATA_HOME is the reliable way to reach ~/.local/share
+        xdg_data = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
+        HOST_DATA = os.path.join(xdg_data, "Color-My-Desktop")
+
+        # Create sub-paths to verify
+        src_scss = os.path.join(BUNDLED_DATA, "scss")
+        dest_scss = os.path.join(HOST_DATA, "scss")
+        src_kde = os.path.join(BUNDLED_DATA, "KDE")
+        dest_kde = os.path.join(HOST_DATA, "KDE")
+
+        # Check if internal bundle exists
+        if not os.path.exists(src_scss):
+            print(f"Error: Bundled source {src_scss} not found in Flatpak.")
+            return
+
+        # Perform the copy if the host folder is missing
+        if not os.path.exists(dest_scss):
+            try:
+                # Ensure parent HOST_DATA exists (Flatpak should create it, but let's be safe)
+                os.makedirs(HOST_DATA, exist_ok=True)
+                
+                # Copy directories
+                shutil.copytree(src_scss, dest_scss, dirs_exist_ok=True)
+                shutil.copytree(src_kde, dest_kde, dirs_exist_ok=True)
+                print(f"Success: Copied assets to {HOST_DATA}")
+            except Exception as e:
+                print(f"Failed to copy files: {e}")
+
+                # We continue anyway to try and open the window, 
+                # or you can sys.exit(1) here if it's strictly required
+
+    def do_activate(self):
+        # 3. This is where your GUI logic starts
+        # ThemeManager must be your Gtk.Window / Adw.Window subclass
+        self.win = ThemeManager(application=self)
         self.win.present()
 
-
-
-import sys
-
 if __name__ == "__main__":
+    # Use the class we defined above
     app = MyApp()
-
-    exit_status = app.run(sys.argv)
-    sys.exit(exit_status)
+    # app.run returns the exit status which we pass to sys.exit
+    sys.exit(app.run(sys.argv))

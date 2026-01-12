@@ -19,8 +19,8 @@ youtube_scss="$HOME/.local/share/Color-My-Desktop/scss/youtube.scss"
 output_youtube="$HOME/.local/share/Color-My-Desktop/scss/youtube.css"
 zen_scss="$HOME/.local/share/Color-My-Desktop/scss/zen.scss"
 output_zen="$HOME/.local/share/Color-My-Desktop/scss/zen.css"
-vencord_scss="$HOME/.local/share/Color-My-Desktop/scss/vencord.theme.scss"
-output_vencord="$HOME/.config/vesktop/themes/vencord.theme.css"
+vencord_scss="$HOME/.local/share/Color-My-Desktop/scss/Color-My-Desktop.scss"
+output_vencord="$HOME/.config/vesktop/themes/Color-My-Desktop.css"
 KDEcore="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop"
 output_KDE="$HOME/.local/share/plasma/look-and-feel"
 KDEtheme="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop-Plasma"
@@ -30,6 +30,8 @@ output_KDEcolors="$HOME/.local/share/color-schemes/Color-My-Desktop-Scheme.color
 
 ZEN_BASE_MANUAL="$HOME/.zen"
 ZEN_BASE_FLATPAK="$HOME/.var/app/app.zen_browser.zen/zen"
+
+
 
 CSS_IMPORT_LINE="@import url(\"file://$HOME/.local/share/Color-My-Desktop/scss/youtube.css\");
 @-moz-document domain(youtube.com) {
@@ -370,6 +372,79 @@ cd "$TARGET_DIR" || { echo "Failed to enter $TARGET_DIR"; exit 1; }
 cp "$main_scss" "$temp_scss"
 
 PROFILE_NAME="$1"
+
+
+
+APP_ID="io.github.schwarzen.colormydesktop"
+DEST_DIR="$HOME/.local/share/Color-My-Desktop/KDE"
+DEST_SCSS_DIR="$HOME/.local/share/Color-My-Desktop/scss"
+
+# 1. Check if the specific app is installed
+if flatpak info "$APP_ID" &> /dev/null; then
+    flatpak_status="y"
+else
+    flatpak_status="n"
+fi
+
+# 2. Corrected Variable Check
+# Use "$flatpak_status" instead of "flatpak" to reference the variable
+if [[ "$flatpak_status" =~ ^[Yy]$ ]]; then
+    
+    # Potential host paths mapping to sandbox's /app directory
+    SYSTEM_PATH="/var/lib/flatpak/app/$APP_ID/current/active/files"
+    USER_PATH="$HOME/.local/share/flatpak/app/$APP_ID/current/active/files"
+
+    # Detect which path exists
+    if [ -d "$USER_PATH" ]; then
+        SRC_PREFIX="$USER_PATH"
+    elif [ -d "$SYSTEM_PATH" ]; then
+        SRC_PREFIX="$SYSTEM_PATH"
+    else
+        echo "Error: Flatpak application $APP_ID files not found."
+        exit 1
+    fi
+
+    # Define internal source paths
+    SRC_KDE_DIR="$SRC_PREFIX/share/color-my-desktop/KDE"
+    SRC_SCSS_DIR="$SRC_PREFIX/share/color-my-desktop/scss"
+
+    # Create destination directories
+    mkdir -p "$DEST_DIR"
+    mkdir -p "$DEST_SCSS_DIR"
+
+    if [ -d "$SRC_KDE_DIR" ]; then
+        echo "Flatpak detected. Copying files from $SRC_KDE_DIR..."
+        cp -r "$SRC_KDE_DIR"/* "$DEST_DIR/"
+        cp -r "$SRC_SCSS_DIR"/* "$DEST_SCSS_DIR/"
+        
+        # Fix permissions
+        find "$DEST_DIR" -type d -exec chmod 755 {} +
+        find "$DEST_DIR" -type f -exec chmod 644 {} +
+        echo "Done! Files imported successfully."
+    else
+        echo "Error: Source directory $SRC_KDE_DIR does not exist."
+    fi
+else
+    echo "Skipping Flatpak import: Application not found."
+fi
+
+# 5. Post-Install Integrity Check
+# Verify if the critical 'scss' folder exists before starting the app
+if [[ -d "$DEST_SCSS_DIR" && -d "$DEST_DIR" ]]; then
+    echo "Check passed: Required directories found."
+    
+    # Run your Python GUI
+    echo "Launching Color My Desktop..."
+    python3 /path/to/your_gui.py
+else
+    echo "CRITICAL ERROR: Required folders are missing."
+    echo "Looked for: $DEST_SCSS_DIR"
+    
+    # Optional: Force a re-run of the import or exit
+    exit 1
+fi
+
+
 
 # --- Option 1: CREATE NEW ---
 if [ -z "$PROFILE_NAME" ]; then
@@ -800,12 +875,6 @@ if [ -n "$PROFILE_NAME" ]; then
  if [[ "$apply_kde" =~ ^[Yy]$ ]]; then\
 
 	
-     primary_rgb = $(hex_to_rgb "$primary")
-
-     secondary_rgb = $(hex_to_rgb "$secondary")
-       tertiary_rgb = $(hex_to_rgb "$tertiary")
-     
-     text_rgb = $(hex_to_rgb "$text")
      
         echo "Compiling KDE theme"
 	cp -r "$KDEcore" "$output_KDE"
