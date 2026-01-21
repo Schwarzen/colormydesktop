@@ -7,6 +7,13 @@
         color: #{$text} !important;
     }
 }
+
+:root {
+    --background-secondary: #{$primary} !important;     /* Main sidebar area */
+    --background-secondary-alt: #{$primary} !important; /* User panel area */
+    --bg-overlay-3: transparent !important;             /* Potential overlay tint */
+}
+
 /* Specifically re-allow the 'User Settings' text if it gets caught */
 [class*="contents"] {
     color: inherit;
@@ -19,17 +26,30 @@
   background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
 }
 
+
+/* Direct Messages */
 .e9e3ed8b8badfe05-contentHeader {
 
   background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
 
 }
 
-
-
 ._6131ab3dbe0affed-scroller {
 
-  background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
+	background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
+}
+
+/* Server window */
+
+._2637a2609f343032-container {
+	background-color: #{$primary} !important; }
+
+._629e4c86564a4ee7-scroller {
+	background-color: #{$primary} !important; 
+}
+
+.f37cb1984c371ee5-header {
+	background-color: #{$primary} !important; 
 }
 
  .c38106a3f0c3ca76-title {
@@ -111,6 +131,7 @@
 
 [class*="-sidebar"] {
     position: relative; /* Essential for absolute positioning of children */
+    background-color: #{$primary} !important;
     
     /* The left gap filler */
     &:before {
@@ -125,12 +146,15 @@
     }
 }
 
+
+
 .e6b7699ce8339e1c-privateChannels {
 	background-color: #{$primary} !important;
 	}
 
 [class*="-sidebarListRounded"] {
     border-left: 1px solid #{$secondary} !important;
+    background-color: #{$primary} !important;
     border-top-left-radius: 0; /* Removes the corner gap */
     height: 100% !important; 
     max-height: none !important; /* Discord often caps this */
@@ -138,6 +162,9 @@
     border-bottom-left-radius: 0 !important; /* Optional: matches the floor better */
 }
 
+section[class*="panels"] {
+    background-color: #{$primary} !important;
+}
 
 /* Target the parent container that holds the channel list */
 nav[class*="sidebar_"] {

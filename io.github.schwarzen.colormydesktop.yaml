@@ -4,11 +4,7 @@ runtime-version: '49' # GNOME ver
 sdk: org.gnome.Sdk
 command: color-my-desktop
 modules:
-  - name: python-deps
-    buildsystem: simple
-    build-commands:
-      - pip3 install --prefix=/app PyGObject 
-      
+
   - name: dart-sass
     buildsystem: simple
     build-commands:
@@ -39,24 +35,12 @@ finish-args:
   - --share=ipc
   - --socket=fallback-x11
   - --socket=wayland
+  - --device=dri
 
 
-  # GTK & App-specific config
-  - --filesystem=xdg-config/gtk-4.0:create
-  - --filesystem=xdg-config/vesktop/themes:create
-
-
-  # Consolidating XDG Data paths
-  - --filesystem=xdg-data/themes/Color-My-Desktop:create
-  - --filesystem=xdg-data/color-schemes:create
-  - --filesystem=xdg-data/plasma:create
-  - --filesystem=xdg-data/Color-My-Desktop:create
-  
-  # External Icons (Keep specific to avoid broad access)
-  - --filesystem=xdg-data/icons/Papirus-Custom:create
-  - --filesystem=/usr/share/icons/Papirus:ro
+ 
 
 
   
  
-  - --device=dri
+ 

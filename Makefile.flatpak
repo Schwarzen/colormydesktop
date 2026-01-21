@@ -7,14 +7,17 @@ KDE_INSTALL_DIR = $(PREFIX)/share/color-my-desktop/KDE
 install:
 	# 1. Install binaries
 	install -d $(BIN_DIR)
-	install -m 755 lib_gui.py $(BIN_DIR)/color-my-desktop
+	install -m 755 main.py $(BIN_DIR)/color-my-desktop
 	install -m 755 color-my-desktop.sh $(BIN_DIR)/color-my-desktop-backend
+
+	# 2. Install the subfolder package to /app/bin/
+	install -d  $(BIN_DIR)/colormydesktop
+	install -m 644 colormydesktop/*.py $(BIN_DIR)/colormydesktop/
 
 	#  Install scss
 	install -d $(PREFIX)/share/color-my-desktop/scss
 	install -m 644 scss/*.scss $(PREFIX)/share/color-my-desktop/scss/
-	# This will create the full path and install all .css files into it
-	install -Dm 644 zen-profile/chrome/*.css -t $(PREFIX)/share/color-my-desktop/zen-profile/chrome/
+
 
 
 

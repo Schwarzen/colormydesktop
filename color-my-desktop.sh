@@ -1,50 +1,13 @@
 #!/bin/bash
 # Copyright 2026 Schwarzen
 # SPDX-License-Identifier: Apache-2.0
-TARGET_DIR="$HOME/.local/share/Color-My-Desktop/scss"
-# Set your default values here
+
+# default values 
 DEF_P="#3584e4"   # GNOME Blue
 DEF_S="#241f31" # Dark Gray
 DEF_T="#1e1e1e"  # Deep Black
 DEF_TXT="#f9f9f9"      # White
-main_scss="gnome-shell.scss"
-temp_scss=$(mktemp --suffix=".scss")
 
-
-gtk4_scss="gtk4.scss"
-output_css="$HOME/.local/share/themes/Color-My-Desktop/gnome-shell/gnome-shell.css"
-output_gtk4_css="$HOME/.config/gtk-4.0/gtk.css"
-output_gtk4dark_css="$HOME/.config/gtk-4.0/gtk-dark.css"
-SCSS_DIR="$HOME/.local/share/Color-My-Desktop/scss"
-youtube_scss="$HOME/.local/share/Color-My-Desktop/scss/youtube.scss"
-output_youtube="$HOME/.local/share/Color-My-Desktop/scss/youtube.css"
-zen_scss="$HOME/.local/share/Color-My-Desktop/scss/zen.scss"
-output_zen="$HOME/.local/share/Color-My-Desktop/scss/zen.css"
-vencord_scss="$HOME/.local/share/Color-My-Desktop/scss/Color-My-Desktop.scss"
-output_vencord="$HOME/.config/vesktop/themes/Color-My-Desktop.css"
-KDEcore="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop"
-output_KDE="$HOME/.local/share/plasma/look-and-feel"
-KDEtheme="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop-Plasma"
-output_KDEtheme="$HOME/.local/share/plasma/desktoptheme"
-KDEcolors="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop-Scheme.colors"
-output_KDEcolors="$HOME/.local/share/color-schemes/Color-My-Desktop-Scheme.colors"
-
-ZEN_BASE_MANUAL="$HOME/.zen"
-ZEN_BASE_FLATPAK="$HOME/.var/app/app.zen_browser.zen/zen"
-
-
-CSS_IMPORT_LINE="@import url(\"file://$HOME/.local/share/Color-My-Desktop/scss/youtube.css\");
-@-moz-document domain(youtube.com) {
-
-}"
-
-CSS_IMPORT_LINE2="@import url(\"file://$HOME/.local/share/Color-My-Desktop/scss/zen.css\");"
-
-
-DIRS=(
-    "$ZEN_CHROME_DIR"
-    "$HOME/.config/vesktop/theme"
-)
 
 # --- EXPLICIT ARGUMENT MAPPING ---
 GUI_NAME="$1"
@@ -54,9 +17,9 @@ GUI_TERTIARY="$4"
 GUI_TEXT="$5"
 GUI_ZEN_TOGGLE="$6"
 GUI_TOPBAR_TOGGLE="$7"
-GUI_TOPBAR_HEX="$8"        # Check if this is truly the color
+GUI_TOPBAR_HEX="$8"        
 GUI_CLOCK_TOGGLE="$9"
-GUI_CLOCK_HEX="${10}"      # Check if this is truly the color
+GUI_CLOCK_HEX="${10}"     
 GUI_TRANS_TOGGLE="${11}"
 GUI_ALPHA="${12}"
 GUI_ICON_SYNC="${13}"
@@ -66,19 +29,90 @@ GUI_KDE_TOGGLE="${19}"
 GUI_YT_TOGGLE="${20}"
 GUI_VESKTOP_TOGGLE="${21}"
 
-VENV="$HOME/.local/share/Color-My-Desktop/.venv/bin"
+#Global
+
+    main_scss="gnome-shell.scss"
+    temp_scss=$(mktemp --suffix=".scss")
+    gtk4_scss="gtk4.scss"
+
+
 
 # 1. Detect environment
 if [ -f "/.flatpak-info" ]; then
     # We are in a Flatpak! Use the path in the sandbox.
     SASS="/app/bin/sass"
+    TARGET_DIR="$XDG_DATA_HOME/scss"
+    SCSS_DIR="$XDG_DATA_HOME/scss"
+    KDEcore="/app/share/color-my-desktop/KDE/Color-My-Desktop"
+    KDEtheme="/app/share/color-my-desktop/KDE/Color-My-Desktop-Plasma"
+    KDEcolors="/app/share/color-my-desktop/KDE/Color-My-Desktop-Scheme.colors"
+
+    youtube_scss="$XDG_DATA_HOME/scss/youtube.scss"
+    zen_scss="$XDG_DATA_HOME/scss/zen.scss"
+    vencord_scss="$XDG_DATA_HOME/scss/Color-My-Desktop.scss"
+
+        CSS_IMPORT_LINE="@import url(\"youtube.css\");
+@-moz-document domain(youtube.com) {
+
+}"
+
+	CSS_IMPORT_LINE2="@import url(\"zen.css\");"
+
+
+    # OUTPUTS
+    output_KDE="${23}/look-and-feel"
+    output_KDEtheme="${22}/desktoptheme"
+    output_KDEcolors="${23}/Color-My-Desktop-Scheme.colors"
+
+    output_css="${24}/Color-My-Desktop/gnome-shell/gnome-shell.css"
+    output_gtk4_css="${27}/gtk.css"
+    output_gtk4dark_css="${27}/gtk-dark.css"
+    output_vencord="${26}/Color-My-Desktop.css"
+    output_zen="${25}/zen.css"
+    output_youtube="${25}/youtube.css"
+
 else
     # We are native and have a local venv!
+    VENV="$HOME/.local/share/Color-My-Desktop/.venv/bin"
     SASS="$VENV/sass"
+    TARGET_DIR="$HOME/.local/share/Color-My-Desktop/scss"
+    KDEcore="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop"
+    KDEtheme="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop-Plasma"
+    KDEcolors="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop-Scheme.colors"
+
+
+    youtube_scss="$HOME/.local/share/Color-My-Desktop/scss/youtube.scss"
+    zen_scss="$HOME/.local/share/Color-My-Desktop/scss/zen.scss"
+    vencord_scss="$HOME/.local/share/Color-My-Desktop/scss/Color-My-Desktop.scss"
+   
+    # OUTPUTS
+    output_KDE="$HOME/.local/share/plasma/look-and-feel"
+    output_KDEtheme="$HOME/.local/share/plasma/desktoptheme"
+    output_KDEcolors="$HOME/.local/share/color-schemes/Color-My-Desktop-Scheme.colors"
+    output_css="$HOME/.local/share/themes/Color-My-Desktop/gnome-shell/gnome-shell.css"
+    output_gtk4_css="$HOME/.config/gtk-4.0/gtk.css"
+    output_gtk4dark_css="$HOME/.config/gtk-4.0/gtk-dark.css"
+    output_vencord="$HOME/.config/vesktop/themes/Color-My-Desktop.css"
+    output_zen="$HOME/.local/share/Color-My-Desktop/scss/zen.css"
+    output_youtube="$HOME/.local/share/Color-My-Desktop/scss/youtube.css"
+
+    CSS_IMPORT_LINE="@import url(\"file://$HOME/.local/share/Color-My-Desktop/scss/youtube.css\");
+@-moz-document domain(youtube.com) {
+
+}"
+
+    CSS_IMPORT_LINE2="@import url(\"file://$HOME/.local/share/Color-My-Desktop/scss/zen.css\");"
+
+
 
 fi
 
-# 2. Safety check
+
+
+
+
+
+#  Safety check
 if [ ! -x "$SASS" ]; then
    echo "Error: Sass compiler not found at $SASS"
    exit 1
@@ -366,85 +400,43 @@ configure_theme() {
     fi
 }
 
-# Create dir
-mkdir -p "$TARGET_DIR"
-cd "$TARGET_DIR" || { echo "Failed to enter $TARGET_DIR"; exit 1; }
 
-cp "$main_scss" "$temp_scss"
+
+
 
 PROFILE_NAME="$1"
 
 
-
 APP_ID="io.github.schwarzen.colormydesktop"
-DEST_DIR="$HOME/.local/share/Color-My-Desktop/KDE"
-DEST_SCSS_DIR="$HOME/.local/share/Color-My-Desktop/scss"
 
-# 1. Check if the specific app is installed
+
+#  Check if the specific app is installed
 if flatpak info "$APP_ID" &> /dev/null; then
     flatpak_status="y"
 else
     flatpak_status="n"
 fi
 
-# 2. Corrected Variable Check
 # Use "$flatpak_status" instead of "flatpak" to reference the variable
-if [[ "$flatpak_status" =~ ^[Yy]$ ]]; then
+#if [[ "$flatpak_status" =~ ^[Yy]$ ]]; then
     
     # Potential host paths mapping to sandbox's /app directory
-    SYSTEM_PATH="/var/lib/flatpak/app/$APP_ID/current/active/files"
-    USER_PATH="$HOME/.local/share/flatpak/app/$APP_ID/current/active/files"
+#    SYSTEM_PATH="/var/lib/flatpak/app/$APP_ID/current/active/files"
+#    USER_PATH="$HOME/.local/share/flatpak/app/$APP_ID/current/active/files"
+#    APP_ID="io.github.schwarzen.colormydesktop"
+#    DEST_DIR="$HOME/.local/share/Color-My-Desktop/KDE"
+#    DEST_SCSS_DIR="$HOME/.local/share/Color-My-Desktop/scss"
 
     # Detect which path exists
-    if [ -d "$USER_PATH" ]; then
-        SRC_PREFIX="$USER_PATH"
-    elif [ -d "$SYSTEM_PATH" ]; then
-        SRC_PREFIX="$SYSTEM_PATH"
-    else
-        echo "Error: Flatpak application $APP_ID files not found."
-        exit 1
-    fi
-
-    # Define internal source paths
-    SRC_KDE_DIR="$SRC_PREFIX/share/color-my-desktop/KDE"
-    SRC_SCSS_DIR="$SRC_PREFIX/share/color-my-desktop/scss"
-
-    # Create destination directories
-    mkdir -p "$DEST_DIR"
-    mkdir -p "$DEST_SCSS_DIR"
-
-    if [ -d "$SRC_KDE_DIR" ]; then
-        echo "Flatpak detected. Copying files from $SRC_KDE_DIR..."
-        cp -r "$SRC_KDE_DIR"/* "$DEST_DIR/"
-        cp -r "$SRC_SCSS_DIR"/* "$DEST_SCSS_DIR/"
-        
-        # Fix permissions
-        find "$DEST_DIR" -type d -exec chmod 755 {} +
-        find "$DEST_DIR" -type f -exec chmod 644 {} +
-        echo "Done! Files imported successfully."
-    else
-        echo "Error: Source directory $SRC_KDE_DIR does not exist."
-    fi
-else
-    echo "Skipping Flatpak import: Application not found."
-fi
-
-# 5. Post-Install Integrity Check
-# Verify if the critical 'scss' folder exists before starting the app
-if [[ -d "$DEST_SCSS_DIR" && -d "$DEST_DIR" ]]; then
-    echo "Check passed: Required directories found."
-    
-    # Run your Python GUI
-    echo "Launching Color My Desktop..."
-    python3 /path/to/your_gui.py
-else
-    echo "CRITICAL ERROR: Required folders are missing."
-    echo "Looked for: $DEST_SCSS_DIR"
-    
-    # Optional: Force a re-run of the import or exit
-    exit 1
-fi
-
+#    if [ -d "$USER_PATH" ]; then
+#        SRC_PREFIX="$USER_PATH"
+#    elif [ -d "$SYSTEM_PATH" ]; then
+#        SRC_PREFIX="$SYSTEM_PATH"
+#    else
+#        echo "Error: Flatpak application $APP_ID files not found."
+#        exit 1
+ #   fi
+# fi
 
 
 # --- Option 1: CREATE NEW ---
@@ -500,6 +492,7 @@ if [ "$choice" == "1" ]; then
 
   
     configure_theme "$@"
+   
 
 
 selected_import="$clean_name"
@@ -599,23 +592,10 @@ fi
 
 
 #  Clean existing imports and add new one
-import_statement="@use '$HOME/.local/share/Color-My-Desktop/scss/$selected_import' as *;"
+import_statement="@use '$SCSS_DIR/$selected_import' as *;"
 
-if [ -f "$temp_scss" ]; then
-    # Delete any line that starts with @import, regardless of the filename
-    sed -i '/^@use/d' "$temp_scss"
-    echo "Removed previous @use statements from $temp_scss."
-else
-    touch "$temp_scss"
-fi
 
-if [ -f "$gtk4_scss" ]; then
-    # Delete any line that starts with @import, regardless of the filename
-    sed -i '/^@use/d' "$gtk4_scss"
-    echo "Removed previous @use statements from $gtk4_scss."
-else
-    touch "$gtk4_scss"
-fi
+
 
 if [ -f "$youtube_scss" ]; then
     # Delete any line that starts with @import, regardless of the filename
@@ -642,9 +622,9 @@ else
 fi
 
 # Append the new import at the top of the file
-echo "$import_statement" | cat - "$temp_scss" > temp && mv temp "$temp_scss"
 
-echo "$import_statement" | cat - "$gtk4_scss" > temp && mv temp "$gtk4_scss"
+
+
 
 echo "$import_statement" | cat - "$youtube_scss" > temp && mv temp "$youtube_scss"
 
@@ -655,8 +635,8 @@ echo "$import_statement" | cat - "$vencord_scss" > temp && mv temp "$vencord_scs
 
 # --- PAPIRUS RECOLOR LOGIC ---
 if [ "$GUI_ICON_SYNC" == "1" ]; then
-    SYSTEM_PAPIRUS="/usr/share/icons/Papirus"
-    LOCAL_ICONS="$HOME/.local/share/icons"
+    SYSTEM_PAPIRUS="${28}/Papirus"
+    LOCAL_ICONS="${28}"
     CUSTOM_THEME="Papirus-Custom"
     LOCAL_PAPIRUS="$LOCAL_ICONS/$CUSTOM_THEME"
 
@@ -736,12 +716,8 @@ else
 if [[ "$apply_zen" =~ ^[Yy]$ ]]; then
 
 
-    ZEN_COPY_DIR="$HOME/.local/share/Color-My-Desktop/zen-copy"
-          mkdir -p "$ZEN_COPY_DIR"
-
-          printf "%s\n" "$CSS_IMPORT_LINE2" > "$ZEN_COPY_DIR/userChrome.css"
-          printf "%s\n" "$CSS_IMPORT_LINE" > "$ZEN_COPY_DIR/userContent.css"
-    
+          printf "%s\n" "$CSS_IMPORT_LINE2" > "${25}/userChrome.css"
+         
 
     echo "Compiling Zen styles..."
     $SASS "$zen_scss" "$output_zen" --style expanded
@@ -764,7 +740,8 @@ else
        fi
 
        if [[ "$apply_yt" =~ ^[Yy]$ ]]; then
-	
+
+	    printf "%s\n" "$CSS_IMPORT_LINE" > "${25}/userContent.css"
 
            $SASS "$youtube_scss" "$output_youtube" --style expanded
 	   
@@ -793,7 +770,7 @@ if [ -n "$PROFILE_NAME" ]; then
        if [[ "$apply_vesktop" =~ ^[Yy]$ ]]; then
 
 
-	
+	echo "Compiling Vesktop"
 
 	$SASS "$vencord_scss" "$output_vencord" --style expanded
     else
@@ -821,7 +798,24 @@ if [ -n "$PROFILE_NAME" ]; then
 
     
     #  Compile GNOME CSS if user said 'y'
-    if [[ "$apply_gnome" =~ ^[Yy]$ ]]; then
+ if [[ "$apply_gnome" =~ ^[Yy]$ ]]; then
+
+     # Create dir
+   mkdir -p "$TARGET_DIR"
+   cd "$TARGET_DIR" || { echo "Failed to enter $TARGET_DIR"; exit 1; }
+
+   cp "$main_scss" "$temp_scss"
+
+   # clean imports
+   
+if [ -f "$temp_scss" ]; then
+    # Delete any line that starts with @import, regardless of the filename
+    sed -i '/^@use/d' "$temp_scss"
+    echo "Removed previous @use statements from $temp_scss."
+else
+    touch "$temp_scss"
+fi
+echo "$import_statement" | cat - "$temp_scss" > temp && mv temp "$temp_scss"
 	
     echo "Compiling $temp_scss to $output_css..."
     $SASS "$temp_scss" "$output_css" --style expanded
@@ -861,10 +855,9 @@ if [ -n "$PROFILE_NAME" ]; then
 
 	sed -i "s/text/$text/g; s/primary/$primary/g; s/secondary/$secondary/g; s/tertiary/$tertiary/g" "$output_KDEcolors"
 	sed -i "s/text/$text/g; s/primary/$primary/g; s/secondary/$secondary/g;  s/tertiary/$tertiary/g" "$output_KDEtheme/Color-My-Desktop-Plasma/colors"
-	sed '/^\(Name\|Id\)/!d' "$output_KDEtheme/Color-My-Desktop-Plasma/metadata.json"
 
-	sed -i "s/breeze-dark/Color-My-Desktop/g" "$output_KDEtheme/Color-My-Desktop-Plasma/metadata.json"
-	sed -i "s/Breeze Dark/Color-My-Desktop/g" "$output_KDEtheme/Color-My-Desktop-Plasma/metadata.json"
+
+
 
     else
 	echo "Skipping KDE"
@@ -889,8 +882,21 @@ if [ -n "$PROFILE_NAME" ]; then
 
 
     #  Compile GTK4 CSS if user said 'y'
-    if [[ "$apply_gtk4" =~ ^[Yy]$ ]]; then
-	
+ if [[ "$apply_gtk4" =~ ^[Yy]$ ]]; then
+
+          # Create dir
+   mkdir -p "$TARGET_DIR"
+   cd "$TARGET_DIR" || { echo "Failed to enter $TARGET_DIR"; exit 1; }
+
+   if [ -f "$gtk4_scss" ]; then
+    # Delete any line that starts with @import, regardless of the filename
+    sed -i '/^@use/d' "$gtk4_scss"
+    echo "Removed previous @use statements from $gtk4_scss."
+else
+    touch "$gtk4_scss"
+   fi
+
+   echo "$import_statement" | cat - "$gtk4_scss" > temp && mv temp "$gtk4_scss"
  
     echo "Compiling to $output_gtk4_css..."
     $SASS "$gtk4_scss" "$output_gtk4_css" --style expanded

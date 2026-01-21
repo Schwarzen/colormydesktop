@@ -6,61 +6,52 @@ import os
 import re
 import subprocess
 import threading
-import shutil
 import sys
+import shutil
 
-BUNDLED_DATA = "/app/share/color-my-desktop"
-HOST_DATA = os.path.expanduser("~/.local/share/Color-My-Desktop")
-
-
-
-# Run this BEFORE any gi.repository imports
 
 
 import gi
-gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, Gdk, GLib, Gio
 
+from gi.repository import Gtk, Adw, Gdk, GLib, Gio, GObject
+
+from .dialogs import DialogMixin
+from .advancedpref import AdvancedMixin
 # --- CONFIGURATION ---
-SCSS_DIR = os.path.expanduser("~/.local/share/Color-My-Desktop/scss")
+
+
+
+
 if os.environ.get("FLATPAK_ID"):
     # Inside Flatpak, the script is at /app/bin/
     BASH_SCRIPT = "/app/bin/color-my-desktop-backend"
+    SCSS_DIR = os.path.expanduser("~/.var/app/io.github.schwarzen.colormydesktop/data/scss")
 else:
     # Native install location
     BASH_SCRIPT = os.path.expanduser("~/.local/bin/color-my-desktop")
+    SCSS_DIR = os.path.expanduser("~/.local/share/Color-My-Desktop/scss")
 
 
-preview_css_provider = Gtk.CssProvider()
-Gtk.StyleContext.add_provider_for_display(
-    Gdk.Display.get_default(),
-    preview_css_provider,
-    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-)
-
-dynamic_color_provider = Gtk.CssProvider()
-Gtk.StyleContext.add_provider_for_display(
-    Gdk.Display.get_default(),
-    dynamic_color_provider,
-    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-)
-
-
-
-
-
-
-class ThemeManager(Adw.ApplicationWindow):
+class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.portal_widgets = {}
+        self.setup_css_providers()
+        self.setup_user_data()
+        self.last_manually_enterd_zen_path = ""
+        self.load_persistent_settings()
 
-            
 
-                   # sorting for default theme
-        raw_themes = [f[1:-5] for f in os.listdir(SCSS_DIR) if f.startswith('_') and f.endswith('.scss')]
-        raw_themes.sort()
-        themes = ["Default"] + raw_themes
+        if os.path.exists(SCSS_DIR):
+            raw_themes = [f[1:-5] for f in os.listdir(SCSS_DIR) if f.startswith('_') and f.endswith('.scss')]
+            raw_themes.sort()
+            self.themes = ["Default"] + raw_themes
+        else:
+            print("CRITICAL: SCSS_DIR missing even after setup_user_data()")
+            self.themes = ["Default"]
+
+
+
         self.current_colors = {} 
         self.status_labels = {}
     
@@ -91,12 +82,12 @@ class ThemeManager(Adw.ApplicationWindow):
         self.group = Adw.PreferencesGroup()
         self.group.set_title("Theme Configuration")
      
-    #    SETUP GROUPS
+        # SETUP GROUPS
         self.load_group = Adw.PreferencesGroup(title="Profile Management")
         self.page.add(self.load_group)
 
         # CREATE DROPDOWN WIDGETS - EXISTING 
-        self.theme_list = Gtk.StringList.new(themes)
+        self.theme_list = Gtk.StringList.new(self.themes)
         self.combo_row = Adw.ComboRow(title="Load Existing Profile")
         self.combo_row.set_model(self.theme_list)
         self.combo_row.set_selected(0) # Force "Default" selection
@@ -138,51 +129,131 @@ class ThemeManager(Adw.ApplicationWindow):
         self.gnome_switch = Adw.SwitchRow()
         self.gnome_switch.set_title("Apply to gnome-shell")
         self.gnome_switch.set_active(False)
-        self.group.add(self.gnome_switch)        
+              
+        # Connect the signal to a handler that checks the specific folder
+        self.gnome_handler_id = self.gnome_switch.connect(
+            "notify::active", 
+            lambda widget, pspec: self.on_feature_toggled(widget, pspec, ["~/.local/share/themes"], "GNOME")
+        )
+        self.add_folder_action(self.gnome_switch, "GNOME", ["~/.local/share/themes"])
+         # For GNOME path arg
+        self.gnome_path = self.get_path_argument("~/.local/share/themes")
+        self.group.add(self.gnome_switch) 
         
-                # --- KDE PLASMA TOGGLE ---
+        # --- KDE PLASMA TOGGLE ---
         self.plasma_switch = Adw.SwitchRow()
         self.plasma_switch.set_title("Apply to KDE Plasma")
+        self.plasma_switch.set_subtitle("Required for KDE Plasma style/colorscheme themes")
         self.plasma_switch.set_active(False)
-        self.group.add(self.plasma_switch)    
+
+        # Connect the signal to a handler that checks the specific folder
+        plasma_folders = ["~/.local/share/plasma", "~/.local/share/color-schemes"]
+
+        # 2. Use the list in the toggle connection
+        self.plasma_handler_id = self.plasma_switch.connect(
+            "notify::active", 
+            lambda widget, pspec: self.on_feature_toggled(
+                widget, 
+                pspec, 
+                plasma_folders, 
+                "KDE Plasma"
+            )
+        )
+
+        # 3. Use the SAME list in the folder action helper
+        # This ensures the dialog shows both "Path 1" and "Path 2"
+        self.add_folder_action(self.plasma_switch, "KDE Plasma", plasma_folders)
+        # For Plasma path arg
+        self.plasma_path = self.get_path_argument("~/.local/share/plasma")
+        self.schemes_path = self.get_path_argument("~/.local/share/color-schemes")
+        self.group.add(self.plasma_switch)
         
         # --- GTK4 TOGGLE ---
         self.gtk4_switch = Adw.SwitchRow()
         self.gtk4_switch.set_title("Apply to GTK4 apps")
         self.gtk4_switch.set_active(False)
+                # Connect the signal to a handler that checks the specific folder
+        self.gtk4_handler_id = self.gtk4_switch.connect(
+            "notify::active", 
+            lambda widget, pspec: self.on_feature_toggled(widget, pspec, ["~/.config/gtk-4.0"], "GTK4")
+        )
+        self.add_folder_action(self.gtk4_switch, "GTK4", ["~/.config/gtk-4.0"])
+         # For GTK path arg
+        self.gtk4_path = self.get_path_argument("~/.config/gtk-4.0")
         self.group.add(self.gtk4_switch) 
         
         
         # --- ZEN BROWSER TOGGLE ---
         self.zen_switch = Adw.SwitchRow()
-        self.zen_switch.set_title("Apply to Zen Browser &amp; YouTube")
+        self.zen_switch.set_title("Apply to Zen Browser")
         self.zen_switch.set_active(False)
+                # Connect the signal to a handler that checks the specific folder
+        self.zen_handler_id = self.zen_switch.connect(
+            "notify::active", 
+            lambda widget, pspec: self.on_feature_toggled(
+                widget, 
+                pspec, 
+                [getattr(self, "last_manually_entered_zen_path", "")], 
+                "Zen"
+            )
+        )
+        self.add_folder_action(self.zen_switch, "Zen" , ["~/.zen/*/chrome"])
+         # For zen path arg
+        self.zen_path = self.get_path_argument("last_manually_entered_zen_path")
         self.group.add(self.zen_switch)
+
+
         
-                # --- YOUTUBE TOGGLE ---
+        # --- YOUTUBE TOGGLE ---
         self.youtube_switch = Adw.SwitchRow()
-        self.youtube_switch.set_title("Apply to YouTube")
+        self.youtube_switch.set_title("Apply to YouTube (Zen Browser)")
         self.youtube_switch.set_active(False)
+        self.youtube_handler_id = self.youtube_switch.connect(
+            "notify::active", 
+            lambda widget, pspec: self.on_feature_toggled(
+                widget, 
+                pspec, 
+                [getattr(self, "last_manually_entered_zen_path", "")], 
+                "Zen"
+            )
+        )
+        self.add_folder_action(self.youtube_switch, "Zen" , ["~/.zen/*/chrome"])
+         # For zen path arg
+        self.zen_path = self.get_path_argument("last_manually_entered_zen_path")
         self.group.add(self.youtube_switch)
-        
-                # --- VESKTOP TOGGLE ---
+
+
+        # --- VESKTOP TOGGLE ---
         self.vesktop_switch = Adw.SwitchRow()
         self.vesktop_switch.set_title("Apply to Vesktop")
         self.vesktop_switch.set_active(False)
+        self.vesktop_handler_id = self.vesktop_switch.connect(
+            "notify::active", 
+            lambda widget, pspec: self.on_feature_toggled(widget, pspec, ["~/.config/vesktop/themes"], "Vesktop")
+        )
+        self.add_folder_action(self.vesktop_switch, "Vesktop" , ["~/.config/vesktop/themes"])
+         # For vesktop path arg
+        self.vesktop_path = self.get_path_argument("~/.config/vesktop/themes")
         self.group.add(self.vesktop_switch)
 
 
 
-
-
-        
         # --- PAPIRUS ICON SYNC TOGGLE ---
-        self.icon_sync_switch = Adw.SwitchRow()
-        self.icon_sync_switch.set_title("Sync Papirus Icons with Theme")
-        self.icon_sync_switch.set_active(False) # Default off
-        self.group.add(self.icon_sync_switch)
+        self.papirus_switch = Adw.SwitchRow()
+        self.papirus_switch.set_title("Sync Papirus Icons with Theme")
+        self.papirus_switch.set_active(False) # Default off
+                # Connect the signal to a handler that checks the specific folder
+        self.papirus_handler_id = self.papirus_switch.connect(
+            "notify::active", 
+            lambda widget, pspec: self.on_feature_toggled(widget, pspec, ["~/.local/share/icons"], "Papirus")
+        )
+        self.add_folder_action(self.papirus_switch, "Papirus", ["~/.local/share/icons"])
+         # For Papirus path arg
+        self.papirus_path = self.get_path_argument("~/.local/share/icons")
+        self.group.add(self.papirus_switch)
 
-                #  SWAP BUTTON (ActionRow) ---
+
+        #  ADVANCED OPTIONS SWAP BUTTON (ActionRow) ---
         # This is a row that looks like a button but fits in a PreferencesGroup
         self.advanced_link = Adw.ActionRow(title="Advanced Options", selectable=False)
         self.advanced_link.add_suffix(Gtk.Image.new_from_icon_name("go-next-symbolic"))
@@ -194,7 +265,7 @@ class ThemeManager(Adw.ApplicationWindow):
         
         
         
-                # Button             # Create the build button
+        # BUILD BUTTON
         self.build_btn = Gtk.Button(label="Build and Apply Theme")
         self.build_btn.add_css_class("suggested-action") # color
         self.build_btn.set_margin_top(24)
@@ -224,9 +295,11 @@ class ThemeManager(Adw.ApplicationWindow):
         
         self.main_nav_page = Adw.NavigationPage.new(self.main_page_content, "Color My Desktop")
         self.nav_view.add(self.main_nav_page)
-       
         
-                # --- ADVANCED PAGE SETUP ---
+
+
+
+        # --- ADVANCED PAGE SETUP ---
         self.adv_page_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
         # Add a HeaderBar so users can go back (NavigationView handles the back button)
@@ -238,6 +311,18 @@ class ThemeManager(Adw.ApplicationWindow):
             icon_name="preferences-system-symbolic"
         )
         self.adv_page_content.append(self.adv_pref_page)
+        # CREATE A MAINTENANCE GROUP (At the top)
+        maintenance_group = Adw.PreferencesGroup()
+        self.adv_pref_page.add(maintenance_group)
+
+        # Create and add the Reset Button to that group
+        self.reset_btn = Adw.ActionRow()
+        self.reset_btn.set_title("Reset App Permissions")
+        self.reset_btn.set_subtitle("Remove all manual folder access and overrides")
+        self.reset_btn.set_activatable(True)
+        self.reset_btn.connect("activated", self.show_reset_instructions)
+        
+        maintenance_group.add(self.reset_btn)
         
         self.grid_group = Adw.PreferencesGroup()
         #  Add the group to the page
@@ -248,142 +333,22 @@ class ThemeManager(Adw.ApplicationWindow):
         self.flowbox.set_max_children_per_line(3) # Forces 3 columns
         self.flowbox.set_selection_mode(Gtk.SelectionMode.NONE)
         self.flowbox.set_homogeneous(True) # Makes all boxes the same size
+        
+
 
         # Add the grid to the group
         self.grid_group.add(self.flowbox)
-
-                        # Helper to create a "Box" Button
-        def add_grid_item(label, default_color, css_id):
-      
-            # CREATE THE SETTINGS PAGE FOR THIS ITEM
-            sub_page_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-            
-            # Sub-page Header
-            sub_header = Adw.HeaderBar()
-            sub_page_box.append(sub_header)
-            
-            # Sub-page Settings Group
-            sub_pref_page = Adw.PreferencesPage()
-            sub_page_box.append(sub_pref_page)
-            sub_group = Adw.PreferencesGroup(title=f"{label} Customization")
-            sub_page_box.append(sub_group)
-            sub_pref_page.add(sub_group)
-            
-            #  SPECIFIC FOR GNOME-SHELL ONLY
-            if css_id == "system_custom":
-                # Create a special toggle, e.g., for Blur effect or Panel transparency
-     
-                # --- TOP BAR SECTION ---
-                self.topbar_switch = Adw.SwitchRow(title="Custom Topbar Color")
-                
-                sub_group.add(self.topbar_switch)
-
-                self.topbar_row = self.create_color_entry("Top Bar Color", "#3584e4","topbar-color")
-                
-                self.topbar_row.set_visible(False) # Hidden initially
-                sub_group.add(self.topbar_row)
-
-                # This links the toggle to the row's visibility
-                self.topbar_switch.bind_property("active", self.topbar_row, "visible", 0)
-                
-                    
-                # Save a reference to it on 'self' for your theme-building logic
-                # setattr(self, "shell_blur_switch", shell_special_row)
-                
-                                # --- CLOCK SECTION ---
-                self.clock_switch = Adw.SwitchRow(title="Custom Clock Color")
-                sub_group.add(self.clock_switch)
-
-                self.clock_row = self.create_color_entry("Clock Color", "#f9f9f9","clock-color")
-               
-                self.clock_row.set_visible(False) # Hidden initially
-                sub_group.add(self.clock_row)
-
-                # This links the toggle to the row's visibility
-                self.clock_switch.bind_property("active", self.clock_row, "visible", 0)
-                
-                                # --- TRANSPARENCY TOGGLE ---
-                self.trans_switch = Adw.SwitchRow()
-                self.trans_switch.set_title("Enable Global Transparency")
-                self.trans_switch.set_active(False) # Default solid
-                sub_group.add(self.trans_switch)
         
-            # SPECIFIC FOR NAUTILUS/FILES 
-            if css_id == "nautilus_custom":
-                #  ADD THE CONTROLS (Live-Syncing)
-                # Main Toggle
-                naut_switch = Adw.SwitchRow(title="Use Custom Main Color")
-                sub_group.add(naut_switch)
-                # Set the class variable directly to the widget for easy access
-                setattr(self, f"{css_id}_switch", naut_switch)
-                
-                naut_row = self.create_color_entry("Main Hex", default_color, f"{css_id}-main")
-                sub_group.add(naut_row)
-                setattr(self, f"{css_id}_entry", naut_row)
-                
-                # Secondary Toggle
-                naut_switch_sec = Adw.SwitchRow(title="Use Custom Secondary Color")
-                sub_group.add(naut_switch_sec)
-                setattr(self, f"{css_id}_sec_switch", naut_switch_sec)
-                
-                naut_row_sec = self.create_color_entry("Secondary Hex", default_color, f"{css_id}-sec")
-                sub_group.add(naut_row_sec)
-                setattr(self, f"{css_id}_naut_row_sec", naut_row_sec)
+        def is_writable(path):
+            # Expands XDG paths like xdg-data/plasma to full host paths
+            # Note: Inside Flatpak, these are usually mounted at /run/host/... or standard ~/.local/share
+            full_path = os.path.expanduser(path)
+            return os.access(full_path, os.W_OK)
 
-                # Visibility Bindings (The "Topbar Logic")
-                naut_switch.bind_property("active", naut_row, "visible", 0)
-                naut_switch_sec.bind_property("active", naut_row_sec, "visible", 0)
-
-            # WRAP IN NAV PAGE
-            sub_nav_page = Adw.NavigationPage.new(sub_page_box, label)
-            self.nav_view.add(sub_nav_page)
-
-            #  CREATE THE GRID BOX BUTTON
-            box_button = Gtk.Button(width_request=140, height_request=140)
-            box_button.add_css_class("flat")
-            
-            btn_layout = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-            btn_layout.set_margin_top(10); btn_layout.set_margin_bottom(10)
-            btn_layout.set_margin_start(10); btn_layout.set_margin_end(10)
-            
-            btn_layout.append(Gtk.Label(label=label, css_classes=["heading"]))
-            status_label = Gtk.Label(label="Default", css_classes=["caption"])
-            btn_layout.append(status_label)
-            
-            # Update status label live when switches change
-            def update_status(*args):
-                # Try to get the switches from 'self' using the dynamic names you set earlier
-                main_sw = getattr(self, f"{css_id}_switch", None)
-                sec_sw = getattr(self, f"{css_id}_sec_switch", None)
-                
-                # Check if they exist AND if they are active
-                is_main_active = main_sw.get_active() if main_sw else False
-                is_sec_active = sec_sw.get_active() if sec_sw else False
-                
-                # Update label
-                status_label.set_label("Custom" if (is_main_active or is_sec_active) else "Default")
-            
-                        # Inside add_grid_item, after the conditional 'if' block
-            if getattr(self, f"{css_id}_switch", None):
-                self.__dict__[f"{css_id}_switch"].connect("notify::active", update_status)
-
-            if getattr(self, f"{css_id}_sec_switch", None):
-                self.__dict__[f"{css_id}_sec_switch"].connect("notify::active", update_status)
-
-            # Run once initially to set the correct label on load
-            update_status()
-
-
-            box_button.set_child(btn_layout)
-            box_button.connect("clicked", lambda b: self.nav_view.push(sub_nav_page))
-            self.flowbox.append(box_button)
-            
-            # Store these as attributes if you need to access them for building
-            # Example: self.adv_toggles[css_id] = toggle
 
         #  Add items to your grid
-        add_grid_item("Nautilus", "#88c0d0", "nautilus_custom")
-        add_grid_item("Gnome-shell", "#bd93f9", "system_custom")
+        self.add_grid_item("Nautilus", "#88c0d0", "nautilus_custom")
+        self.add_grid_item("Gnome-shell", "#bd93f9", "system_custom")
         
 
         # Wrap it in a NavigationPage
@@ -393,25 +358,26 @@ class ThemeManager(Adw.ApplicationWindow):
         initial_css = ""
         for cid, hcolor in self.current_colors.items():
             initial_css += f"#{cid}-preview {{ background-color: {hcolor}; border-radius: 6px; min-width: 24px; min-height: 24px; }}\n"
-        dynamic_color_provider.load_from_string(initial_css)
+        self.dynamic_color_provider.load_from_string(initial_css)
         
+        GLib.idle_add(self.setup_user_data)
         self.nav_view.push(self.main_nav_page)
         
         
-    def open_small_window(self, title, default_color, css_id): 
-        # Create the sub-window
-        popup = Adw.Window(transient_for=self)
-        popup.set_default_size(320, 250)
-        popup.set_title(title)
+    def load_persistent_settings(self):
+        config_path = os.path.expanduser("~/.var/app/io.github.schwarzen.colormydesktop/config/color-my-desktop/settings.json")
+        if os.path.exists(config_path):
+            try:
+                import json
+                with open(config_path, "r") as f:
+                    data = json.load(f)
+                    self.last_manually_entered_zen_path = data.get("zen_path", "")
+                    print(f"DEBUG: Loaded Zen Path: {self.last_manually_entered_zen_path}")
+            except Exception as e:
+                print(f"DEBUG: Failed to load settings: {e}")
+                self.last_manually_entered_zen_path = ""
         
-        #  Layout container
-        # Using a Box with margins for a clean Libadwaita look
-        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        content_box.set_margin_top(18)
-        content_box.set_margin_bottom(18)
-        content_box.set_margin_start(18)
-        content_box.set_margin_end(18)
-        
+
   
     
 
@@ -419,7 +385,7 @@ class ThemeManager(Adw.ApplicationWindow):
         # Strip whitespace to avoid simple input errors
         color = color.strip()
         
-        # 1. Matches SCSS variables (e.g., $primary-color)
+        # Matches SCSS variables (e.g., $primary-color)
         if re.match(r'^\$[A-Za-z0-9_-]+$', color):
             return True
         
@@ -429,7 +395,7 @@ class ThemeManager(Adw.ApplicationWindow):
         if re.match(r'^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$', color):
             return True
 
-        # 3. Fallback to Gdk.RGBA.parse (Handles rgba(0,0,0,0), hsl, names, etc.)
+        # Fallback to Gdk.RGBA.parse (Handles rgba(0,0,0,0), hsl, names, etc.)
         rgba = Gdk.RGBA()
         return rgba.parse(color)
         
@@ -447,7 +413,7 @@ class ThemeManager(Adw.ApplicationWindow):
         preview.set_name(f"{css_id}-preview")
         row.add_suffix(preview)
 
-        # 1. VISUAL VALIDATION ONLY (On Leave)
+        # VISUAL VALIDATION ONLY (On Leave)
         def on_leave(controller):
             current_text = row.get_text().strip()
             if not self.is_valid_hex(current_text):
@@ -483,13 +449,33 @@ class ThemeManager(Adw.ApplicationWindow):
                     if not hcolor.startswith('$'):
                         full_css += f"#{cid}-preview {{ background-color: {hcolor}; border-radius: 6px; min-width: 24px; min-height: 24px; }}\n"
                 
-                dynamic_color_provider.load_from_string(full_css)
+                self.dynamic_color_provider.load_from_string(full_css)
             else:
                 pass
 
 
         row.connect("notify::text", update_preview)
         return row
+        
+        
+    def setup_css_providers(self):
+        display = Gdk.Display.get_default()
+        
+        #  Attach them to 'self' so they persist as instance attributes
+        self.preview_css_provider = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            display, self.preview_css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        self.dynamic_color_provider = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            display, self.dynamic_color_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        # Update the loading logic to use 'self.'
+        initial_css = "/* your initial css */"
+        self.dynamic_color_provider.load_from_string(initial_css) # Added self.
+
 
 
         # --- DATA EXTRACTION LOGIC ---
@@ -596,6 +582,13 @@ class ThemeManager(Adw.ApplicationWindow):
         primary_color = str(self.primary_row.get_text() or "#3584e4")
         secondary_color = str(self.secondary_row.get_text() or "#3584e4")
         text_color = str(self.text_row.get_text() or "#f9f9f9")
+        plasma_path = self.get_path_argument("~/.local/share/plasma")
+        schemes_path = self.get_path_argument("~/.local/share/color-schemes")
+        gnome_path = self.get_path_argument("~/.local/share/themes")
+        zen_path = self.get_path_argument("~/.zen/*/chrome")
+        vesktop_path = self.get_path_argument("~/.config/vesktop/themes")
+        gtk4_path = self.get_path_argument("~/.config/gtk-4.0")
+        papirus_path = self.get_path_argument("~/.local/share/icons")
 
      
         if self.topbar_switch.get_active():
@@ -637,7 +630,7 @@ class ThemeManager(Adw.ApplicationWindow):
             clock_val,
             "1" if self.trans_switch.get_active() else "0",
             "0.8",
-            "1" if self.icon_sync_switch.get_active() else "0",  # ${13}
+            "1" if self.papirus_switch.get_active() else "0",  # ${13}
             n_main_val, # $14
             "#3584e4",  # $15 (Datemenu fallback)
             n_sec_val,  # $16
@@ -646,6 +639,14 @@ class ThemeManager(Adw.ApplicationWindow):
             "1" if self.plasma_switch.get_active() else "0", # $19
             "1" if self.youtube_switch.get_active() else "0", # 20
             "1" if self.vesktop_switch.get_active() else "0", # 21
+            plasma_path,  # $22
+            schemes_path, # $23
+            gnome_path,
+            zen_path,
+            vesktop_path,
+            gtk4_path,
+            papirus_path,
+            
         ]   
         
         self.log_container.set_visible(True)
@@ -744,63 +745,23 @@ class ThemeManager(Adw.ApplicationWindow):
         dialog.choose(self, None, lambda *args: None)
 
 
-class MyApp(Adw.Application):
-    def __init__(self):
-        super().__init__(application_id="io.github.schwarzen.colormydesktop",
-                         flags=Gio.ApplicationFlags.FLAGS_NONE)
-    
+class ColorMyDesktopApp(Adw.Application):
+    def __init__(self, **kwargs):
+        super().__init__(
+            application_id="io.github.schwarzen.colormydesktop",
+            flags=Gio.ApplicationFlags.NON_UNIQUE,  # Move it HERE
+            **kwargs
+        )
+        
     def do_startup(self):
         Adw.Application.do_startup(self)
 
-        # SOURCE: Bundle inside the Flatpak
-        BUNDLED_DATA = "/app/share/color-my-desktop"
-        
-        # DESTINATION: The shared host folder mapped via --filesystem=xdg-data/Color-My-Desktop:create
-        # In a Flatpak, XDG_DATA_HOME is the reliable way to reach ~/.local/share
-        xdg_data = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
-        HOST_DATA = os.path.join(xdg_data, "Color-My-Desktop")
 
-        # Create sub-paths to verify
-        src_scss = os.path.join(BUNDLED_DATA, "scss")
-        dest_scss = os.path.join(HOST_DATA, "scss")
-        src_kde = os.path.join(BUNDLED_DATA, "KDE")
-        dest_kde = os.path.join(HOST_DATA, "KDE")
-        src_zen = os.path.join(BUNDLED_DATA, "zen-profile")
-        dest_zen = os.path.join(HOST_DATA, "zen-profile")
-
-        # Check if internal bundle exists
-        if not os.path.exists(src_scss):
-            print(f"Error: Bundled source {src_scss} not found in Flatpak.")
-            return
-            
-            
-
-        # Perform the copy if the host folder is missing
-        if not os.path.exists(dest_scss):
-            try:
-                # Ensure parent HOST_DATA exists (Flatpak should create it, but let's be safe)
-                os.makedirs(HOST_DATA, exist_ok=True)
-                
-                # Copy directories
-                shutil.copytree(src_scss, dest_scss, dirs_exist_ok=True)
-                shutil.copytree(src_kde, dest_kde, dirs_exist_ok=True)
-                shutil.copytree(src_zen, dest_zen, dirs_exist_ok=True)
-                print(f"Success: Copied assets to {HOST_DATA}")
-            except Exception as e:
-                print(f"Failed to copy files: {e}")
-                
-                
-                
-            
-
-
-                # We continue anyway to try and open the window, 
-                # or you can sys.exit(1) here if it's strictly required
 
     def do_activate(self):
-        # 3. This is where your GUI logic starts
-        # ThemeManager must be your Gtk.Window / Adw.Window subclass
-        self.win = ThemeManager(application=self)
+        # Store window as a class attribute to prevent garbage collection
+        if not hasattr(self, 'win') or self.win is None:
+            self.win = ThemeManager(application=self)
         self.win.present()
 
 if __name__ == "__main__":

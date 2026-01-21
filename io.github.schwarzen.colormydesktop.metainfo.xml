@@ -10,49 +10,75 @@
   <project_license>Apache-2.0 AND MIT</project_license>
 
   <name>Color My Desktop</name>
-  <summary>Personalize your GNOME desktop colors with custom generated themes</summary>
+  <summary>Personalize your desktop with custom generated themes using colors you choose</summary>
 
   <description>
     <p>
-      Color My Desktop is a tool designed to give you full control over 
-      your GTK4, Gnome-shell, Nautilus, and even Discord/Vesktop aesthetics.
+      Color My Desktop is designed to give you full control over 
+      your Gnome-shell, KDE Plasma, GTK4 apps, Nautilus, Zen-Browser, and even Vesktop aesthetics.
     </p>
     <ul>
   <li>Creates and manages custom color palettes.</li>
-  <li>Generates matching GTK4 and GNOME Shell themes.</li>
-  <li>Supports uniform themes for Vesktop, Zen-browser, and YouTube.</li>
-</ul>
+  <li>Generates and applies matching themes using selected color pallete.</li>
+  <li>Supports uniform themes for numerous apps and system UI elements.</li>
+  </ul>
   </description>
 
 
-  <url type="homepage">https://github.com/Schwarzen/Color-My-Desktop</url>
+    <url type="homepage">https://github.com/Schwarzen/Color-My-Desktop</url>
+    <url type="vcs-browser">https://github.com/Schwarzen/Color-My-Desktop</url>
+ 
 
 
   
   <developer id="schwarzen.github.io">
   <name>Schwarzen</name>
-</developer>
+  </developer>
 
 <screenshots>
   <screenshot type="default">
     <caption>Main Menu</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/Screenshot%20From%202026-01-06%2023-18-46.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss0.png</image>
+  </screenshot>
+  
+  <screenshot>
+    <caption>Zen-browser (Youtube)</caption>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss5.png</image>
+  </screenshot>
+    
+  <screenshot>
+    <caption>Zen-browser (Youtube)</caption>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss6.png</image>
   </screenshot>
 
   <screenshot>
-    <caption>Date menu colors</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss3.png</image>
-  </screenshot>
-    
-    
-  <screenshot>
-    <caption>Quick settings menu colors</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss4.png</image>
+    <caption>Nautilus(GNOME Files)</caption>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss7.png</image>
   </screenshot>
   
-    <screenshot>
-    <caption>Nautilus themed with custom accent color 2</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss2.png</image>
+  <screenshot>
+    <caption>Nautilus(GNOME Files)</caption>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss8.png</image>
+  </screenshot>
+  
+  <screenshot>
+    <caption>Vesktop</caption>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss9.png</image>
+  </screenshot>
+  
+  <screenshot>
+    <caption>Vesktop</caption>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss10.png</image>
+  </screenshot>
+  
+  <screenshot>
+    <caption>Gnome-Shell</caption>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss3.png</image>
+  </screenshot>
+  
+  <screenshot>
+    <caption>KDE Plasma</caption>
+    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss11.png</image>
   </screenshot>
     
 
@@ -64,6 +90,16 @@
   </provides>
   
 <releases>
+  <release version="0.9.5" date="2026-01-07">
+    <description>
+      <p>Version 0.9.5: Bug fix, corrected a mismatched path name.</p>
+    </description>
+  </release>
+  <release version="0.9.4" date="2026-01-07">
+    <description>
+      <p>Version 0.9.4: Name migration.</p>
+    </description>
+  </release>
   <release version="0.9.3" date="2026-01-06">
     <description>
       <p>Version 0.9.3: Numerous CSS UI fixes.</p>
@@ -71,6 +107,18 @@
   </release>
 </releases>
 
+<categories>
+  <category>DesktopSettings</category>
+  <category>Settings</category>
+</categories>
+
+<keywords>
+  <keyword>Personalization</keyword>
+  <keyword>Themes</keyword>
+  <keyword>GNOME</keyword>
+  <keyword>KDE</keyword>
+  <keyword>CSS</keyword>
+</keywords>
 
 
 
@@ -80,7 +128,8 @@
   <launchable type="desktop-id">io.github.schwarzen.colormydesktop.desktop</launchable>
 
   <branding>
-    <color type="primary">#b276ae</color> 
+    <color type="primary" scheme_preference="light">#81745e</color>
+    <color type="primary" scheme_preference="dark">#464646</color>
   </branding>
   
 </component>

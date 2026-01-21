@@ -35,9 +35,20 @@ install: setup
 
 	@echo "Installing scripts to $(BIN_DIR)..."
 	@mkdir -p $(BIN_DIR)
+	# 1. Install binaries
+	install -d $(BIN_DIR)
+	install -m 755 main.py $(BIN_DIR)/color-my-desktop
+	install -m 755 color-my-desktop.sh $(BIN_DIR)
+
+	# 2. Install the subfolder package to /app/bin/
+	install -d  $(BIN_DIR)/colormydesktop
+	install -m 644 colormydesktop/*.py $(BIN_DIR)/colormydesktop/
+
 	# Copy files to the stable APP_DATA_DIR so they never disappear
-	cp lib_gui.py $(APP_DATA_DIR)/lib_gui.py
-	install -m 755 color-my-desktop.sh $(BIN_DIR)/color-my-desktop
+	cp main.py $(APP_DATA_DIR)/color-my-desktop
+	mkdir -p $(APP_DATA_DIR)/colormydesktop/
+	cp colormydesktop/*.py $(APP_DATA_DIR)/colormydesktop/
+
 
 	@echo "Creating desktop launcher..."
 	@echo "[Desktop Entry]" > $(DESKTOP_FILE)
@@ -45,7 +56,7 @@ install: setup
 	@echo "Name=Color My Desktop" >> $(DESKTOP_FILE)
 	@echo "Comment=GNOME Theme Manager" >> $(DESKTOP_FILE)
 	# Point to the STABLE venv and STABLE script location
-	@echo "Exec=$(VENV_PYTHON) $(APP_DATA_DIR)/lib_gui.py" >> $(DESKTOP_FILE)
+	@echo "Exec=$(VENV_PYTHON) $(APP_DATA_DIR)/color-my-desktop" >> $(DESKTOP_FILE)
 
 	@echo "Terminal=false" >> $(DESKTOP_FILE)
 	@echo "Categories=Settings;GNOME;GTK;" >> $(DESKTOP_FILE)
