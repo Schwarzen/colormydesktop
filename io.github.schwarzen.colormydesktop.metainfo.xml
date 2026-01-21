@@ -90,6 +90,11 @@
   </provides>
   
 <releases>
+  <release version="0.10" date="2026-01-21">
+    <description>
+      <p>Version 0.10: Sandbox permission overhaul.</p>
+    </description>
+  </release>
   <release version="0.9.5" date="2026-01-07">
     <description>
       <p>Version 0.9.5: Bug fix, corrected a mismatched path name.</p>
