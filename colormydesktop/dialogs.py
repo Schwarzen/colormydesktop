@@ -8,6 +8,7 @@ import os
 import re
 import json
 import shutil
+import hashlib
 
 class DialogMixin:
 
@@ -559,17 +560,23 @@ class DialogMixin:
             
     def get_safe_key(self, folder_path):
         """
-        Converts a path like '~/.local/share/plasma' into a safe attribute key like 'plasma'.
-        This allows us to save separate portal paths for different folders.
+        Creates a unique attribute name.
+        Example: '/path/to/vesktop/themes' -> 'themes_7a8b9c'
         """
-        #  Get the last part of the path (e.g., 'plasma' or 'color-schemes')
+        # 1. Get the folder name (e.g., 'themes')
         base_name = os.path.basename(os.path.normpath(folder_path))
         
-        #  Remove any characters that aren't letters, numbers, or underscores
-        # This ensures it's a valid Python attribute name
-        safe_name = re.sub(r'[^a-zA-Z0-9_]', '_', base_name)
+        # 2. Create a unique hash of the FULL path
+        # This distinguishes vesktop/themes from gnome/themes
+        path_hash = hashlib.md5(folder_path.encode()).hexdigest()[:6]
+        
+        # 3. Combine into a safe Python attribute name
+        raw_key = f"{base_name}_{path_hash}"
+        safe_name = re.sub(r'[^a-zA-Z0-9_]', '_', raw_key).lower()
         
         return safe_name
+
+
 
     # Helper to get current text for a folder from the UI
     def get_path_argument(self, folder_path):
