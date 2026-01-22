@@ -25,8 +25,8 @@
   </description>
 
 
-    <url type="homepage">https://github.com/Schwarzen/Color-My-Desktop</url>
-    <url type="vcs-browser">https://github.com/Schwarzen/Color-My-Desktop</url>
+    <url type="homepage">https://github.com/Schwarzen/colormydesktop</url>
+    <url type="vcs-browser">https://github.com/Schwarzen/colormydesktop</url>
  
 
 
@@ -38,47 +38,47 @@
 <screenshots>
   <screenshot type="default">
     <caption>Main Menu</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss0.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/colormydesktop/assets/ss0.png</image>
   </screenshot>
   
   <screenshot>
     <caption>Zen-browser (Youtube)</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss5.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/colormydesktop/assets/ss5.png</image>
   </screenshot>
     
   <screenshot>
     <caption>Zen-browser (Youtube)</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss6.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/colormydesktop/assets/ss6.png</image>
   </screenshot>
 
   <screenshot>
     <caption>Nautilus(GNOME Files)</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss7.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/colormydesktop/assets/ss7.png</image>
   </screenshot>
   
   <screenshot>
     <caption>Nautilus(GNOME Files)</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss8.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/colormydesktop/assets/ss8.png</image>
   </screenshot>
   
   <screenshot>
     <caption>Vesktop</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss9.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/colormydesktop/assets/ss9.png</image>
   </screenshot>
   
   <screenshot>
     <caption>Vesktop</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss10.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/colormydesktop/assets/ss10.png</image>
   </screenshot>
   
   <screenshot>
     <caption>Gnome-Shell</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss3.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/colormydesktop/assets/ss3.png</image>
   </screenshot>
   
   <screenshot>
     <caption>KDE Plasma</caption>
-    <image>https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss11.png</image>
+    <image>https://raw.githubusercontent.com/Schwarzen/colormydesktop/assets/ss11.png</image>
   </screenshot>
     
 

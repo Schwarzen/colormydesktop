@@ -30,7 +30,7 @@ modules:
        - type: git
          url: https://github.com/Schwarzen/Color-My-Desktop
          tag: v0.10
-         commit: 8d4a71d9e14601f7421a34231dd33ef134c9d261
+         commit: 4aa434c4d53f198080faa84e924dc939777998b4
 finish-args:
   - --share=ipc
   - --socket=fallback-x11
