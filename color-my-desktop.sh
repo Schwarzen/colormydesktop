@@ -40,7 +40,7 @@ GUI_VESKTOP_TOGGLE="${21}"
 # 1. Detect environment
 if [ -f "/.flatpak-info" ]; then
     # We are in a Flatpak! Use the path in the sandbox.
-    SASS="/app/bin/sass"
+    SASS="/app/lib/dart-sass/sass"
     TARGET_DIR="$XDG_DATA_HOME/scss"
     SCSS_DIR="$XDG_DATA_HOME/scss"
     KDEcore="/app/share/color-my-desktop/KDE/Color-My-Desktop"

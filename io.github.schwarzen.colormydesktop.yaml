@@ -3,22 +3,34 @@ runtime: org.gnome.Platform
 runtime-version: '49' # GNOME ver
 sdk: org.gnome.Sdk
 command: color-my-desktop
+
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=dri
+
 modules:
 
   - name: dart-sass
     buildsystem: simple
     build-commands:
-      - install -d /app/bin
-      - cp -r * /app/bin/
-      - ln -s /app/bin/sass /app/bin/sass-embedded 
+      - install -d /app/lib/dart-sass
+      - cp -r * /app/lib/dart-sass/
+      - ln -s /app/lib/dart-sass/sass /app/lib/dart-sass/sass-embedded 
     sources:
       - type: archive
+      	only-arches: [x86_64]
         url: https://github.com/sass/dart-sass/releases/download/1.97.1/dart-sass-1.97.1-linux-x64.tar.gz
-
-        sha256: 08867d2f63f458bc07985d0fd96bfef42ed759a4dd9b3d5e1a87b85b52b76112
-
-
-
+	sha256: 08867d2f63f458bc07985d0fd96bfef42ed759a4dd9b3d5e1a87b85b52b76112
+	
+      - type: archive
+      	only-arches: [aarch64]
+      	url: https://github.com/sass/dart-sass/releases/download/1.97.1/dart-sass-1.97.1-linux-arm64.tar.gz
+      	sha256: a8176dc31889977a2026895a35674dfabec01a9c3cc62f55f321fb67d9dbe971
+        
+        
+        
   - name: color-my-desktop
     buildsystem: simple
     build-commands:
@@ -30,12 +42,7 @@ modules:
        - type: git
          url: https://github.com/Schwarzen/Color-My-Desktop
          tag: v0.10
-         commit: 4aa434c4d53f198080faa84e924dc939777998b4
-finish-args:
-  - --share=ipc
-  - --socket=fallback-x11
-  - --socket=wayland
-  - --device=dri
+         commit: b81c9448b27d6fb174e9f38989a009d5be8a3deb
 
 
  
