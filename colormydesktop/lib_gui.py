@@ -749,7 +749,7 @@ class ColorMyDesktopApp(Adw.Application):
     def __init__(self, **kwargs):
         super().__init__(
             application_id="io.github.schwarzen.colormydesktop",
-            flags=Gio.ApplicationFlags.NON_UNIQUE,  # Move it HERE
+            flags=Gio.ApplicationFlags.DEFAULT_FLAGS,  
             **kwargs
         )
         
