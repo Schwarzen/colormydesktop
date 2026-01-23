@@ -18,7 +18,7 @@ def main():
     app = ColorMyDesktopApp()
     
  
-    return app.run(sys.argv)
+    return app.run([])
 
 if __name__ == "__main__":
     sys.exit(main())

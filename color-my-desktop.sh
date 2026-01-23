@@ -76,6 +76,7 @@ else
     VENV="$HOME/.local/share/Color-My-Desktop/.venv/bin"
     SASS="$VENV/sass"
     TARGET_DIR="$HOME/.local/share/Color-My-Desktop/scss"
+    SCSS_DIR="$HOME/.local/share/Color-My-Desktop/scss"
     KDEcore="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop"
     KDEtheme="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop-Plasma"
     KDEcolors="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop-Scheme.colors"

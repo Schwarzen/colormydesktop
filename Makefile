@@ -38,7 +38,7 @@ install: setup
 	# 1. Install binaries
 	install -d $(BIN_DIR)
 	install -m 755 main.py $(BIN_DIR)/color-my-desktop
-	install -m 755 color-my-desktop.sh $(BIN_DIR)
+	install -m 755 color-my-desktop.sh $(BIN_DIR)/color-my-desktop-backend
 
 	# 2. Install the subfolder package to /app/bin/
 	install -d  $(BIN_DIR)/colormydesktop
@@ -92,8 +92,9 @@ clean:
 	@echo "Removing installation..."
 	rm -rf $(VENV_DIR)
 	rm -f $(DESKTOP_FILE)
-	rm -f $(BIN_DIR)/color-my-desktop.sh
-	rm -f $(BIN_DIR)/lib_gui.py
+	rm -f $(BIN_DIR)/color-my-desktop-backend
+	rm -f $(BIN_DIR)/color-my-desktop
+	rm -rf $(BIN_DIR)/colormydesktop
 
 uninstall:
 	@echo "Removing Color My Desktop installation..."
@@ -101,7 +102,7 @@ uninstall:
 	rm -rf $(HOME)/.local/share/Color-My-Desktop
 	# Remove the scripts
 	rm -f $(HOME)/.local/bin/color-my-desktop.sh
-	rm -f $(HOME)/.local/bin/lib_gui.py
+	rm -f $(HOME)/.local/bin/color-my-desktop
 	# Remove the launcher
 	rm -f $(HOME)/.local/share/applications/color-my-desktop.desktop
 	# Update the desktop database so the icon disappears

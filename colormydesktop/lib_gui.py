@@ -28,7 +28,7 @@ if os.environ.get("FLATPAK_ID"):
     SCSS_DIR = os.path.expanduser("~/.var/app/io.github.schwarzen.colormydesktop/data/scss")
 else:
     # Native install location
-    BASH_SCRIPT = os.path.expanduser("~/.local/bin/color-my-desktop")
+    BASH_SCRIPT = os.path.expanduser("~/.local/bin/color-my-desktop-backend")
     SCSS_DIR = os.path.expanduser("~/.local/share/Color-My-Desktop/scss")
 
 
