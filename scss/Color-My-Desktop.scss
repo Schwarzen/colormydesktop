@@ -1,197 +1,83 @@
 @use 'brown' as *;
 
+.theme-dark,
+.theme-dark span:not([class*=username]):not([class*=mention]):not([style*=color]),
+.theme-dark div:not([class*=username]):not([style*=color]), .theme-light,
+.theme-light span:not([class*=username]):not([class*=mention]):not([style*=color]),
+.theme-light div:not([class*=username]):not([style*=color]) {
+  color: #{$text} !important;
+
+}
+
 .theme-dark, .theme-light {
-    &, 
-    span:not([class*="username"]):not([class*="mention"]):not([style*="color"]),
-    div:not([class*="username"]):not([style*="color"]) {
-        color: #{$text} !important;
-    }
+  background-color: #{$primary} !important;
+  
 }
 
-:root {
-    --background-secondary: #{$primary} !important;     /* Main sidebar area */
-    --background-secondary-alt: #{$primary} !important; /* User panel area */
-    --bg-overlay-3: transparent !important;             /* Potential overlay tint */
+/*Bottom left user window and mute buttons*/
+[class*="container"] {
+  background-color: #{$primary} !important;
 }
 
-/* Specifically re-allow the 'User Settings' text if it gets caught */
+[class*="panels"]::before {
+  content: "";
+  position: absolute;
+  /* Negative values expand the background outward to touch neighboring elements */
+  top: -5px;
+  bottom: -5px;
+  left: -5px;
+  right: -5px;
+  background-color: #{$primary} !important;
+  z-index: -1; /* Pushes the fill behind the actual content */
+  pointer-events: none; /* Ensures you can still click the buttons/text */
+  box-shadow: 0 0 10px 5px color-mix(in srgb, #{$primary}, black 20%) !important
+}
+
+
+
+/* Using ::before to create an "underlay" that fills gaps */
+
+
+/*chat box*/
+[class*="container_b7e1cb"] {
+  background-color: #{$secondary} !important;
+}
+
+
+/*side bar background */
+[class*="content"] {
+  background-color: #{$primary} !important;
+}
+
+/*username above message content */
 [class*="contents"] {
-    color: inherit;
-}
-._8a031a135bfcb9ba-container {
-  background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
+  background-color: #{$secondary} !important;
 }
 
-._36d072eab2b2e737-scroller {
-  background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
+/*side bar scroller (must be above scrollerInner)*/
+[class*="scroller"] {
+  background-color: #{$primary} !important;
 }
 
 
-/* Direct Messages */
-.e9e3ed8b8badfe05-contentHeader {
-
-  background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
-
-}
-
-._6131ab3dbe0affed-scroller {
-
-	background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
-}
-
-/* Server window */
-
-._2637a2609f343032-container {
-	background-color: #{$primary} !important; }
-
-._629e4c86564a4ee7-scroller {
-	background-color: #{$primary} !important; 
-}
-
-.f37cb1984c371ee5-header {
-	background-color: #{$primary} !important; 
-}
-
- .c38106a3f0c3ca76-title {
-
-  background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
-}
-
- .e6b7699ce8339e1c-privateChannels {
-
-  background-color: #{$secondary} !important;  /* Replace #ff0000 with your desired hex color */
-
-}
-
-
-.d125d22cdfd32cfe-content {
-
- background-color: #{$primary} !important; /* Friends panel */
-
-}
-
-._36d072eab2b2e737-scrollerInner {
-
-  background-color: #{$secondary} !important; /* Replace #ff0000 with your desired hex color */
-
-}
-
-._740174f3d6a2c8fe-themedBackground {
-
-  background-color: #{$primary} !important;/* Replace #ff0000 with your desired hex color */
-  }
-
-._9293f6b2fc12398a-themed
-{
-
-      background-color: #{$secondary} !important; /* Replace #ff0000 with your desired hex color */
-  }
-
-  .ef3116c2da186559-itemsContainer {
-    background-color: #{$secondary} !important; /* Replace #ff0000 with your desired hex color */
-
-  }
-
-   ._37e49614b9f110a9-container {
-    background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
-
-  }
-
-   .d125d22cdfd32cfe-none {
-    background-color: #{$primary} !important; /* Servers panel */
-
-  }
-
- ._7f9c030b25536e94-banner {
-    background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
-
-  }
-
-  ._99e7cad8d4c55236-scroller {
-
-    background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
-  }
-
-
-
-.f75fb00fb7356cbe-form {
-
-
-    background-color: #{$primary} !important; /* Replace #ff0000 with your desired hex color */
-
-}
-
-._5e434347c823b592-sidebar:after {
-    content: ""; /* Required for :after to show up */
-    background-color: #{$primary} !important;
-    display: block;
-    /* Add your width, height, or positioning here */
-   
-}
-
-[class*="-sidebar"] {
-    position: relative; /* Essential for absolute positioning of children */
-    background-color: #{$primary} !important;
-    
-    /* The left gap filler */
-    &:before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 6px; /* Adjust this to match the width of the gap */
-        background-color: #{$primary} !important;
-        z-index: 1; /* Ensures it sits on top of the background */
-    }
+/* inner message window area */
+[class*="scrollerInner"] {
+  background-color: #{$secondary} !important;
 }
 
 
 
-.e6b7699ce8339e1c-privateChannels {
-	background-color: #{$primary} !important;
-	}
 
-[class*="-sidebarListRounded"] {
-    border-left: 1px solid #{$secondary} !important;
-    background-color: #{$primary} !important;
-    border-top-left-radius: 0; /* Removes the corner gap */
-    height: 100% !important; 
-    max-height: none !important; /* Discord often caps this */
-    margin-bottom: 0 !important;
-    border-bottom-left-radius: 0 !important; /* Optional: matches the floor better */
+
+[class*="scrollableContainer"] {
+  background-color: #{$primary} !important;
 }
 
-section[class*="panels"] {
-    background-color: #{$primary} !important;
+[class*="searchBar"] {
+  background-color: #{$primary} !important;
 }
 
-/* Target the parent container that holds the channel list */
-nav[class*="sidebar_"] {
-    background-color: #{$secondary} !important; /* Match your theme's dark background */
+[class*="form"] {
+  background-color: #{$secondary} !important;
 }
 
-.e131a99484292a19-container {
-    background-color: #{$secondary} !important;
-}
-
-.e6b7699ce8339e1c-searchBar {
-    background-color: #{$primary} !important;
-}
-
-._5e434347c823b592-panels {
-    box-shadow: 0 -4px 12px 0 rgba(0, 0, 0, 0.3) !important;
-
-}
-
-
-
-[data-list-item-id*="__nitro"] {
-  display: none;
-}
-[data-list-item-id*="__shop"] {
-  display: none;
-}
-[aria-label="Send a gift"]{
-  display: none;
-}

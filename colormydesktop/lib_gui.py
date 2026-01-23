@@ -752,6 +752,7 @@ class ColorMyDesktopApp(Adw.Application):
             flags=Gio.ApplicationFlags.DEFAULT_FLAGS,  
             **kwargs
         )
+        self.win = None
         
     def do_startup(self):
         Adw.Application.do_startup(self)
@@ -759,13 +760,32 @@ class ColorMyDesktopApp(Adw.Application):
 
 
     def do_activate(self):
-        # Store window as a class attribute to prevent garbage collection
-        if not hasattr(self, 'win') or self.win is None:
+        #initialize window
+        if not self.win:
+            # Pass 'self' as the application
             self.win = ThemeManager(application=self)
+            
+            #  Connect the close signal to the WINDOW (ThemeManager)
+            self.win.connect("close-request", self.on_window_close)
+        
         self.win.present()
+        
+    def on_window_close(self, window):
+        print("Shutting down cleanly...")
+        
+        # Clean up the subprocess if it is running
+    
+        if hasattr(window, 'current_process') and window.current_process:
+            print("Terminating active build process...")
+            window.current_process.terminate()
+            
+     
+        # Calling quit() ensures all background threads are signaled to stop.
+        self.quit() 
+        return False 
 
 if __name__ == "__main__":
-    # Use the class we defined above
-    app = MyApp()
-    # app.run returns the exit status which we pass to sys.exit
-    sys.exit(app.run(sys.argv))
+
+    app = ColorMyDesktopApp()
+
+    sys.exit(app.run([]))
