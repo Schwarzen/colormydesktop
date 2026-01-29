@@ -29,36 +29,27 @@ class DialogMixin:
         return False
 
     def setup_user_data(self):
-        #  Define the bundled (read-only) path inside the Flatpak
         bundled_scss = "/app/share/color-my-desktop/scss"
-        
-        #  Define the writable sandbox data path
         xdg_data = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
-    
-    # Create a subfolder specifically for your app's data
-        user_data_dir = xdg_data
         user_scss_dir = os.path.join(xdg_data, "scss")
 
         if not os.path.exists(bundled_scss):
-            print(f"DEBUG: Source {bundled_scss} not found. Skipping setup.")
+            print(f"DEBUG: Source {bundled_scss} not found.")
             return None
 
-        #  Perform the copy if it hasn't been done yet
-        if not os.path.exists(user_scss_dir):
-            try:
-                # Create the data directory if it doesn't exist
-                os.makedirs(user_data_dir, exist_ok=True)
-                
-                # Copy the entire directory tree
-                # 'dirs_exist_ok=True' (Python 3.8+) allows copying to an existing folder
-                shutil.copytree(bundled_scss, user_scss_dir, dirs_exist_ok=True)
-                print(f"Successfully initialized SCSS data at: {user_scss_dir}")
-            except Exception as e:
-                print(f"Error copying SCSS data: {e}")
+        # --- THE FIX: ALWAYS OVERWRITE ---
+        try:
+            if os.path.exists(user_scss_dir):
+                shutil.rmtree(user_scss_dir) # Delete existing folder first
+                print(f"Refreshing existing SCSS data...")
+            
+            # Re-copy the fresh files from /app/share
+            shutil.copytree(bundled_scss, user_scss_dir)
+            print(f"Successfully synchronized SCSS data at: {user_scss_dir}")
+        except Exception as e:
+            print(f"Error updating SCSS data: {e}")
 
-        
         return user_scss_dir
-        
 
 
 

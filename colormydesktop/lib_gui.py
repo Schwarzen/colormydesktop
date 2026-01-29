@@ -37,9 +37,9 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         super().__init__(**kwargs)
         self.portal_widgets = {}
         self.setup_css_providers()
-        self.setup_user_data()
         self.last_manually_enterd_zen_path = ""
         self.load_persistent_settings()
+        self.setup_user_data()
 
 
         if os.path.exists(SCSS_DIR):
@@ -47,7 +47,7 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             raw_themes.sort()
             self.themes = ["Default"] + raw_themes
         else:
-            print("CRITICAL: SCSS_DIR missing even after setup_user_data()")
+            print("CRITICAL: SCSS_DIR missing even after setup_user_data")
             self.themes = ["Default"]
 
 
@@ -118,7 +118,7 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         # Connect to the selection change signal
         self.combo_row.connect("notify::selected", self.on_theme_select)
 
-  
+
         
         # Global Options Group
       
@@ -185,6 +185,7 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         
         
         # --- ZEN BROWSER TOGGLE ---
+        current_zen_path = getattr(self, "last_manually_entered_zen_path", "~/.zen/*/chrome")
         self.zen_switch = Adw.SwitchRow()
         self.zen_switch.set_title("Apply to Zen Browser")
         self.zen_switch.set_active(False)
@@ -194,13 +195,13 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             lambda widget, pspec: self.on_feature_toggled(
                 widget, 
                 pspec, 
-                [getattr(self, "last_manually_entered_zen_path", "")], 
+                [getattr(self, "last_manually_entered_zen_path", "~/.zen/*/chrome")],  
                 "Zen"
             )
         )
-        self.add_folder_action(self.zen_switch, "Zen" , ["~/.zen/*/chrome"])
+        self.add_folder_action(self.zen_switch, "Zen" , [current_zen_path])
          # For zen path arg
-        self.zen_path = self.get_path_argument("last_manually_entered_zen_path")
+        self.zen_path = self.get_path_argument(current_zen_path)
         self.group.add(self.zen_switch)
 
 
@@ -214,13 +215,13 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             lambda widget, pspec: self.on_feature_toggled(
                 widget, 
                 pspec, 
-                [getattr(self, "last_manually_entered_zen_path", "")], 
+                [getattr(self, "last_manually_entered_zen_path", "~/.zen/*/chrome")],  
                 "Zen"
             )
         )
-        self.add_folder_action(self.youtube_switch, "Zen" , ["~/.zen/*/chrome"])
+        self.add_folder_action(self.youtube_switch, "Zen" , [current_zen_path])
          # For zen path arg
-        self.zen_path = self.get_path_argument("last_manually_entered_zen_path")
+        self.zen_path = self.get_path_argument(current_zen_path)
         self.group.add(self.youtube_switch)
 
 
@@ -361,7 +362,7 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             initial_css += f"#{cid}-preview {{ background-color: {hcolor}; border-radius: 6px; min-width: 24px; min-height: 24px; }}\n"
         self.dynamic_color_provider.load_from_string(initial_css)
         
-        GLib.idle_add(self.setup_user_data)
+        
         self.nav_view.push(self.main_nav_page)
         
         
@@ -587,6 +588,7 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
 
         
     def on_run_build_clicked(self, button):
+
         self.active_build_button = button 
         self.active_build_button.set_sensitive(False)
     # Get primary hex and ensure it is a string
@@ -596,7 +598,12 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         plasma_path = self.get_path_argument("~/.local/share/plasma")
         schemes_path = self.get_path_argument("~/.local/share/color-schemes")
         gnome_path = self.get_path_argument("~/.local/share/themes")
-        zen_path = self.get_path_argument("~/.zen/*/chrome")
+        #  Dynamic Zen path
+        # Get the actual path string first (falling back to the default glob if not set)
+        current_zen_val = getattr(self, "last_manually_entered_zen_path", "~/.zen/*/chrome")
+
+        # Pass that VALUE to get_path_argument
+        zen_path = self.get_path_argument(current_zen_val)
         vesktop_path = self.get_path_argument("~/.config/vesktop/themes")
         gtk4_path = self.get_path_argument("~/.config/gtk-4.0")
         papirus_path = self.get_path_argument("~/.local/share/icons")

@@ -3,10 +3,28 @@
     --zen-colors-primary: #{$primary} !important; /* Your SASS variable */
     --zen-main-browser-background: #{$primary} !important;
     --zen-color-brand-primary: #{$secondary} !important;
-    --zen-container-bg: #{$secondary} !important;    
+    --zen-container-bg: #{$secondary} !important;
+    --zen-sidebar-background: #{$secondary} !important; /* Forces the sidebar bg */
+    --zen-compact-mode-background: #{$secondary} !important; /* Targets compact mode specifically */
 }
 
 
-#zen-sidebar-box {
-    background-color: #{$primary} !important;
+/* Direct ID targeting for the titlebar container */
+#titlebar {
+  background-color: var(--zen-main-browser-background) !important;
+  background-image: none !important;
+  border-bottom: none !important;
+  appearance: none !important;
 }
+
+/* Zen often nests the background color in a specific toolbar background class */
+#titlebar .zen-toolbar-background {
+  background-color: var(--zen-main-browser-background) !important;
+}
+
+/* Ensure the wrapper doesn't provide a fallback color */
+#zen-main-app-wrapper {
+  background-color: var(--zen-main-browser-background) !important;
+}
+
+
