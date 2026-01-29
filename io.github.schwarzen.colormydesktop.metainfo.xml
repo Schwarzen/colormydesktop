@@ -90,6 +90,11 @@
   </provides>
   
 <releases>
+  <release version="0.10.3" date="2026-01-29">
+    <description>
+      <p>Version 0.10.3: Corrected issue with Zen-browser side tab-panel not being themed</p>
+    </description>
+  </release>
   <release version="0.10.2" date="2026-01-29">
     <description>
       <p>Version 0.10.2: Bug fix: Allow simultaneous portal paths</p>
