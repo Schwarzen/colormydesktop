@@ -579,14 +579,24 @@ class DialogMixin:
 
 
     # Helper to get current text for a folder from the UI
+
     def get_path_argument(self, folder_path):
+        # 1. First, check if we have a saved portal path attribute
+        # This is the most reliable way to get the /run/user/ path
+        safe_key = self.get_safe_key(folder_path)
+        saved_path = getattr(self, f"active_portal_{safe_key}", None)
+        if saved_path:
+            return saved_path
+
+        # 2. If no saved attribute, check the UI widgets
         widgets = self.portal_widgets.get(folder_path)
         if widgets:
             text = widgets["entry"].get_text()
-            # Fallback if user hasn't selected a folder yet
-            if text == "No folder selected yet...":
-                return os.path.expanduser(folder_path)
-            return text
+            # Ensure we don't pass the placeholder string to your script
+            if text and text != "No folder selected yet...":
+                return text
+                
+        # 3. Default Fallback: Host path
         return os.path.expanduser(folder_path)
         
             

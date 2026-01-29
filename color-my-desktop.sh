@@ -598,40 +598,20 @@ import_statement="@use '$SCSS_DIR/$selected_import' as *;"
 
 
 
-if [ -f "$youtube_scss" ]; then
-    # Delete any line that starts with @import, regardless of the filename
-    sed -i '/^@use/d' "$youtube_scss"
-    echo "Removed previous @use statements from $youtube_scss."
-else
-    touch "$youtube_scss"
-fi
 
-if [ -f "$zen_scss" ]; then
-    # Delete any line that starts with @import, regardless of the filename
-    sed -i '/^@use/d' "$zen_scss"
-    echo "Removed previous @use statements from $zen_scss."
-else
-    touch "$zen_scss"
-fi
 
-if [ -f "$zen_scss" ]; then
-    # Delete any line that starts with @import, regardless of the filename
-    sed -i '/^@use/d' "$vencord_scss"
-    echo "Removed previous @use statements from $vencord_scss."
-else
-    touch "$vencord_scss"
-fi
+
+
 
 # Append the new import at the top of the file
 
 
 
 
-echo "$import_statement" | cat - "$youtube_scss" > temp && mv temp "$youtube_scss"
 
-echo "$import_statement" | cat - "$zen_scss" > temp && mv temp "$zen_scss"
 
-echo "$import_statement" | cat - "$vencord_scss" > temp && mv temp "$vencord_scss"
+
+
 
 
 # --- PAPIRUS RECOLOR LOGIC ---
@@ -716,11 +696,20 @@ else
     #  Compile YouTube CSS if user said 'y'
 if [[ "$apply_zen" =~ ^[Yy]$ ]]; then
 
+    if [ -f "$zen_scss" ]; then
+    # Delete any line that starts with @import, regardless of the filename
+    sed -i '/^@use/d' "$zen_scss"
+    echo "Removed previous @use statements from $zen_scss."
+else
+    touch "$zen_scss"
+fi
+
+    echo "$import_statement" | cat - "$zen_scss" > temp && mv temp "$zen_scss"
 
           printf "%s\n" "$CSS_IMPORT_LINE2" > "${25}/userChrome.css"
          
 
-    echo "Compiling Zen styles..."
+    echo "Compiling Zen styles to ${25}/userChrome.css..."
     $SASS "$zen_scss" "$output_zen" --style expanded
     else
 	echo "Skip Zen"
@@ -740,7 +729,18 @@ else
 
        fi
 
-       if [[ "$apply_yt" =~ ^[Yy]$ ]]; then
+if [[ "$apply_yt" =~ ^[Yy]$ ]]; then
+
+    
+if [ -f "$youtube_scss" ]; then
+    # Delete any line that starts with @import, regardless of the filename
+    sed -i '/^@use/d' "$youtube_scss"
+    echo "Removed previous @use statements from $youtube_scss."
+else
+    touch "$youtube_scss"
+fi
+
+echo "$import_statement" | cat - "$youtube_scss" > temp && mv temp "$youtube_scss"
 
 	    printf "%s\n" "$CSS_IMPORT_LINE" > "${25}/userContent.css"
 
@@ -768,7 +768,18 @@ if [ -n "$PROFILE_NAME" ]; then
 
     fi
 
-       if [[ "$apply_vesktop" =~ ^[Yy]$ ]]; then
+if [[ "$apply_vesktop" =~ ^[Yy]$ ]]; then
+
+    if [ -f "$vencord_scss" ]; then
+    # Delete any line that starts with @import, regardless of the filename
+    sed -i '/^@use/d' "$vencord_scss"
+    echo "Removed previous @use statements from $vencord_scss."
+else
+    touch "$vencord_scss"
+    fi
+
+    
+echo "$import_statement" | cat - "$vencord_scss" > temp && mv temp "$vencord_scss"
 
 
 	echo "Compiling Vesktop"
