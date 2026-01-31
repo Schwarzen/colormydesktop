@@ -91,6 +91,59 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         self.combo_row = Adw.ComboRow(title="Load Existing Profile")
         self.combo_row.set_model(self.theme_list)
         self.combo_row.set_selected(0) # Force "Default" selection
+                # --- NEW PROFILE BUTTON ---
+        new_profile_btn = Gtk.Button.new_from_icon_name("list-add-symbolic")
+        new_profile_btn.set_valign(Gtk.Align.CENTER)
+        new_profile_btn.add_css_class("flat")
+        new_profile_btn.set_tooltip_text("Start New Profile")
+        
+        # --- DELETE PROFILE BUTTON ---
+        self.delete_profile_btn = Gtk.Button.new_from_icon_name("user-trash-symbolic")
+        self.delete_profile_btn.set_valign(Gtk.Align.CENTER)
+        self.delete_profile_btn.add_css_class("flat")
+        self.delete_profile_btn.add_css_class("error") # Makes it red on hover in some themes
+        self.delete_profile_btn.set_tooltip_text("Delete Selected Profile")
+        self.delete_profile_btn.set_visible(False)
+        
+
+        # Connect the logic
+        def on_new_profile_clicked(button):
+            self.name_row.set_text("New Profile")
+            self.combo_row.set_selected(0) 
+            
+            # FIX: Reveal the ROW, not just the button inside it
+            self.bash_trigger_row.set_visible(True)
+
+
+        def on_delete_clicked(button):
+            selected_index = self.combo_row.get_selected()
+            selected_theme = self.theme_list.get_string(selected_index)
+
+            if selected_index == 0 or selected_theme == "Default":
+                # Don't delete the factory default
+                return
+
+            # Create a confirmation dialog
+            dialog = Adw.MessageDialog(
+                transient_for=self,
+                heading=f"Delete Profile?",
+                body=f"Are you sure you want to permanently delete '{selected_theme}'?"
+            )
+            dialog.add_response("cancel", "Cancel")
+            dialog.add_response("delete", "Delete")
+            dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
+            dialog.set_default_response("cancel")
+
+            dialog.connect("response", self.on_delete_confirm, selected_theme)
+            dialog.present()
+
+
+
+
+        new_profile_btn.connect("clicked", on_new_profile_clicked)
+        self.combo_row.add_suffix(new_profile_btn)
+        self.delete_profile_btn.connect("clicked", on_delete_clicked)
+        self.combo_row.add_suffix(self.delete_profile_btn)
         
 
         self.load_group.add(self.combo_row)
@@ -103,7 +156,11 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         self.color_group.set_title("Theme Colors")
         self.page.add(self.color_group)
         
-        self.name_row = Adw.EntryRow(title="Profile Name")
+        self.name_row = Adw.EntryRow(
+            title="Profile Name", 
+            text="Default"
+        )
+        
         self.color_group.add(self.name_row)
 
         self.primary_row = self.create_color_entry("Primary Color", "#3584e4","primary")
@@ -114,6 +171,22 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         self.color_group.add(self.tertiary_row)
         self.text_row = self.create_color_entry("Text Hex", "#f9f9f9", "text")
         self.color_group.add(self.text_row)      
+
+        # --- HIDDEN BASH TRIGGER ROW ---
+        # Using an ActionRow makes it look like a standard part of the list
+        self.bash_trigger_row = Adw.ActionRow(title="Save new color profile")
+        self.bash_trigger_row.set_subtitle("Save these custom hex colors to a new file")
+        self.bash_trigger_row.set_visible(False) # Hidden by default
+
+        self.bash_trigger_btn = Gtk.Button(label="Save")
+        self.bash_trigger_btn.set_valign(Gtk.Align.CENTER)
+        self.bash_trigger_btn.add_css_class("suggested-action")
+
+        # Connect to your bash function
+        self.bash_trigger_btn.connect("clicked", self.on_configure_clicked)
+
+        self.bash_trigger_row.add_suffix(self.bash_trigger_btn)
+        self.color_group.add(self.bash_trigger_row)
 
         # Connect to the selection change signal
         self.combo_row.connect("notify::selected", self.on_theme_select)
@@ -365,6 +438,30 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         
         self.nav_view.push(self.main_nav_page)
         
+    def on_delete_confirm(self, dialog, response, theme_name):
+        if response == "delete":
+            # Construct the file path
+            file_path = os.path.join(SCSS_DIR, f"_{theme_name}.scss")
+            
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"Deleted profile file: {file_path}")
+                    
+                    # Refresh the UI
+                    self.refresh_theme_list()
+                    
+                    # Return to Default profile
+                    self.combo_row.set_selected(0)
+                    
+                    # Show success toast
+                    toast = Adw.Toast.new(f"Profile '{theme_name}' deleted")
+                    self.toast_overlay.add_toast(toast)
+            except Exception as e:
+                print(f"Error deleting file: {e}")
+        
+        dialog.destroy()
+        
         
     def load_persistent_settings(self):
         config_path = os.path.expanduser("~/.var/app/io.github.schwarzen.colormydesktop/config/color-my-desktop/settings.json")
@@ -501,14 +598,22 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
 
     
     def on_theme_select(self, combo_row, gparamspec):
+        is_default = (combo_row.get_selected() == 0)
+        self.delete_profile_btn.set_visible(not is_default)
         selected_index = combo_row.get_selected()
         
         #  Guard: Ignore index 0 ('Default') or errors
         if selected_index <= 0:
+            print("Resetting to Default theme values...")
+            self.name_row.set_text("Default")
+            self.primary_row.set_text("#3584e4")
+            self.secondary_row.set_text("#241f31")
+            self.tertiary_row.set_text("#1e1e1e")
+            self.text_row.set_text("#f9f9f9")
             return
                 
         selected_theme = self.theme_list.get_string(selected_index)
-        if not selected_theme or selected_theme == "Default":
+        if not selected_theme:
             return
 
         #  Construct the path INSIDE the function
@@ -585,6 +690,65 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
 
         
         # --- RUN BASH SCRIPT ---
+    def on_configure_clicked(self, button):
+    
+        self.active_build_button = button 
+        self.active_build_button.set_sensitive(False)
+        
+  
+        
+        # We add "config_only" as the very first argument ($1)
+        args = [
+            "config_only", 
+            self.name_row.get_text(),
+            self.primary_row.get_text(),
+            self.secondary_row.get_text(),
+            self.tertiary_row.get_text(),
+            self.text_row.get_text(),
+        ]
+        
+        # Use your existing threading logic
+        thread = threading.Thread(target=self.execute_build, args=(args,))
+        thread.daemon = True
+        thread.start()
+        
+        button.set_sensitive(False)
+        
+    def refresh_theme_list(self):
+        """Rescans SCSS_DIR, updates the model, and selects the new profile."""
+        if not os.path.exists(SCSS_DIR):
+            return
+
+        # 1. Capture the name the user just saved so we can select it later
+        newly_saved_name = self.name_row.get_text()
+
+        # 2. Collect only the custom themes from the directory
+        custom_themes = []
+        for f in os.listdir(SCSS_DIR):
+            if f.startswith("_") and f.endswith(".scss"):
+                name = f[1:-5]  # Strip '_' and '.scss'
+                if name != "Default":
+                    custom_themes.append(name)
+        
+        # 3. Sort ONLY the custom themes alphabetically
+        custom_themes.sort()
+
+        # 4. Create the final list with "Default" locked at index 0
+        final_list = ["Default"] + custom_themes
+
+        # 5. Update the Gtk.StringList model
+        current_count = self.theme_list.get_n_items()
+        self.theme_list.splice(0, current_count, final_list)
+
+        # 6. AUTO-SELECT: Find the index of the newly created profile
+        # We loop through the new list to find the match
+        for index, theme_name in enumerate(final_list):
+            if theme_name == newly_saved_name:
+                self.combo_row.set_selected(index)
+                break
+                
+        print(f"Refreshed dropdown. Selected: {newly_saved_name}")
+
 
         
     def on_run_build_clicked(self, button):
@@ -705,7 +869,29 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         except Exception as e:
             GLib.idle_add(self.append_log, f"Error: {str(e)}\n")
         finally:
-            GLib.idle_add(self.build_finished)
+            if args[0] == "config_only":
+                GLib.idle_add(self.config_finished_cleanup)
+            else:
+                # For standard builds, keep your existing logic
+                GLib.idle_add(self.build_finished)
+                
+    def config_finished_cleanup(self):
+        # 1. Re-enable the button using your existing attribute
+        if hasattr(self, "active_build_button"):
+            self.active_build_button.set_sensitive(True)
+        
+        # 2. Show the success toast
+        self.toast_overlay.add_toast(Adw.Toast.new("Configuration Saved!"))
+        
+        # 3. Hide the configuration row since the task is done
+        if hasattr(self, "bash_trigger_row"):
+            self.bash_trigger_row.set_visible(False)
+            
+            
+        self.refresh_theme_list()
+            
+        return False
+
 
     def append_log(self, text):
         buffer = self.log_view.get_buffer()
@@ -742,6 +928,7 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         toast = Adw.Toast.new(f"Theme '{theme_name}' applied!")
         self.toast_overlay.add_toast(toast)
         button.set_sensitive(True) 
+
 
 
 

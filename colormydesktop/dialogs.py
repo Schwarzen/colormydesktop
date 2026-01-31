@@ -28,24 +28,35 @@ class DialogMixin:
             
         return False
 
+
     def setup_user_data(self):
         bundled_scss = "/app/share/color-my-desktop/scss"
         xdg_data = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
         user_scss_dir = os.path.join(xdg_data, "scss")
 
         if not os.path.exists(bundled_scss):
-            print(f"DEBUG: Source {bundled_scss} not found.")
             return None
 
-        # --- THE FIX: ALWAYS OVERWRITE ---
+        os.makedirs(user_scss_dir, exist_ok=True)
+
         try:
-            if os.path.exists(user_scss_dir):
-                shutil.rmtree(user_scss_dir) # Delete existing folder first
-                print(f"Refreshing existing SCSS data...")
+            # Walk through the bundled source directory
+            for root, dirs, files in os.walk(bundled_scss):
+                # Calculate the relative path to maintain folder structure
+                rel_path = os.path.relpath(root, bundled_scss)
+                dest_path = os.path.join(user_scss_dir, rel_path)
+
+                # Ensure subdirectories exist in the destination
+                os.makedirs(dest_path, exist_ok=True)
+
+                for file in files:
+                    src_file = os.path.join(root, file)
+                    dst_file = os.path.join(dest_path, file)
+                    
+                    # Overwrite the specific file from the bundle
+                    shutil.copy2(src_file, dst_file)
             
-            # Re-copy the fresh files from /app/share
-            shutil.copytree(bundled_scss, user_scss_dir)
-            print(f"Successfully synchronized SCSS data at: {user_scss_dir}")
+            print(f"Successfully synchronized bundled SCSS to: {user_scss_dir}")
         except Exception as e:
             print(f"Error updating SCSS data: {e}")
 

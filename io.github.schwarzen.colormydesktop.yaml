@@ -39,5 +39,5 @@ modules:
     sources:
        - type: git
          url: https://github.com/Schwarzen/colormydesktop
-         tag: v0.10.2
-         commit: 5266d138c4b9732eb3053ce09609ac4070009501
+         tag: v0.10.3
+         commit: bc0d58d6c8ed51133d0bfe7240add3d4dbd8d89b

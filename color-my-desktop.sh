@@ -401,7 +401,57 @@ configure_theme() {
     fi
 }
 
+MODE=$1
 
+# 1. Check for the special flag at the START of the script
+if [ "$MODE" == "config_only" ]; then
+    echo "Mode: Configuration Only"
+    
+    # Remove "config_only" from the global argument list ($@)
+    # This makes the old $2 become the new $1
+    shift 
+    
+    # 2. Call the function with the "shifted" arguments
+    # Now configure_theme sees $1 as the Profile Name
+        # 1. Determine the filename (from $1 or terminal prompt)
+    if [ -n "$1" ]; then
+        clean_name=$(echo "$1" | sed 's/^_//;s/\.scss$//')
+    else
+        read -p "Enter Profile Name: " filename
+        clean_name=$(echo "$filename" | sed 's/^_//;s/\.scss$//')
+    fi
+    
+    partial_file="${SCSS_DIR}/_${clean_name}.scss"
+     #  Map to clean, hyphen-free Bash variables
+    B_PRIMARY="${2:-#3584e4}"
+    B_SECONDARY="${3:-#241f31}"
+    B_TERTIARY="${4:-#1e1e1e}"
+    B_TEXT="${5:-#f9f9f9}"
+    B_TOPBAR="${8:-$B_PRIMARY}"  # Fallback to primary if empty
+    B_CLOCK="${10:-$B_TEXT}"     # Fallback to text if empty
+        # Capture the new arguments ($14 and $15)
+    B_NAUTILUS="${14:-$3}" # Fallback to Primary ($2) if empty
+    B_DATEMENU="${15:-$2}" # Fallback to Primary ($2) if empty
+    B_NAUT_SEC="${16:-$3}"
+
+
+    {
+        printf '$primary: %s;\n' "$B_PRIMARY"
+        printf '$secondary: %s;\n' "$B_SECONDARY"
+        printf '$tertiary: %s;\n' "$B_TERTIARY"
+	printf '$tertiary-light: %s;\n' "rgba(\$tertiary, 0.25)"
+	printf '$text: %s;\n' "$B_TEXT"
+	printf '$text-light: %s;\n' "rgba(\$text, 0.25)"
+        printf '$topbar-color: %s;\n' "$B_TOPBAR"
+        printf '$clock-color: %s;\n' "$B_CLOCK"
+	printf '$nautilus-main: %s;\n' "$B_NAUTILUS"
+	printf '$nautilus-secondary: %s;\n' "$B_NAUT_SEC"
+        printf '$system-datemenu: %s;\n' "$B_DATEMENU"
+    } > "$partial_file"
+    
+    # 3. Exit so the rest of the build logic doesn't run
+    exit 0
+fi
 
 
 
