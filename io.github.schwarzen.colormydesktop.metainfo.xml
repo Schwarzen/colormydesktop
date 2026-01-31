@@ -90,6 +90,15 @@
   </provides>
   
 <releases>
+  <release version="0.10.4" date="2026-01-30">
+    <description>
+      <p>Version 0.10.4 includes the following updates:</p>
+      <ul>
+        <li>Added the ability to save and delete color profiles directly</li>
+        <li>Fixed an issue where new color profiles were deleted on restart</li>
+      </ul>
+    </description>
+  </release>
   <release version="0.10.3" date="2026-01-29">
     <description>
       <p>Version 0.10.3: Corrected issue with Zen-browser side tab-panel not being themed</p>
