@@ -1,0 +1,11 @@
+[Unit]
+Description=Plasma Refresher Service
+
+[Service]
+Type=oneshot
+# This ensures the command can find your active KDE session
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus
+# We wrap the bash call to ensure all sub-commands share the same session context
+ExecStart=/usr/bin/bash -c '/usr/bin/plasma-apply-colorscheme BreezeDark && sleep 0.5 && /usr/bin/plasma-apply-colorscheme Color-My-Desktop-Scheme'
+
+

@@ -37,7 +37,7 @@ GUI_VESKTOP_TOGGLE="${21}"
 
 
 
-# 1. Detect environment
+#  Detect environment
 if [ -f "/.flatpak-info" ]; then
     # We are in a Flatpak! Use the path in the sandbox.
     SASS="/app/lib/dart-sass/sass"
@@ -878,6 +878,9 @@ else
     touch "$temp_scss"
 fi
 echo "$import_statement" | cat - "$temp_scss" > temp && mv temp "$temp_scss"
+   
+custom_top_bar_logic "$7" "$8" "$9" "${10}"
+
 	
     echo "Compiling $temp_scss to $output_css..."
     $SASS "$temp_scss" "$output_css" --style expanded
@@ -919,6 +922,10 @@ echo "$import_statement" | cat - "$temp_scss" > temp && mv temp "$temp_scss"
 	sed -i "s/text/$text/g; s/primary/$primary/g; s/secondary/$secondary/g;  s/tertiary/$tertiary/g" "$output_KDEtheme/Color-My-Desktop-Plasma/colors"
 
 
+
+
+
+  
 
 
     else

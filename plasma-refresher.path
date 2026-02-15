@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch for refresher trigger file
+
+[Path]
+# Watch for the file being created or modified
+PathChanged=%h/.var/app/io.github.schwarzen.colormydesktop/data/colormydesktop/plasma-refresh.trigger
+
+[Install]
+WantedBy=paths.target

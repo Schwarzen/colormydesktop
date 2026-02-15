@@ -4,6 +4,7 @@ DATA_DIR = $(PREFIX)/share
 APP_ID = io.github.schwarzen.colormydesktop
 LICENSE_DIR = $(DATA_DIR)/licenses/$(APP_ID)
 KDE_INSTALL_DIR = $(PREFIX)/share/color-my-desktop/KDE
+REFRESHER_DIR = $(DATA_DIR)/refresher
 install:
 	# 1. Install binaries
 	install -d $(BIN_DIR)
@@ -12,11 +13,23 @@ install:
 
 	# 2. Install the subfolder package to /app/bin/
 	install -d  $(BIN_DIR)/colormydesktop
-	install -m 644 colormydesktop/*.py $(BIN_DIR)/colormydesktop/
+	install -m 644 colormydesktop/* $(BIN_DIR)/colormydesktop/
 
 	#  Install scss
 	install -d $(PREFIX)/share/color-my-desktop/scss
 	install -m 644 scss/*.scss $(PREFIX)/share/color-my-desktop/scss/
+	install -d $(PREFIX)/share/color-my-desktop/palettes
+	install -m 644 palettes/*.scss $(PREFIX)/share/color-my-desktop/palettes/
+
+
+
+
+	# Install refresh units
+	install -d $(REFRESHER_DIR)
+	install -m 644 plasma-refresher.path $(REFRESHER_DIR)/plasma-refresher.path
+	install -m 644 plasma-refresher.service $(REFRESHER_DIR)/plasma-refresher.service
+	install -m 644 gnome-refresher.path $(REFRESHER_DIR)/gnome-refresher.path
+	install -m 644 gnome-refresher.service $(REFRESHER_DIR)/gnome-refresher.service
 
 
 

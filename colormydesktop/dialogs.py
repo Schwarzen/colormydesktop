@@ -13,15 +13,15 @@ import hashlib
 class DialogMixin:
 
     def is_running_in_flatpak(self):
-        # 1. Check for the physical metadata file (Most reliable in 2026)
+        #  Check for the physical metadata file 
         if os.path.exists('/.flatpak-info'):
             return True
         
-        # 2. Check the 'container' env var (Commonly set by Flatpak/Podman)
+        # Check the 'container' env var (Commonly set by Flatpak/Podman)
         if os.environ.get('container') == 'flatpak':
             return True
         
-        # 3. Check for FLATPAK_ID but double-check it's not a leaked value
+        # Check for FLATPAK_ID but double-check it's not a leaked value
         # If FLATPAK_ID exists but /app does not, it's likely a leaked variable
         if os.environ.get('FLATPAK_ID') and os.path.exists('/app'):
             return True
@@ -31,34 +31,42 @@ class DialogMixin:
 
     def setup_user_data(self):
         bundled_scss = "/app/share/color-my-desktop/scss"
+        bundled_palettes = "/app/share/color-my-desktop/palettes"
+        # Inside Flatpak, XDG_DATA_HOME is usually /var/config/data/ or ~/.local/share/
         xdg_data = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
         user_scss_dir = os.path.join(xdg_data, "scss")
+        
+        #  Sync SCSS files
+        if os.path.exists(bundled_scss):
+            os.makedirs(user_scss_dir, exist_ok=True)
+            try:
+                for root, dirs, files in os.walk(bundled_scss):
+                    rel_path = os.path.relpath(root, bundled_scss)
+                    dest_path = os.path.join(user_scss_dir, rel_path)
+                    os.makedirs(dest_path, exist_ok=True)
+                    for file in files:
+                        shutil.copy2(os.path.join(root, file), os.path.join(dest_path, file))
+                print(f"Synced SCSS to: {user_scss_dir}")
+            except Exception as e:
+                print(f"Error updating SCSS: {e}")
+                   
 
-        if not os.path.exists(bundled_scss):
-            return None
-
-        os.makedirs(user_scss_dir, exist_ok=True)
-
-        try:
-            # Walk through the bundled source directory
-            for root, dirs, files in os.walk(bundled_scss):
-                # Calculate the relative path to maintain folder structure
-                rel_path = os.path.relpath(root, bundled_scss)
-                dest_path = os.path.join(user_scss_dir, rel_path)
-
-                # Ensure subdirectories exist in the destination
-                os.makedirs(dest_path, exist_ok=True)
-
-                for file in files:
-                    src_file = os.path.join(root, file)
-                    dst_file = os.path.join(dest_path, file)
+        if os.path.exists(bundled_palettes):
+            os.makedirs(user_scss_dir, exist_ok=True)
+            try:
+                for file in os.listdir(bundled_palettes):
+                    src_file = os.path.join(bundled_palettes, file)
+                    dest_file = os.path.join(user_scss_dir, file) # Placed in root
                     
-                    # Overwrite the specific file from the bundle
-                    shutil.copy2(src_file, dst_file)
-            
-            print(f"Successfully synchronized bundled SCSS to: {user_scss_dir}")
-        except Exception as e:
-            print(f"Error updating SCSS data: {e}")
+                    # Guard: Only copy if the file is missing
+                    if not os.path.exists(dest_file):
+                        shutil.copy2(src_file, dest_file)
+                        print(f"Added new palette file to root: {file}")
+                
+                print("Palette files synced to SCSS root (No overwrites).")
+            except Exception as e:
+                print(f"Error syncing palette files: {e}")
+
 
         return user_scss_dir
 
@@ -66,23 +74,8 @@ class DialogMixin:
 
 
 
-    def on_folder_button_clicked(self, button, target_path=None):
-        # 1. Trigger the Bash function first
-        try:
-            # Pass "sync_youtube" as $1 to trigger the Bash logic
-            subprocess.Popen([BASH_SCRIPT, "sync_zen"])
-        except Exception as e:
-            print(f"Bash trigger failed: {e}")
 
-        # 2. Proceed with opening the folder via the Portal
-        if target_path is None:
-            target_path = os.path.expanduser("~/.var/app/io.github.schwarzen.colormydesktop/data/scss/")
 
-        folder_file = Gio.File.new_for_path(target_path)
-        launcher = Gtk.FileLauncher.new(folder_file)
-        
-        # Open the folder in the host file manager
-        launcher.open_containing_folder(self, None, self.on_open_finished)
 
     def on_open_finished(self, launcher, result):
         try:
@@ -92,64 +85,363 @@ class DialogMixin:
         except GLib.Error as e:
             print(f"Failed to open folder: {e.message}")
             
-    def show_youtube_window(self):
-        #  Create a new Window
-        win = Adw.Window(
-            transient_for=self,
-            title="YouTube Theme Manager",
-            default_width=400,
-            default_height=300,
-            modal=True
-        )
 
-        #  Setup the content layout
-        toolbar_view = Adw.ToolbarView()
-        header_bar = Adw.HeaderBar()
-        toolbar_view.add_top_bar(header_bar)
-
-        #  Main content area (using a PreferencesGroup for a clean look)
-        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
-        content_box.set_margin_top(24)
-        content_box.set_margin_bottom(24)
-        content_box.set_margin_start(24)
-        content_box.set_margin_end(24)
-
-        #  Instruction Text
-        instruction_text = (
-            "<b>First Time Setup:</b>\n\n"
-            "1. Open Zen Browser and type <tt>about:profiles</tt> in the URL bar.\n"
-            "2. Locate your active profile and open its <b>Root Directory</b>.\n"
-            "3. Navigate into the <b>chrome</b> folder.\n"
-            "4. Click the button below to open your local <b>Zen-sync-data</b>.\n"
-            "5. Copy the two files from sync-data into your browser's chrome folder."
-        )
-        instruction_label = Gtk.Label(
-            label=instruction_text,
-            use_markup=True,
-            wrap=True,
-            xalign=0
-        )
-        instruction_label.set_margin_bottom(18)
-        instruction_label.add_css_class("body")
-        content_box.append(instruction_label)
-
-        #  Open Folder Button (Using the logic we built)
-        open_btn = Gtk.Button.new_from_icon_name("folder-open-symbolic")
-        open_btn.set_label("Open Zen-sync-install folder")
-        open_btn.add_css_class("suggested-action")
-        open_btn.set_hexpand(True)
         
-        # Path logic using your setup_user_data location
-        yt_path = os.path.expanduser("~/.var/app/io.github.schwarzen.colormydesktop/data/scss/")
-        open_btn.connect("clicked", lambda b: self.on_folder_button_clicked(b, yt_path))
-        content_box.append(open_btn)
+    def is_gnome_refresh_ready(self):
+        #  Check Systemd Portal Path
+        host_path = "~/.config/systemd/user"
+        portal_path = getattr(self, f"active_portal_{self.get_safe_key(host_path)}", None)
+        if not portal_path:
+            portal_path = self.load_cached_portal_path(host_path)
+        
+        if not portal_path or not os.path.exists(portal_path):
+            return False
 
-        #  Finalize and present
-        toolbar_view.set_content(content_box)
-        win.set_content(toolbar_view)
-        win.present()
+        #  Check for the two refresher files
+        path_exists = os.path.isfile(os.path.join(portal_path, "gnome-refresher.path"))
+        service_exists = os.path.isfile(os.path.join(portal_path, "gnome-refresher.service"))
+        if not (path_exists and service_exists):
+            return False
+            
+        return True
+        
+    # GNOME REFRESH DIALOG
+    def show_gnome_setup_dialog(self, button=None):
+        # --- Close existing dialog if it's already open ---
+        if hasattr(self, 'gnome_dialog') and self.gnome_dialog:
+            self.gnome_dialog.destroy()
+            self.gnome_dialog = None
 
-    
+        app_id = self.get_application().get_application_id()
+        self.gnome_dialog = Adw.MessageDialog(transient_for=self, heading="GNOME Shell Refresh Setup")
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+
+        # --- STATUS LOGIC ---
+        host_path = "~/.config/systemd/user"
+        
+        # Look for path in Memory -> then File Cache
+        portal_path = getattr(self, f"active_portal_{self.get_safe_key(host_path)}", None)
+        if not portal_path:
+            portal_path = self.load_cached_portal_path(host_path)
+            if portal_path:
+                setattr(self, f"active_portal_{self.get_safe_key(host_path)}", portal_path)
+
+        # Accurate Status Checks
+        has_access = portal_path is not None and os.path.exists(portal_path)
+        path_exists = False
+        service_exists = False
+        if has_access:
+            path_exists = os.path.isfile(os.path.join(portal_path, "gnome-refresher.path"))
+            service_exists = os.path.isfile(os.path.join(portal_path, "gnome-refresher.service"))
+
+        # --- STATUS EXPANDER ---
+        status_expander = Adw.ExpanderRow(title="System Status Check", subtitle="Expand to see setup details")
+        status_expander.add_css_class("card")
+        
+        def create_status_row(title, is_ready):
+            row = Adw.ActionRow(title=title)
+            icon = Gtk.Image.new_from_icon_name("emblem-ok-symbolic" if is_ready else "window-close-symbolic")
+            icon.add_css_class("success" if is_ready else "error")
+            row.add_prefix(icon)
+            return row
+
+        display_path = portal_path if portal_path else "Folder Not Linked"
+        status_expander.add_row(create_status_row(f"Portal Access: {display_path}", has_access))
+        status_expander.add_row(create_status_row("Systemd .path file found", path_exists))
+        status_expander.add_row(create_status_row("Systemd .service file found", service_exists))
+        main_box.append(status_expander)
+
+        # --- INSTRUCTIONS ---
+        instruction_text = (
+            "<b>To setup auto refresh:</b>\n"
+            "• Copy the path below\n"
+            "• Click the <b>Automated Installer</b> button\n"
+            "• Paste the path into the folder selection dialog"
+        )
+        main_box.append(Gtk.Label(label=instruction_text, use_markup=True, xalign=0, wrap=True))
+
+        # --- PATH COPY SECTION ---
+        path_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        path_box.add_css_class("card")
+        path_box.set_margin_start(12)
+        
+        path_display = Gtk.Label(label=host_path, xalign=0, hexpand=True, selectable=True)
+        path_display.add_css_class("dim-label")
+        
+        copy_path_btn = Gtk.Button.new_from_icon_name("edit-copy-symbolic")
+        copy_path_btn.add_css_class("flat")
+        copy_path_btn.set_tooltip_text("Copy path to clipboard")
+        copy_path_btn.connect("clicked", lambda b: Gdk.Display.get_default().get_clipboard().set_content(
+            # Use os.path.expanduser here to turn ~ into /home/User
+            Gdk.ContentProvider.new_for_value(os.path.expanduser(host_path))
+        ))
+        copy_path_btn.connect("clicked", lambda b: self.toast_overlay.add_toast(Adw.Toast.new("Path copied!")))
+
+        path_box.append(path_display)
+        path_box.append(copy_path_btn)
+        main_box.append(path_box)
+
+        # --- ACTION BUTTONS ---
+        setup_btn = Gtk.Button(label="Run Automated Installer")
+        setup_btn.add_css_class("suggested-action")
+        # Link to the function we wrote earlier for GNOME
+        setup_btn.connect("clicked", lambda b: self.install_gnome_host_refresher())
+        main_box.append(setup_btn)
+                # WARNING EXPANDER
+        warning_expander = Adw.ExpanderRow(title="WARNING", subtitle="Security information")
+        warning_expander.add_css_class("card")
+        
+        warning_text = (
+           
+            "<span size='large' weight='bold'>Security &amp; Background Service</span>\n\n"
+            "This setup installs a <b>systemd user unit</b> on your host system. "
+            "This is a secure way to allow the sandbox to request a theme refresh "
+            "without giving the app full control over your computer.\n\n"
+            "<b>How it works:</b>\n"
+            "• The app 'touches' a trigger file inside its sandbox.\n"
+            "• Your host system detects this change and runs the refresh command.\n"
+            "• You can inspect the exact command inside <b>gnome-refresher.service</b>.\n\n"
+            "<span color='#999999' size='small'>Use with caution: This allows code execution "
+            "on the host triggered by the sandbox.</span>"
+        )
+
+        warning_label = Gtk.Label(label=warning_text, use_markup=True, xalign=0, wrap=True)
+        warning_label.set_margin_bottom(12)
+
+        warning_expander.add_row(warning_label) # Add the widget you already created
+        main_box.append(warning_expander)
+
+        # --- COMMAND SECTION ---
+        cmd_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        cmd_box.append(Gtk.Label(label="<b>Then run this command and restart the app</b>", use_markup=True, xalign=0))
+        
+        full_cmd = "systemctl --user daemon-reload && systemctl --user enable --now gnome-refresher.path"
+        
+        entry_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        cmd_label = Gtk.Label(label=full_cmd, selectable=True, wrap=True, hexpand=True, xalign=0)
+        cmd_label.add_css_class("card")
+        
+        copy_cmd_btn = Gtk.Button.new_from_icon_name("edit-copy-symbolic")
+        copy_cmd_btn.add_css_class("flat")
+        copy_cmd_btn.connect("clicked", lambda b: Gdk.Display.get_default().get_clipboard().set_content(
+            Gdk.ContentProvider.new_for_value(full_cmd)
+        ))
+        copy_cmd_btn.connect("clicked", lambda b: self.toast_overlay.add_toast(Adw.Toast.new("Command copied!")))
+
+        entry_box.append(cmd_label)
+        entry_box.append(copy_cmd_btn)
+        cmd_box.append(entry_box)
+        main_box.append(cmd_box)
+
+        # --- DIALOG FINALIZATION ---
+        self.gnome_dialog.connect("destroy", self._on_gnome_dialog_destroyed)
+        self.gnome_dialog.set_extra_child(main_box)
+        self.gnome_dialog.add_response("close", "Close")
+        self.gnome_dialog.present()
+
+    def _on_gnome_dialog_destroyed(self, dialog):
+        self.gnome_dialog = None
+        # Refresh the UI switch state when user closes dialog
+        self.check_gnome_refresh_status()
+        self.initial_status()
+
+
+
+        
+    # PLAMSA REFRESH SETUP WINDOW
+    def show_plasma_setup_dialog(self, button=None):
+     # ---  Close existing dialog if it's already open ---
+        if hasattr(self, 'plasma_dialog') and self.plasma_dialog:
+            self.plasma_dialog.destroy()
+            self.plasma_dialog = None
+
+        app_id = self.get_application().get_application_id()
+        # Store the reference on self
+        self.plasma_dialog = Adw.MessageDialog(transient_for=self, heading="KDE Plasma Refresh Setup")
+        
+        app_id = self.get_application().get_application_id()
+        dialog = Adw.MessageDialog(transient_for=self, heading="KDE Plasma Refresh Setup")
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+
+        # ---STATUS LOGIC ---
+        host_path = "~/.config/systemd/user"
+        
+        # Look for path in Memory -> then File Cache
+        portal_path = getattr(self, f"active_portal_{self.get_safe_key(host_path)}", None)
+        if not portal_path:
+            portal_path = self.load_cached_portal_path(host_path)
+            if portal_path:
+                setattr(self, f"active_portal_{self.get_safe_key(host_path)}", portal_path)
+
+        # Accurate Status Checks
+        has_access = portal_path is not None and os.path.exists(portal_path)
+        
+        path_exists = False
+        service_exists = False
+        if has_access:
+            path_exists = os.path.isfile(os.path.join(portal_path, "plasma-refresher.path"))
+            service_exists = os.path.isfile(os.path.join(portal_path, "plasma-refresher.service"))
+
+        runtime_dir = os.environ.get("XDG_RUNTIME_DIR", "")
+        trigger_file = os.path.join(runtime_dir, "plasma-refresher.trigger")
+        # Ensure it's a real file and not just a ghost directory
+        has_trigger = os.path.isfile(trigger_file)
+
+        # --- STATUS EXPANDER ---
+        status_expander = Adw.ExpanderRow(title="System Status Check", subtitle="Expand to see setup details")
+        status_expander.add_css_class("card")
+        
+        def create_status_row(title, is_ready):
+            row = Adw.ActionRow(title=title)
+            icon = Gtk.Image.new_from_icon_name("emblem-ok-symbolic" if is_ready else "window-close-symbolic")
+            icon.add_css_class("success" if is_ready else "error")
+            row.add_prefix(icon)
+            return row
+
+        display_path = portal_path if portal_path else "Folder Not Linked"
+        status_expander.add_row(create_status_row(f"Portal Access: {display_path}", has_access))
+        status_expander.add_row(create_status_row("Systemd .path file found", path_exists))
+        status_expander.add_row(create_status_row("Systemd .service file found", service_exists))
+        main_box.append(status_expander)
+                # --- IMPORTANT: Clear the reference when the dialog is closed/destroyed ---
+        self.plasma_dialog.connect("destroy", self._on_plasma_dialog_destroyed)
+        
+        self.plasma_dialog.set_extra_child(main_box)
+        self.plasma_dialog.add_response("close", "Close")
+
+        self.plasma_dialog.present()
+
+        # ---  THE SETUP COMMANDS ---
+        cmd_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        cmd_box.append(Gtk.Label(label="<b>Required Setup Command:</b>", use_markup=True, xalign=0))
+        
+        full_cmd = (
+            f"flatpak override --user --filesystem=xdg-run/plasma-refresher.trigger:create {app_id} && "
+            "systemctl --user daemon-reload && "
+            "systemctl --user enable --now plasma-refresher.path"
+        )
+        
+        entry_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        cmd_label = Gtk.Label(label=full_cmd, selectable=True, wrap=True, hexpand=True, xalign=0)
+        cmd_label.add_css_class("card")
+        
+        copy_btn = Gtk.Button.new_from_icon_name("edit-copy-symbolic")
+        copy_btn.add_css_class("flat")
+        copy_btn.connect("clicked", lambda b: Gdk.Display.get_default().get_clipboard().set_content(
+            Gdk.ContentProvider.new_for_value(full_cmd)
+        ))
+        #  Instruction Label (Updated with Newlines)
+        instruction_text = (
+            "<b>To setup auto refresh:</b>\n"
+            "• Copy the path below\n"
+            "• Click the <b>Automated Installer</b> button\n"
+            "• Paste the path into the folder selection dialog"
+        )
+        main_box.append(Gtk.Label(label=instruction_text, use_markup=True, xalign=0, wrap=True))
+        
+
+        #  Copy Path Section
+        path_to_copy = "~/.config/systemd/user"
+        
+        path_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        path_box.add_css_class("card") # Optional: adds a nice background frame if your CSS supports it
+        path_box.set_margin_start(12)
+        
+        # Display the path in a selectable label
+        path_display = Gtk.Label(label=path_to_copy, xalign=0, hexpand=True, selectable=True)
+        path_display.add_css_class("dim-label") # Makes it look like a secondary technical path
+        
+        # Copy Button
+        copy_path_btn = Gtk.Button.new_from_icon_name("edit-copy-symbolic")
+        copy_path_btn.add_css_class("flat")
+        copy_path_btn.set_tooltip_text("Copy path to clipboard")
+        copy_path_btn.connect("clicked", lambda b: Gdk.Display.get_default().get_clipboard().set_content(
+            # Use os.path.expanduser here to turn ~ into /home/User
+            Gdk.ContentProvider.new_for_value(os.path.expanduser(host_path))
+        ))
+        #  Add a toast confirmation when clicked
+        copy_path_btn.connect("clicked", lambda b: self.toast_overlay.add_toast(Adw.Toast.new("Path copied!")))
+
+        path_box.append(path_display)
+        path_box.append(copy_path_btn)
+        main_box.append(path_box)
+        # --- THE ACTION BUTTONS ---
+        setup_btn = Gtk.Button(label="Run Automated Installer")
+        setup_btn.add_css_class("suggested-action")
+        setup_btn.connect("clicked", self.install_host_refresher)
+        main_box.append(setup_btn)
+        # WARNING EXPANDER
+        warning_expander = Adw.ExpanderRow(title="WARNING", subtitle="Security information")
+        warning_expander.add_css_class("card")
+        
+        warning_text = (
+            "<span size='large' weight='bold'>Security &amp; Background Service</span>\n\n"
+            "This setup installs a <b>systemd user unit</b> on your host system. "
+            "This is a secure way to allow the sandbox to request a theme refresh "
+            "without giving the app full control over your computer.\n\n"
+            "<b>How it works:</b>\n"
+            "• The app 'touches' a trigger file inside its sandbox.\n"
+            "• Your host system detects this change and runs the refresh command.\n"
+            "• You can inspect the exact command inside <b>plasma-refresher.service</b>.\n\n"
+            "<span color='#999999' size='small'>Use with caution: This allows code execution "
+            "on the host triggered by the sandbox.</span>"
+        )
+
+        warning_label = Gtk.Label(label=warning_text, use_markup=True, xalign=0, wrap=True)
+        warning_label.set_margin_bottom(12)
+
+        warning_expander.add_row(warning_label) # Add the widget you already created
+        main_box.append(warning_expander)
+        # --- COMMAND SECTION ---
+        cmd_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        cmd_box.append(Gtk.Label(label="<b>Then run this command and restart the app</b>", use_markup=True, xalign=0))
+        
+        full_cmd = "systemctl --user daemon-reload && systemctl --user enable --now plasma-refresher.path"
+        
+        entry_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        cmd_label = Gtk.Label(label=full_cmd, selectable=True, wrap=True, hexpand=True, xalign=0)
+        cmd_label.add_css_class("card")
+        
+        copy_cmd_btn = Gtk.Button.new_from_icon_name("edit-copy-symbolic")
+        copy_cmd_btn.add_css_class("flat")
+        copy_cmd_btn.connect("clicked", lambda b: Gdk.Display.get_default().get_clipboard().set_content(
+            Gdk.ContentProvider.new_for_value(full_cmd)
+        ))
+        copy_cmd_btn.connect("clicked", lambda b: self.toast_overlay.add_toast(Adw.Toast.new("Command copied!")))
+
+        entry_box.append(cmd_label)
+        entry_box.append(copy_cmd_btn)
+        cmd_box.append(entry_box)
+        main_box.append(cmd_box)
+
+    def _on_plasma_dialog_destroyed(self, dialog):
+        self.plasma_dialog = None
+        # Refresh the UI switch state when user closes dialog
+        self.check_plasma_refresh_status()
+        self.initial_status()
+
+    def is_plasma_refresh_ready(self):
+        # Check Systemd Portal Path
+        host_path = "~/.config/systemd/user"
+        portal_path = getattr(self, f"active_portal_{self.get_safe_key(host_path)}", None)
+        if not portal_path:
+            portal_path = self.load_cached_portal_path(host_path)
+        
+        if not portal_path or not os.path.exists(portal_path):
+            return False
+
+        # Check for the two PLASMA refresher files
+        path_exists = os.path.isfile(os.path.join(portal_path, "plasma-refresher.path"))
+        service_exists = os.path.isfile(os.path.join(portal_path, "plasma-refresher.service"))
+        if not (path_exists and service_exists):
+            return False
+
+
+        return True
+
+
+
+    #MAIN PERMISSION WINDOW
     def show_permission_dialog(self, title, folders):
         # Ensure folders is always a list for consistent looping
         if isinstance(folders, str):
@@ -492,10 +784,13 @@ class DialogMixin:
             # Hint to the portal where to start
             # Note: Some portals (like KDE) may ignore this, but it is standard for GNOME
             portal.set_initial_folder(initial_dir)
-            
+            self.check_gnome_refresh_status()
             # Pass the folder to the callback so we know which Entry to update
             portal.select_folder(self, None, 
                 lambda dialog, result: self.on_portal_folder_selected(dialog, result, target_folder))
+                
+
+
 
     def on_portal_folder_selected(self, dialog, result, target_folder):
         try:
@@ -503,27 +798,26 @@ class DialogMixin:
             if folder_file:
                 sandboxed_path = folder_file.get_path()
                 
-                # Get the "last word" of the selected folder
-                # os.path.basename handles trailing slashes correctly
-                selected_folder_name = os.path.basename(os.path.normpath(sandboxed_path))
+                # 1. PERSISTENCE: Save to JSON so it survives app restarts
+                self.save_portal_path(target_folder, sandboxed_path)
                 
-                #  Get the "last word" of the expected folder
-                # e.g., if target_folder is "~/.local/share/plasma", this is "plasma"
+                # 2. SESSION DATA: Keep your existing safe_key logic
+                safe_key = self.get_safe_key(target_folder)
+                setattr(self, f"active_portal_{safe_key}", sandboxed_path)
+
+                # Existing validation logic
+                selected_folder_name = os.path.basename(os.path.normpath(sandboxed_path))
                 expected_folder_name = os.path.basename(os.path.normpath(target_folder))
                 
-                                # Update the permission list ---
                 if not hasattr(self, 'portal_access_list'):
                     self.portal_access_list = []
                 
-                # Add the path to the list so the checker can see it
                 if sandboxed_path not in self.portal_access_list:
                     self.portal_access_list.append(sandboxed_path)
                 
                 widgets = self.portal_widgets.get(target_folder)
                 if widgets:
                     widgets["entry"].set_text(sandboxed_path)
-                    
-                    #  Perform the "Last Word" validation
                     if selected_folder_name != expected_folder_name:
                         msg = f"⚠️ <b>Warning:</b> You selected '{selected_folder_name}', but we expected '{expected_folder_name}'."
                         widgets["warning"].set_label(msg)
@@ -534,31 +828,36 @@ class DialogMixin:
                         widgets["entry"].remove_css_class("error")
                         widgets["entry"].add_css_class("success")
 
-                # Proceed with saving the permission and toggling the switch...
-                safe_key = self.get_safe_key(target_folder)
-                setattr(self, f"active_portal_{safe_key}", sandboxed_path)
+                # 3. SPECIAL HANDLING: If this was the Plasma systemd folder, refresh the setup dialog
+                if "systemd/user" in target_folder:
+                    # This forces the status icons (the 4 boxes) to update to green immediately
+                    self.show_plasma_setup_dialog()
+
+            # Existing switch reactivation logic
             target_switch = getattr(self, 'last_toggled_switch', None)
-            
             if target_switch:
-                # Determine which ID to block based on which switch it is
-                # (You can store the ID on the widget to make this easier)
                 handler_id = None
-                if target_switch == self.gnome_switch:
-                    handler_id = self.gnome_handler_id
-                elif target_switch == self.plasma_switch:
-                    handler_id = self.plasma_handler_id
-                # ... add other switches ...
+                if target_switch == getattr(self, 'gnome_switch', None):
+                    handler_id = getattr(self, 'gnome_handler_id', None)
+                elif target_switch == getattr(self, 'plasma_refresh_switch', None):
+                    handler_id = getattr(self, 'plasma_handler_id', None)
 
                 if handler_id:
                     target_switch.handler_block(handler_id)
                     target_switch.set_active(True)
                     target_switch.handler_unblock(handler_id)
                 else:
-                    # Fallback if ID is missing: just set active (might trigger dialog)
                     target_switch.set_active(True)
+                    
+            if self.is_plasma_refresh_ready():
+                    # Block the signal so we don't trigger a recursive call or toast
+                    self.plasma_refresh_switch.handler_block(self.plasma_handler_id)
+                    self.plasma_refresh_switch.set_active(True)
+                    self.plasma_refresh_switch.handler_unblock(self.plasma_handler_id)
                 
         except Exception as e:
             print(f"Portal Error: {e}")
+
             
     def get_safe_key(self, folder_path):
         """
@@ -651,12 +950,47 @@ class DialogMixin:
             
             # --- ROUTING & DIALOG LOGIC ---
             if missing_permission:
+                self.clear_specific_portal_cache(folder_pattern)
                 self.last_toggled_switch = widget
                 if feature_name in ["Zen", "YouTube"]:
                     self.zen_permission_dialog(feature_name, folders)
                 else:
                     self.show_permission_dialog(feature_name, folders)
                 widget.set_active(False)
+                
+    def clear_specific_portal_cache(self, target_folder):
+        # 1. Clear from memory immediately
+        safe_key = self.get_safe_key(target_folder)
+        attr_name = f"active_portal_{safe_key}"
+        if hasattr(self, attr_name):
+            delattr(self, attr_name)
+
+        # 2. Remove only the specific entry from the JSON file
+        data_dir = GLib.get_user_data_dir()
+        config_file = os.path.join(data_dir, "portal_cache.json")
+        
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, 'r') as f:
+                    cache = json.load(f)
+                
+                if target_folder in cache:
+                    del cache[target_folder]
+                    # Rewrite the file with the remaining valid paths
+                    with open(config_file, 'w') as f:
+                        json.dump(cache, f, indent=4)
+                    print(f"Cleared {target_folder} from cache. Others preserved.")
+            except Exception as e:
+                print(f"Error updating cache: {e}")
+
+        # 3. Update the UI Entry if it's currently visible
+        if hasattr(self, 'portal_widgets') and target_folder in self.portal_widgets:
+            w = self.portal_widgets[target_folder]
+            w["entry"].set_text("")
+            w["entry"].remove_css_class("success")
+            w["entry"].set_placeholder_text("Permission lost, please re-select...")
+
+        
                 
                 
     def add_folder_action(self, switch_row, feature_name, folders):

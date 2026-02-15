@@ -1,17 +1,37 @@
 @use 'brown' as *;
 canvas {
-    background-color: $primary; 
+  background-color: #{$primary};
+
 }
 
 /* Only target these when they are inside a YouTube component */
-ytd-app h1, 
-ytd-app h2, 
+ytd-app h1,
+ytd-app h2,
 ytd-app h3,
-ytd-app yt-formatted-string span:not(.ytp-time-current):not(.ytp-time-duration), 
-ytd-app div#contentText, 
+ytd-app yt-formatted-string span:not(.ytp-time-current):not(.ytp-time-duration),
+ytd-app div#contentText,
 ytd-app #video-title {
-    color: #{$text} !important;
+  color: #{$text} !important;
 }
+
+/* Universal text override for the entire YouTube app */
+ytd-app, 
+ytd-app *, 
+ytd-browse,
+ytd-watch-flexy {
+  color: #{$text} !important;
+  --iron-icon-fill-color: #{$text} !important; /* Forces icons to match text */
+}
+
+/* Fix for specific elements that often resist universal selectors */
+    ytd-app span, 
+    ytd-app a, 
+    ytd-app yt-formatted-string, 
+    ytd-app #video-title, 
+    ytd-app #content-text,
+    ytd-app .yt-core-attributed-string {
+      color: #{$text} !important;
+    }
 
 :root, html[dark], [dark] {
   --yt-spec-base-background: #{$secondary} !important;
@@ -21,21 +41,133 @@ ytd-app #video-title {
   --yt-spec-frosted-glass-desktop: #{$primary} !important;
   --yt-spec-text-primary: #{$text} !important;
   --yt-spec-text-secondary: #{$text} !important;
-  --yt-spec-text-disabled: #{$tertiary} !important;
+  --yt-spec-text-disabled: #bf6056 !important;
   --yt-spec-call-to-action: #{$text} !important;
   --yt-spec-app-drawer: #{$primary} !important;
-  
 }
 
 /* Targets the app-drawer content container */
-#contentContainer[class*="tp-yt-app-drawer"] {
-    background-color: #{$primary} !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+#contentContainer[class*=tp-yt-app-drawer] {
+  background-color: #{$primary} !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
-
 
 ytd-mini-guide-renderer.style-scope.ytd-app {
-    background-color: #{$primary} !important;
-    border-right: 1px solid #{$secondary} !important;
+  background-color: #{$primary} !important;
+  border-right: 1px solid #{$secondary} !important;
 }
 
+/* Explicitly restore the player text/icon colors */
+#ytd-player,
+#ytd-player *,
+.html5-video-player,
+.html5-video-player * {
+  color: #ffffff !important;
+  --iron-icon-fill-color: #ffffff !important;
+}
+
+
+/* Target the standard thumbnail overlay classes */
+ytd-thumbnail-overlay-time-status-renderer,
+ytd-thumbnail-overlay-time-status-renderer *,
+.ytd-thumbnail-overlay-time-status-renderer,
+#time-status,
+#text.ytd-thumbnail-overlay-time-status-renderer {
+  color: #ffffff !important;
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* modern YouTube (2024+) thumbnail overlay components */
+yt-thumbnail-overlay-time-status-view-model,
+yt-thumbnail-overlay-time-status-view-model *,
+.yt-core-attributed-string--white-text {
+  color: #ffffff !important;
+}
+
+/* 1. Target standard thumbnail time/duration overlays */
+ytd-thumbnail-overlay-time-status-renderer,
+ytd-thumbnail-overlay-time-status-renderer *,
+.ytd-thumbnail-overlay-time-status-renderer,
+#time-status,
+#text.ytd-thumbnail-overlay-time-status-renderer {
+  color: #ffffff !important;
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* 2. Target modern YouTube (2024-2026) view-model overlays */
+yt-thumbnail-overlay-time-status-view-model,
+yt-thumbnail-overlay-time-status-view-model *,
+yt-thumbnail-bottom-overlay-view-model,
+yt-thumbnail-bottom-overlay-view-model *,
+.yt-core-attributed-string--white-text {
+  color: #ffffff !important;
+}
+
+/* 3. Target "Watch Later" and "Add to Queue" hover icons */
+ytd-thumbnail-overlay-button-renderer,
+ytd-thumbnail-overlay-button-renderer *,
+ytd-thumbnail-overlay-toggle-button-renderer,
+ytd-thumbnail-overlay-toggle-button-renderer *,
+#hover-overlays,
+#hover-overlays * {
+  color: #ffffff !important;
+  --iron-icon-fill-color: #ffffff !important;
+}
+
+/* 4. Target playback progress bars (the red line) */
+#progress.ytd-thumbnail-overlay-resume-playback-renderer {
+  background-color: #ff0000 !important;
+}
+
+/* Target the generic badge-shape and its internal text/icons */
+badge-shape,
+badge-shape *,
+yt-thumbnail-badge-view-model,
+yt-thumbnail-badge-view-model *,
+yt-thumbnail-overlay-badge-view-model,
+yt-thumbnail-overlay-badge-view-model * {
+  color: #ffffff !important;
+  --iron-icon-fill-color: #ffffff !important;
+}
+
+/* Specifically target the "Live" and "New" badges often found in thumbnails */
+.yt-core-attributed-string--white-text,
+.yt-spec-badge-shape--active,
+.yt-spec-badge-shape--default {
+  color: #ffffff !important;
+}
+
+ytd-app yt-thumbnail-view-model badge-shape {
+  color: #ffffff !important;
+}
+
+/* Target the Search Input Box */
+.ytSearchboxComponentInputBox,
+.ytSearchboxComponentInputBox input,
+#search-form.ytd-searchbox {
+  background-color: #{$primary} !important;
+  color: #{$text} !important; /* Keep text brown for contrast */
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Target the Suggestions Dropdown Container */
+.ytSearchboxComponentSuggestionsContainer,
+.sbdd_a, 
+.sbsb_a {
+  background-color: #{$primary} !important;
+  color: #{$text} !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+}
+
+/* Ensure the individual suggestion rows also take the color */
+.ytSearchboxComponentSuggestionItem:hover,
+.sbsb_c:hover,
+.sbsb_d {
+  background-color: #{$secondary} !important; /* Use your primary color for hover */
+}
+
+/* Fix for the magnifying glass icons in suggestions */
+.sbpqs_a, .sbic_sb {
+  filter: invert(1) brightness(0.2); /* Makes icons dark brown-ish */
+}

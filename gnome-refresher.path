@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch for GNOME Shell refresh trigger
+
+[Path]
+# Adjust this path to where your Flatpak data is stored
+PathChanged=%h/.var/app/io.github.schwarzen.colormydesktop/data/colormydesktop/refresh.trigger
+
+[Install]
+WantedBy=paths.target

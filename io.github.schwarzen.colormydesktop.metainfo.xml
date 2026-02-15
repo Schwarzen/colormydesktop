@@ -90,6 +90,18 @@
   </provides>
   
 <releases>
+  <release version="0.10.5" date="2026-02-15">
+    <description>
+      <p>Version 0.10.5 includes the following updates:</p>
+      <ul>
+        <li>Added auto refresh/apply for GNOME and KDE Plasma themes</li>
+        <li>Added color preview with mockup showing selected colors</li>
+        <li>Added color selection menu and color picker tool</li>
+        <li>Updated Vesktop UI to be more modern</li>
+        <li>Updated Zen browser and the Zen Youtube page UI with more consistent colors</li>
+      </ul>
+    </description>
+  </release>
   <release version="0.10.4" date="2026-01-30">
     <description>
       <p>Version 0.10.4 includes the following updates:</p>
@@ -127,11 +139,6 @@
   <release version="0.9.4" date="2026-01-07">
     <description>
       <p>Version 0.9.4: Name migration.</p>
-    </description>
-  </release>
-  <release version="0.9.3" date="2026-01-06">
-    <description>
-      <p>Version 0.9.3: Numerous CSS UI fixes.</p>
     </description>
   </release>
 </releases>

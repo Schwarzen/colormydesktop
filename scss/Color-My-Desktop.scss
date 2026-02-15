@@ -1,83 +1,228 @@
 @use 'brown' as *;
-
 .theme-dark,
 .theme-dark span:not([class*=username]):not([class*=mention]):not([style*=color]),
 .theme-dark div:not([class*=username]):not([style*=color]), .theme-light,
 .theme-light span:not([class*=username]):not([class*=mention]):not([style*=color]),
 .theme-light div:not([class*=username]):not([style*=color]) {
   color: #{$text} !important;
-
+  
 }
 
 .theme-dark, .theme-light {
   background-color: #{$primary} !important;
-  
 }
 
-/*Bottom left user window and mute buttons*/
-[class*="container"] {
-  background-color: #{$primary} !important;
+
+/*Top channel bar in server window*/
+[class*=container] {
+  background-color: transparent !important;
+  color: #{$text} !important;
 }
 
-[class*="panels"]::before {
+[class*=panels]::before {
   content: "";
   position: absolute;
   /* Negative values expand the background outward to touch neighboring elements */
   top: -5px;
   bottom: -5px;
   left: -5px;
-  right: -5px;
+  right: -15px;
   background-color: #{$primary} !important;
   z-index: -1; /* Pushes the fill behind the actual content */
   pointer-events: none; /* Ensures you can still click the buttons/text */
-  box-shadow: 0 0 10px 5px color-mix(in srgb, #{$primary}, black 20%) !important
+  box-shadow: 0 0 10px 5px color-mix(in srgb, #{$primary}, black 20%) !important;
 }
 
-
-
 /* Using ::before to create an "underlay" that fills gaps */
-
-
 /*chat box*/
-[class*="container_b7e1cb"] {
+[class*=container_b7e1cb] {
   background-color: #{$secondary} !important;
 }
 
-
-/*side bar background */
-[class*="content"] {
-  background-color: #{$primary} !important;
+/*side bar contents */
+[class*=content] {
+  background-color: transparent !important;
 }
 
 /*username above message content */
-[class*="contents"] {
+[class*=contents] {
   background-color: #{$secondary} !important;
 }
 
-/*side bar scroller (must be above scrollerInner)*/
-[class*="scroller"] {
+/*side bar scroller (must be above scrollerInner) (background element)*/
+[class*=scroller] {
   background-color: #{$primary} !important;
+  box-shadow: inset 8px 8px 12px rgba(0, 0, 0, 0.09) !important;
 }
-
 
 /* inner message window area */
-[class*="scrollerInner"] {
+[class*=scrollerInner] {
   background-color: #{$secondary} !important;
 }
 
+/* Target the actual text area wrapper */
+[class*=channelTextArea]::before {
+  content: "";
+  position: absolute;
+  background-color: #{$primary} !important;
+  border: none !important;
+  border-color: #{$primary} !important;
+  box-shadow: none !important;
+  outline: none !important;
+  top: -5px;
+  bottom: -5px;
+  left:-5px;
+  right: -25px;
+}
+/* text entry/ message box */
+[class*=scrollableContainer]::before {
+  content: "";
+  position: absolute;
+  background-color: #{$primary} !important;
+  border: none !important;
+  border-color: #{$secondary} !important;
+  box-shadow: none !important;
+  outline: none !important;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+}
 
-
-
-
-[class*="scrollableContainer"] {
+[class*=searchBar] {
   background-color: #{$primary} !important;
 }
 
-[class*="searchBar"] {
-  background-color: #{$primary} !important;
-}
-
-[class*="form"] {
+[class*=form] {
   background-color: #{$secondary} !important;
 }
 
+nav[class^="container_"], 
+section[class^="container_"] {
+  border: none !important;
+}
+
+/* Channel list and Member list hover/selected */
+[class*=interactive_]:hover,
+[class*=member_]:hover,
+[class*=channel_][class*=selected_] [class*=layout_] {
+  background-color: #{$tertiary}66 !important;
+}
+
+/* Sidebar "Selected" Pill (The little white bar on the left) */
+[class*=item_][style*="height: 40px"] {
+  background-color: #{$tertiary} !important;
+}
+
+/* Fix for Tooltips (Popups when hovering over icons) */
+[class*=tooltip_] {
+  background-color: #{$tertiary} !important;
+
+}
+
+/* 1. Target the internal layout and name wrappers to be transparent */
+[class*=interactive_]:hover [class*=layout_],
+[class*=member_]:hover [class*=inner_],
+[class*=member_]:hover [class*=layout_],
+[class*=channel_] [class*=layout_] {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* 2. Target the specific "Link" or "Button" wrapper inside channels */
+[class*=channel_] [class*=link_] {
+  background-color: transparent !important;
+}
+
+/* 3. Ensure no border-radius conflicts are making "ghost" boxes */
+[class*=layout_] {
+  border: none !important;
+}
+
+/* Unread channel pill (left side) and Mention badges (numbers) */
+[class*=unread_],
+[class*=mention_],
+[class*=numberBadge_],
+[class*=lowerBadge_] {
+  background-color: #{$tertiary} !important;
+  color: #{$text} !important; /* White text on pink looks best */
+}
+
+/* The "New Messages" bar that appears inside chat */
+[class*=newMessagesBar_] {
+  background-color: #{$tertiary} !important;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* The Home button (Discord icon) when active/hovered */
+[class*=homeIcon_] {
+  color: #{$tertiary} !important;
+}
+
+/* The little white 'pill' on the left side of the server list */
+[class*=item_][class*=selected_],
+[class*=item_][class*=hover_] {
+  background-color: #{$tertiary} !important;
+}
+
+/* Settings toggles (Checkboxes/Switches) */
+[class*=container_][style*="background-color: rgb(35, 165, 90)"], /* Green 'ON' state */
+[class*=container_][class*=checked_] {
+  background-color: #{$tertiary} !important;
+  
+}
+
+/* Volume sliders and seek bars */
+[class*=slider_] [class*=barFill_] {
+  background-color: #{$tertiary} !important;
+}
+
+[class*=subtitleContainer] {
+  background-color: #{$secondary} !important;
+  border-top: none !important;
+  box-shadow: none !important;
+}
+
+[class*=children_]::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+}
+
+[class*=videoGrid] {
+  background-color: #{$primary} !important;
+  border-top: none !important;
+  box-shadow: inset 8px 8px 12px rgba(0, 0, 0, 0.10) !important;
+}
+
+/* Target the main chat area and its content wrapper */
+[class*=chat_] {
+  border-top: none !important;
+  box-shadow: inset 8px 8px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+[class*=chatContent_] {
+  border-top: none !important;
+    /* Offset-X: -5px (Left), Offset-Y: -5px (Top), Blur: 15px */
+  box-shadow: inset 8px 8px 12px rgba(0, 0, 0, 0.25) !important;
+  
+
+}
+
+/* Sometimes the line is an "after" pseudo-element on the header */
+[class*=container_][class*=themed_]::after {
+  display: none !important;
+  content: none !important;
+}
+
+[class*=buttonSection] {
+  background-color: #{$secondary} !important;
+}
+
+[class*=experimentOverlayTitle] {
+  background-color: #{$secondary} !important;
+}
+
+[class*=overlayButton] {
+  background-color: #{$secondary} !important;
+}

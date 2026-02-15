@@ -11,6 +11,7 @@ SASS	      = $(VENV_DIR)/bin/sass
 # Destinations
 SCSS_DATA_DIR = $(APP_DATA_DIR)/scss
 KDE_DIR = $(APP_DATA_DIR)/KDE
+REFRESHER_DIR = $(APP_DATA_DIR)/refresher
 BIN_DIR       = $(HOME)/.local/bin
 DESKTOP_FILE  = $(HOME)/.local/share/applications/Color-My-Desktop.desktop
 
@@ -25,6 +26,10 @@ install: setup
 	@echo "Installing SCSS partials..."
 	@mkdir -p $(SCSS_DATA_DIR)
 	install -m 644 scss/*.scss $(SCSS_DATA_DIR)
+	install -m 644 palettes/*.scss $(SCSS_DATA_DIR)
+
+#	@mkdir -p $(REFRESHER_DIR)
+#	install -m 644 refresher/* $(REFRESHER_DIR)
 
 	@echo "Installing KDE data recursively..."
 	mkdir -p $(KDE_DIR)
@@ -47,7 +52,7 @@ install: setup
 	# Copy files to the stable APP_DATA_DIR so they never disappear
 	cp main.py $(APP_DATA_DIR)/color-my-desktop
 	mkdir -p $(APP_DATA_DIR)/colormydesktop/
-	cp colormydesktop/*.py $(APP_DATA_DIR)/colormydesktop/
+	cp colormydesktop/* $(APP_DATA_DIR)/colormydesktop/
 
 
 	@echo "Creating desktop launcher..."
@@ -55,9 +60,10 @@ install: setup
 	@echo "Type=Application" >> $(DESKTOP_FILE)
 	@echo "Name=Color My Desktop" >> $(DESKTOP_FILE)
 	@echo "Comment=GNOME Theme Manager" >> $(DESKTOP_FILE)
-	# Point to the STABLE venv and STABLE script location
-	@echo "Exec=$(VENV_PYTHON) $(APP_DATA_DIR)/color-my-desktop" >> $(DESKTOP_FILE)
-
+	# Use the full path to the python inside the venv
+	@echo "Exec=$(VENV_DIR)/bin/python3 $(APP_DATA_DIR)/color-my-desktop" >> $(DESKTOP_FILE)
+	# ADD THIS: Sets the working directory to where the code lives
+	@echo "Path=$(APP_DATA_DIR)" >> $(DESKTOP_FILE)
 	@echo "Terminal=false" >> $(DESKTOP_FILE)
 	@echo "Categories=Settings;GNOME;GTK;" >> $(DESKTOP_FILE)
 

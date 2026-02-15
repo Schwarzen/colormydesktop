@@ -1,0 +1,9 @@
+[Unit]
+Description=GNOME Shell Refresher Service
+
+[Service]
+Type=oneshot
+# Directly sets the theme to empty, waits, then forces "Color-My-Desktop"
+ExecStart=/bin/bash -c 'dconf write /org/gnome/shell/extensions/user-theme/name "\x27\x27"; sleep 0.2; dconf write /org/gnome/shell/extensions/user-theme/name "\x27Color-My-Desktop\x27"'
+
+

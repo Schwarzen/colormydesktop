@@ -15,7 +15,7 @@ class AdvancedMixin:
         
                 # Sub-page Header
         sub_header = Adw.HeaderBar()
-        sub_page_box.append(sub_header) #
+        sub_page_box.append(sub_header)
         sub_pref_page = Adw.PreferencesPage()
         sub_page_box.append(sub_pref_page)
 
@@ -26,6 +26,36 @@ class AdvancedMixin:
 
         sub_page_box.append(sub_group)
         sub_pref_page.add(sub_group)
+
+        if css_id == "KDE_custom":
+            self.plasma_refresh_row = Adw.ActionRow(
+                title="Auto-Reload Shell Theme",
+                subtitle="Requires one-time setup to refresh Plasma on the host"
+            )
+            
+            setup_btn = Gtk.Button(label="Setup")
+            setup_btn.add_css_class("suggested-action")
+            setup_btn.set_valign(Gtk.Align.CENTER)
+            # Connect to the Gio-based install function
+            # No lambda needed
+            setup_btn.connect("clicked", self.show_plasma_setup_dialog)
+
+            
+            # Use Gtk.Switch here, not Adw.Switch
+            self.plasma_refresh_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
+
+            self.plasma_refresh_switch.connect("notify::active", self.on_plasma_refresh_toggled)
+            self.plasma_handler_id = self.plasma_refresh_switch.connect("notify::active", self.on_plasma_refresh_toggled)
+            
+            
+            self.plasma_refresh_row.add_suffix(setup_btn)
+            self.plasma_refresh_row.add_suffix(self.plasma_refresh_switch)
+            
+            sub_group.add(self.plasma_refresh_row)
+            self.plasma_refresh_switch.set_active(self.is_plasma_refresh_ready())
+            self.check_plasma_refresh_status()
+
+
         
         #  SPECIFIC FOR GNOME-SHELL ONLY
         if css_id == "system_custom":
@@ -66,6 +96,38 @@ class AdvancedMixin:
             self.trans_switch.set_active(False) # Default solid
             sub_group.add(self.trans_switch)
     
+                # --- AUTO REFRESH TOGGLE ---
+            is_ready = self.is_gnome_refresh_ready()
+            status_text = "Ready" if is_ready else "Not Setup"
+
+            #  Pass the variable DIRECTLY into the constructor
+            self.gnome_refresh_row = Adw.ActionRow(
+                title="Auto-Reload Shell Theme",
+                subtitle=status_text
+            )
+            
+            setup_btn = Gtk.Button(label="Setup")
+            setup_btn.add_css_class("suggested-action")
+            setup_btn.set_valign(Gtk.Align.CENTER)
+            # Connect to the Gio-based install function
+            # No lambda needed
+            setup_btn.connect("clicked", self.show_gnome_setup_dialog)
+
+            
+            # Use Gtk.Switch here, not Adw.Switch
+            self.refresh_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
+            self.refresh_switch.connect("notify::active", self.on_gnome_refresh_toggled)
+            self.gnome_handler_id = self.refresh_switch.connect("notify::active", self.on_gnome_refresh_toggled)
+            
+            
+            self.gnome_refresh_row.add_suffix(setup_btn)
+            self.gnome_refresh_row.add_suffix(self.refresh_switch)
+            
+            sub_group.add(self.gnome_refresh_row)
+
+            self.refresh_switch.set_active(self.is_gnome_refresh_ready())
+            self.check_gnome_refresh_status()
+
         # SPECIFIC FOR NAUTILUS/FILES 
         if css_id == "nautilus_custom":
             #  ADD THE CONTROLS (Live-Syncing)
@@ -130,13 +192,14 @@ class AdvancedMixin:
 
         # Run once initially to set the correct label on load
         update_status()
+        self.check_gnome_refresh_status()
 
 
         box_button.set_child(btn_layout)
         box_button.connect("clicked", lambda b: self.nav_view.push(sub_nav_page))
         self.flowbox.append(box_button)
         
-        # Store these as attributes if you need to access them for building
+        # Store these as attributes
         # Example: self.adv_toggles[css_id] = toggle
         
     def show_reset_instructions(self, widget):

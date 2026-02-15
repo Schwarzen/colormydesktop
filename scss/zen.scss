@@ -1,11 +1,31 @@
 @use 'brown' as *;
 :root {
-    --zen-colors-primary: #{$primary} !important; /* Your SASS variable */
-    --zen-main-browser-background: #{$primary} !important;
-    --zen-color-brand-primary: #{$secondary} !important;
-    --zen-container-bg: #{$secondary} !important;
-    --zen-sidebar-background: #{$secondary} !important; /* Forces the sidebar bg */
-    --zen-compact-mode-background: #{$secondary} !important; /* Targets compact mode specifically */
+ 
+  --zen-colors-primary: #{$primary} !important; /* Your SASS variable */
+  --zen-main-browser-background: #{$primary} !important;
+  --zen-color-brand-primary: #{$secondary} !important;
+  --zen-container-bg: #{$secondary} !important;
+  --zen-sidebar-background: #{$secondary} !important; /* Forces the sidebar bg */
+  --zen-compact-mode-background: #{$secondary} !important; /* Targets compact mode specifically */
+  --zen-colors-tertiary: #{$text} !important;
+  --zen-colors-secondary-text: #{$text} !important;
+  --zen-colors-primary-text: #{$text} !important;
+}
+
+/* Target the URL bar text specifically */
+#urlbar-input, 
+#urlbar-scheme, 
+.urlbar-input-box,
+#searchbar {
+  color: #{$text} !important;
+  --panel-description-color: #{$text} !important;
+}
+
+/* Fix the text inside the URL bar results dropdown */
+.urlbarView-row, 
+.urlbarView-title, 
+.urlbarView-url {
+  color: #{$text} !important;
 }
 
 
@@ -27,4 +47,37 @@
   background-color: var(--zen-main-browser-background) !important;
 }
 
+/* Ensure tab text and titles are caught */
+.tab-label, 
+.tab-content, 
+#titlebar, 
+#nav-bar,
+toolbarbutton {
+  color: #{$text} !important;
+}
+
+/* Target ONLY the browser toolbars and sidebars */
+#nav-bar, 
+#titlebar, 
+#sidebar-box, 
+#PersonalToolbar,
+#statuspanel-label {
+  color: #{$text} !important;
+}
+
+/* This ensures it applies to Zen's specific sidebar components */
+.zen-sidebar-item, 
+.zen-sidebar-item *,
+#zen-sidebar-container * {
+  color: #{$text} !important;
+}
+
+
+/* Fix for icons to match your brown text */
+toolbarbutton image, 
+.toolbarbutton-icon, 
+.zen-icon {
+  fill: #{$text} !important;
+  context-fill: #{$text} !important;
+}
 
