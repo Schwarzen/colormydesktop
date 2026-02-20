@@ -23,9 +23,27 @@ allowing for easy and uniform customization of your desktop environment.
 
 ## Install:
 
+For a permission free, fully sandboxed, flatpak version please download from flathub
+
+<a href="https://flathub.org/en/apps/io.github.schwarzen.colormydesktop">
+  <img src="https://raw.githubusercontent.com/flathub-infra/assets/refs/heads/main/buttons/template/download.svg" width="240"/>
+</a>
+
+&nbsp;
+
+
+If you prefer a non-sandbox native install, download the latest stable release from github and build from source
+
+
+<a href="https://github.com/Schwarzen/colormydesktop/releases/latest">
+   <img src="https://img.shields.io" height="40" alt="Latest Release"/>
+</a>
+
+&nbsp;
+
+After downloading, navigate into the unpacked folder and run
+
 ```
-git clone https://github.com/Schwarzen/Color-My-Desktop.git
-cd Color-My-Desktop
 make install 
 ```
 
@@ -43,19 +61,35 @@ Open the Color-My-Desktop gui and either create a new profile, or select an exis
 
 
 <p>
-      <img width="60%" src="https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/Screenshot%20From%202026-01-06%2023-18-46.png" />
+      <img width="60%" src="https://raw.githubusercontent.com/Schwarzen/colormydesktop/assets/ss0.png" />
 </p>
-Or 
 
-Run the command <br>
+Then select which platforms/apps you want to generate themes for and press the build and apply butto.
 
-`color-my-desktop` <br>
+### First time setup:
 
-If you prefer the cli <br>
 
-You will then have the option to either create a new color profile or choose from an existing color profile to swap to.<br>
+* GNOME
+
+* KDE Plasma 
+
+* Zen-browser themes
+
+   * Zen-broswer requires an initial one time configuration to apply themes<br>
+   * these instructions are included in the application aswell.
+   
+     First you will need to enable user themes for zen. In your browser enter `about:config` into the url bar and search for `toolkit.legacyUserProfileCustomizations.stylesheets` <br>
+          click the arrow to set the value to "true" <br>
+
+     Then In your browser enter `about:profiles` into your url bar, look for the profile currently in use and click the "Open Directory" button <br>
+     open your "chrome" directory and copy the path to your "chrome" directory.
+
+     Finally in the Color My Desktop app, open the zen-browser permission dialog and paste the path of your current profiles chrome directory into the box as prompted.
+     You will now be able to correctly select this path in the app for exporting your custom zen themes.
+
 
 ### Features:
+
 Color My Desktop currently has these features: <br>
 * Picking hex color values for <br>
   * Primary (main color used on top bar, window bar, and main window elements)
@@ -63,13 +97,61 @@ Color My Desktop currently has these features: <br>
   * Tertiary (used mostly for accents and some backgrounds)
   * Text color.<br>
 * Apply colors to / create themes for
-   * GNOME
+  
+   * <details>
+        <summary>GNOME</summary>
+
+        <p align="center">
+        <img src="https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss3.png" width="48%"/>
+        <img src="https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss4.png" width="48%"/>
+        </p>
+
+      </details>
    * KDE-Plasma
-   * Zen-browser
-   * Youtube (Zen browser only)
-   * Vesktop
+   * <details>
+        <summary>Zen-browser</summary>
+
+      * Zen-broswer requires an initial one time configuration to apply themes<br>
+      * these instructions are included in the application aswell.
+      
+        First you will need to enable user themes for zen. In your browser enter `about:config` into the url bar and search for `toolkit.legacyUserProfileCustomizations.stylesheets` <br>
+             click the arrow to set the value to "true" <br>
+   
+        Then In your browser enter `about:profiles` into your url bar, look for the profile currently in use and click the "Open Directory" button <br>
+        open your "chrome" directory and copy the path to your "chrome" directory.
+   
+        Finally in the Color My Desktop app, open the zen-browser permission dialog and paste the path of your current profiles chrome directory into the box as prompted.
+        You will now be able to correctly select this path in the app for exporting your custom zen themes.
+
+       
+      </details>
+
+
+   * <details>
+        <summary>Youtube (Zen browser only)</summary>
+
+        <p align="center">
+        <img src="https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss6.png" width="48%"/>
+        <img src="https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss5.png" width="48%"/>
+        </p>
+
+      </details>
+
+   * <details>
+        <summary>Vesktop</summary>
+
+        <p align="center">
+        <img src="https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss9.png" width="48%"/>
+        <img src="https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss10.png" width="48%"/>
+        </p>
+
+      </details>
    * Papirus Icons
-   * GTK4 Apps
+   * <details>
+        <summary>GTK4 Apps</summary>
+      
+        <img src="https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss2.png" width="75%" />
+      </details>
 
 
 
@@ -77,10 +159,7 @@ Color My Desktop currently has these features: <br>
 
 
 
-<img src="https://github.com/user-attachments/assets/1139419e-8ea9-4ad4-b198-0d8ea54a7c5c" width="400" height="600" align="left" />
 
-
-<img src="https://raw.githubusercontent.com/Schwarzen/Color-My-Desktop/assets/ss2.png" width="75%" />
 
 
 <br clear="left" />
@@ -88,10 +167,12 @@ Color My Desktop currently has these features: <br>
 ### Finishing steps:
 
 * GNOME
-   * Once the theme has finished compiling, open the gnome tweaks application and change your shell theme to "Color-My-Desktop"<br>
+   * For regular installs auto apply/refresh is enabled by default for GNOME shell themes (requires setup in flatpak installs), if not using auto apply/refresh, you will need to set the theme manually.
+   * To manually change themes, once the theme has finished compiling, open the gnome tweaks application and change your shell theme to "Color-My-Desktop"<br>
      Some apps may require logging out to refresh their colors. <br>
 
 * KDE
+   * For regular installs auto apply/refresh is enabled by default for Plasma themes (requires setup in flatpak installs), if not using auto apply/refresh, you will need to set the theme manually.
    * Once the theme has finished compiling, open the system settings, navigate to the "Colors & Themes" and change your "Colors" and "Plasma Style" to Color-My-Desktop.  <br>
 
 * Vesktop
@@ -99,20 +180,10 @@ Color My Desktop currently has these features: <br>
      and press the "load missing themes" button, then activate the Color-My-Desktop theme.
 
 * Zen-browser/youtube
-   * Zen-broswer has two installation options <br>
-   
-     Both will require loading css overides to be enabled, to allow this, in your browser enter `about:config` into the url bar and search for `toolkit.legacyUserProfileCustomizations.stylesheets` <br>
-          click the arrow to set the value to "true" <br>
-  
-        * Method 1 - New profile ( better for fresh zen install, if using existing profile, new profile will NOT use any existing logins/data from existing profile) <br>
+   * Please make sure you complete the Zen-browser/youtube initial setup, the Zen-browser themes will then autmatically refresh after the browser is closed and re-opened
 
-          run `zen-browser -p` or `flatpak run io.github.zen_browser.zen -p` for flatpak or type `about:profiles` into the url bar, then<br>
-          create a new profile named "Color-My-Desktop" in the folder `~/.local/share/Color-My-Desktop/zen-profile/`
 
-        * Method 2 - Existing profile <br>
-          In your browser enter `about:profiles` into your url bar, look for the profile currently in use and click the "Open Directory" button <br>
-          then copy the two css files from `~/.local/share/Color-My-Desktop/zen-copy/` into the `chrome` folder inside your active profiles directory <br>
-          Zen will now sync color updates from Color-My-Desktop when toggled. 
+
 
 
 
