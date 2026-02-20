@@ -1,5 +1,5 @@
 # Color-My-Desktop
-An easy to use tool for creating, managing, and applying custom color palettes to an auto generated gnome-shell/ KDE-Plasma / GTK apps theme. With options for creating/applying Vesktop, Zen-browser, and Youtube themes with your colors,<br>
+An easy to use tool for creating, managing, and applying custom color palettes to customm generated themes for the gnome-shell/ KDE-Plasma / GTK4 apps. With options for creating Vesktop, Zen-browser, and Youtube themes with your colors,<br>
 allowing for easy and uniform customization of your desktop environment.
 
 <img src="https://github.com/user-attachments/assets/6422dd01-cafa-432b-8a62-0f71a348aa6f" width="60%"/>
