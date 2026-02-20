@@ -5,9 +5,17 @@ allowing for easy and uniform customization of your desktop environment.
 <img src="https://github.com/user-attachments/assets/6422dd01-cafa-432b-8a62-0f71a348aa6f" width="60%"/>
 
 
+## Table of Contents
+* [Requirements](#requirements)
+* [How to Install](#install)
+* [Usage Instructions](#usage)
+* [First Time Setup](#first-time-setup)
+* [Features](#features)
+* [Finishing Steps](#finishing-steps)
+* [Screenshots](#screenshots)
+  
 
-
-## Requriements:
+# Requirements:
 
 ### GNOME
  * GNOME 49 (may work on older versions)
@@ -21,7 +29,7 @@ allowing for easy and uniform customization of your desktop environment.
 
  * KDE-Plasma 6
 
-## Install:
+# Install:
 
 For a permission free, fully sandboxed, flatpak version please download from flathub
 
@@ -54,7 +62,7 @@ to your .bashrc and run <br>
 `. ~/.bashrc`<br>
 to refresh <br>
 
-## Usage:
+# Usage:
 
 
 Open the Color-My-Desktop gui and either create a new profile, or select an existing to edit/apply. <br>
@@ -64,9 +72,9 @@ Open the Color-My-Desktop gui and either create a new profile, or select an exis
       <img width="60%" src="https://raw.githubusercontent.com/Schwarzen/colormydesktop/assets/ss0.png" />
 </p>
 
-Then select which platforms/apps you want to generate themes for and press the build and apply butto.
+Then select which platforms/apps you want to generate themes for and press the build and apply button.
 
-### First time setup:
+# First time setup:
 
 
 * GNOME
@@ -88,7 +96,7 @@ Then select which platforms/apps you want to generate themes for and press the b
      You will now be able to correctly select this path in the app for exporting your custom zen themes.
 
 
-### Features:
+# Features:
 
 Color My Desktop currently has these features: <br>
 * Picking hex color values for <br>
@@ -164,7 +172,7 @@ Color My Desktop currently has these features: <br>
 
 <br clear="left" />
 
-### Finishing steps:
+# Finishing steps:
 
 * GNOME
    * For regular installs auto apply/refresh is enabled by default for GNOME shell themes (requires setup in flatpak installs), if not using auto apply/refresh, you will need to set the theme manually.
@@ -198,7 +206,7 @@ navigate to the directory where you cloned the files
 make uninstall
 make clean
 ```
-## Screenshots:
+# Screenshots:
 
 <p align="center">
 <img width="45%" alt="Screenshot From 2025-12-28 15-07-21" src="https://github.com/user-attachments/assets/f4ddcbc8-d34d-4cd9-9354-94787883f6dd" />
