@@ -31,7 +31,7 @@ class DialogMixin:
 
     def setup_user_data(self):
         bundled_scss = "/app/share/color-my-desktop/scss"
-        bundled_palettes = "/app/share/color-my-desktop/palettes"
+        #bundled_palettes = "/app/share/color-my-desktop/palettes"
         # Inside Flatpak, XDG_DATA_HOME is usually /var/config/data/ or ~/.local/share/
         xdg_data = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
         user_scss_dir = os.path.join(xdg_data, "scss")
@@ -49,6 +49,18 @@ class DialogMixin:
                 print(f"Synced SCSS to: {user_scss_dir}")
             except Exception as e:
                 print(f"Error updating SCSS: {e}")
+                   
+
+
+
+        return user_scss_dir
+
+    def setup_palette_data(self):
+
+        bundled_palettes = self.PALETTES
+        user_scss_dir = self.SCSS_USR
+        
+
                    
 
         if os.path.exists(bundled_palettes):
@@ -72,8 +84,16 @@ class DialogMixin:
 
 
 
-
-
+    def on_refresh_palettes_clicked(self, button):
+        """Callback to trigger the palette sync logic."""
+        print("Refreshing palette data from bundle...")
+        user_path = self.setup_palette_data()
+        
+        # Optional: Show a notification in the UI if you have an Adw.ToastOverlay
+        print(f"Palettes are up to date in: {user_path}")
+        
+        # If your UI needs to reload the list of palettes, call that here:
+        # self.load_palettes_into_ui() 
 
 
 

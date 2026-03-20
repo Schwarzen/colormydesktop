@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Color My Desktop (Native)
+Comment=GNOME Theme Manager
+# We use absolute paths to your user-level venv and script
+Exec=/home/Warzen/.local/share/color-my-desktop/.venv/bin/python3 /home/Warzen/.local/bin/color-my-desktop
+Icon=io.github.schwarzen.colormydesktop
+Terminal=false
+Type=Application
+Categories=Settings;GNOME;GTK;

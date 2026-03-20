@@ -73,18 +73,18 @@ if [ -f "/.flatpak-info" ]; then
 
 else
     # We are native and have a local venv!
-    VENV="$HOME/.local/share/Color-My-Desktop/.venv/bin"
+    VENV="$HOME/.local/share/color-my-desktop/.venv/bin"
     SASS="$VENV/sass"
-    TARGET_DIR="$HOME/.local/share/Color-My-Desktop/scss"
-    SCSS_DIR="$HOME/.local/share/Color-My-Desktop/scss"
-    KDEcore="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop"
-    KDEtheme="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop-Plasma"
-    KDEcolors="$HOME/.local/share/Color-My-Desktop/KDE/Color-My-Desktop-Scheme.colors"
+    TARGET_DIR="$HOME/.local/share/color-my-desktop/scss"
+    SCSS_DIR="$HOME/.local/share/color-my-desktop/scss"
+    KDEcore="$HOME/.local/share/color-my-desktop/KDE/Color-My-Desktop"
+    KDEtheme="$HOME/.local/share/color-my-desktop/KDE/Color-My-Desktop-Plasma"
+    KDEcolors="$HOME/.local/share/color-my-desktop/KDE/Color-My-Desktop-Scheme.colors"
 
 
-    youtube_scss="$HOME/.local/share/Color-My-Desktop/scss/youtube.scss"
-    zen_scss="$HOME/.local/share/Color-My-Desktop/scss/zen.scss"
-    vencord_scss="$HOME/.local/share/Color-My-Desktop/scss/Color-My-Desktop.scss"
+    youtube_scss="$HOME/.local/share/color-my-desktop/scss/youtube.scss"
+    zen_scss="$HOME/.local/share/color-my-desktop/scss/zen.scss"
+    vencord_scss="$HOME/.local/share/color-my-desktop/scss/Color-My-Desktop.scss"
    
     # OUTPUTS
     output_KDE="$HOME/.local/share/plasma/look-and-feel"
@@ -94,15 +94,16 @@ else
     output_gtk4_css="$HOME/.config/gtk-4.0/gtk.css"
     output_gtk4dark_css="$HOME/.config/gtk-4.0/gtk-dark.css"
     output_vencord="$HOME/.config/vesktop/themes/Color-My-Desktop.css"
-    output_zen="$HOME/.local/share/Color-My-Desktop/scss/zen.css"
-    output_youtube="$HOME/.local/share/Color-My-Desktop/scss/youtube.css"
+    output_zen="${25}/zen.css"
+    output_youtube="${25}/youtube.css"
 
-    CSS_IMPORT_LINE="@import url(\"file://$HOME/.local/share/Color-My-Desktop/scss/youtube.css\");
+
+        CSS_IMPORT_LINE="@import url(\"youtube.css\");
 @-moz-document domain(youtube.com) {
 
 }"
 
-    CSS_IMPORT_LINE2="@import url(\"file://$HOME/.local/share/Color-My-Desktop/scss/zen.css\");"
+	CSS_IMPORT_LINE2="@import url(\"zen.css\");"
 
 
 

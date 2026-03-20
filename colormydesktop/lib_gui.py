@@ -29,12 +29,17 @@ if os.environ.get("FLATPAK_ID"):
     # Inside Flatpak, the script is at /app/bin/
     BASH_SCRIPT = "/app/bin/color-my-desktop-backend"
     SCSS_DIR = os.path.expanduser("~/.var/app/io.github.schwarzen.colormydesktop/data/scss")
+    SCSS_USR = os.path.expanduser("~/.var/app/io.github.schwarzen.colormydesktop/data/scss")
+
+    PALETTES = "/app/share/color-my-desktop/palettes"
     PYTHON_DIR = "/app/bin/colormydesktop"
 else:
     # Native install location
     BASH_SCRIPT = os.path.expanduser("~/.local/bin/color-my-desktop-backend")
-    SCSS_DIR = os.path.expanduser("~/.local/share/Color-My-Desktop/scss")
-    PYTHON_DIR = os.path.expanduser("colormydesktop")
+    SCSS_DIR = os.path.expanduser("~/.local/share/color-my-desktop/scss")
+    SCSS_USR = os.path.expanduser("~/.local/share/color-my-desktop/scss")
+    PALETTES = os.path.expanduser("~/.local/share/color-my-desktop/palettes")
+    PYTHON_DIR = os.path.expanduser("~/.local/bin/colormydesktop")
 
 
 class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
@@ -49,6 +54,8 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         self.load_all_cached_portals()
         self.is_plasma_refresh_ready()
         self.is_gnome_refresh_ready()
+        self.PALETTES = PALETTES
+        self.SCSS_USR = SCSS_USR
         
         
 
@@ -104,6 +111,8 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         self.combo_row.set_model(self.theme_list)
         self.combo_row.set_selected(0) # Force "Default" selection
         self.combo_row.connect("notify::selected", self.on_theme_select)
+        
+
 
                 # --- NEW PROFILE BUTTON ---
         new_profile_btn = Gtk.Button.new_from_icon_name("list-add-symbolic")
@@ -120,7 +129,22 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         self.delete_profile_btn.set_visible(False)
         
         # Hides the built-in arrow so only your button is visible
+        # --- REFRESH PALETTES BUTTON ---
+        self.refresh_palettes_btn = Gtk.Button.new_from_icon_name("view-refresh-symbolic")
+        self.refresh_palettes_btn.set_valign(Gtk.Align.CENTER)
+        self.refresh_palettes_btn.add_css_class("flat")
+        self.refresh_palettes_btn.set_tooltip_text("Sync Bundled Palettes")
+        
+        # Connect the button to your setup function
+        self.refresh_palettes_btn.connect("clicked", self.on_refresh_palettes_clicked)
 
+        # Add the buttons to the ComboRow suffix (right side)
+        self.combo_row.add_suffix(new_profile_btn)
+        self.combo_row.add_suffix(self.refresh_palettes_btn) # Added here
+        self.combo_row.add_suffix(self.delete_profile_btn)
+
+        # Add the row to the group
+        self.load_group.add(self.combo_row)
 
         
 
@@ -391,7 +415,7 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         self.gnome_switch.add_controller(cursor_controller)
 
 
-        # 6. Add the OVERLAY to your group, not the switch
+
         
               
         # Connect the signal to a handler that checks the specific folder
@@ -684,6 +708,18 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         self.nav_view.connect("popped", self.on_nav_popped)
 
         self.on_window_width_changed()
+        
+    def on_refresh_palettes_clicked(self, button):
+        """Callback to trigger the palette sync logic."""
+        print("Refreshing palette data from bundle...")
+        user_path = self.setup_palette_data()
+        
+        # Optional: Show a notification in the UI if you have an Adw.ToastOverlay
+        print(f"Palettes are up to date in: {user_path}")
+        
+        # If your UI needs to reload the list of palettes, call that here:
+        # self.load_palettes_into_ui() 
+        self.refresh_theme_list()
 
     def setup_subtitle_links(self):
         # 1. Use your search function to find the label
@@ -1286,12 +1322,13 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             # --- NATIVE LOGIC: Run dconf commands directly ---
             try:
                 # We toggle the theme to empty then back to your theme to force a refresh
-                cmd = (
-                    "/usr/bin/bash -c "
-                    "'dconf write /org/gnome/shell/extensions/user-theme/name \"\\'\\' \"; "
-                    "sleep 0.2; "
-                    "dconf write /org/gnome/shell/extensions/user-theme/name \"\\'Color-My-Desktop\\'\"'"
-                )
+                # Use a raw triple-quoted string to handle all internal quotes safely
+                cmd = r"""/usr/bin/bash -c '
+                dconf write /org/gnome/shell/extensions/user-theme/name " \"\" ";
+                sleep 0.2;
+                dconf write /org/gnome/shell/extensions/user-theme/name " \"Color-My-Desktop\" "
+                '"""
+
                 subprocess.Popen(cmd, shell=True)
                 print("Native: Direct GNOME refresh executed via dconf.")
             except Exception as e:

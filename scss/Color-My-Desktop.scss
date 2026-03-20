@@ -226,3 +226,11 @@ section[class^="container_"] {
 [class*=overlayButton] {
   background-color: #{$secondary} !important;
 }
+
+[class*=unreadBottom] {
+  background-color: transparent !important;
+}
+
+[class*=unreadTop] {
+  background-color: transparent !important;
+}
