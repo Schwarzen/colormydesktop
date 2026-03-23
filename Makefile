@@ -47,7 +47,7 @@ install: setup
 
 	# 2. Install the subfolder package to /app/bin/
 	install -d  $(BIN_DIR)/colormydesktop
-	install -m 644 colormydesktop/*.py $(BIN_DIR)/colormydesktop/
+	install -m 644 colormydesktop/* $(BIN_DIR)/colormydesktop/
 
 	# Copy files to the stable APP_DATA_DIR so they never disappear
 	cp main.py $(APP_DATA_DIR)/color-my-desktop
@@ -55,19 +55,32 @@ install: setup
 	cp colormydesktop/* $(APP_DATA_DIR)/colormydesktop/
 
 
+	# --- Update your icon install line ---
+	@echo "Installing Icon..."
+	@mkdir -p $(HOME)/.local/share/icons/hicolor/128x128/apps
+	install -m 644 io.github.schwarzen.colormydesktop.png $(HOME)/.local/share/icons/hicolor/128x128/apps/io.github.schwarzen.colormydesktop.png
+
+
 	@echo "Creating desktop launcher..."
 	@echo "[Desktop Entry]" > $(DESKTOP_FILE)
 	@echo "Type=Application" >> $(DESKTOP_FILE)
 	@echo "Name=Color My Desktop" >> $(DESKTOP_FILE)
 	@echo "Comment=GNOME Theme Manager" >> $(DESKTOP_FILE)
-	# Use the full path to the python inside the venv
 	@echo "Exec=$(VENV_DIR)/bin/python3 $(APP_DATA_DIR)/color-my-desktop" >> $(DESKTOP_FILE)
-	# ADD THIS: Sets the working directory to where the code lives
+	@echo "Icon=io.github.schwarzen.colormydesktop" >> $(DESKTOP_FILE) # CRITICAL: Must match the icon filename
 	@echo "Path=$(APP_DATA_DIR)" >> $(DESKTOP_FILE)
 	@echo "Terminal=false" >> $(DESKTOP_FILE)
 	@echo "Categories=Settings;GNOME;GTK;" >> $(DESKTOP_FILE)
+	# Add this to help GNOME link the window to the launcher
+	@echo "StartupWMClass=color-my-desktop" >> $(DESKTOP_FILE) 
 
 	@update-desktop-database $(HOME)/.local/share/applications
+# --- Update your icon cache line ---
+	@echo "Updating icon cache..."
+	@touch $(HOME)/.local/share/icons/hicolor
+# Use -t to ignore the missing index.theme file
+	gtk-update-icon-cache -t -f $(HOME)/.local/share/icons/hicolor
+
 	@echo "Installation successful! You can now launch Color-My-Desktop from the app list."
 
 # --- SETUP: VENV + NODE + SASS ---
@@ -110,6 +123,7 @@ uninstall:
 	rm -f $(HOME)/.local/bin/color-my-desktop.sh
 	rm -f $(HOME)/.local/bin/color-my-desktop
 	# Remove the launcher
+	rm -f $(HOME)/.local/share/icons/hicolor/scalable/apps/io.github.schwarzen.colormydesktop.svg
 	rm -f $(HOME)/.local/share/applications/color-my-desktop.desktop
 	# Update the desktop database so the icon disappears
 	@update-desktop-database $(HOME)/.local/share/applications

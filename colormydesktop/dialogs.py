@@ -59,9 +59,6 @@ class DialogMixin:
 
         bundled_palettes = self.PALETTES
         user_scss_dir = self.SCSS_USR
-        
-
-                   
 
         if os.path.exists(bundled_palettes):
             os.makedirs(user_scss_dir, exist_ok=True)
@@ -84,16 +81,7 @@ class DialogMixin:
 
 
 
-    def on_refresh_palettes_clicked(self, button):
-        """Callback to trigger the palette sync logic."""
-        print("Refreshing palette data from bundle...")
-        user_path = self.setup_palette_data()
-        
-        # Optional: Show a notification in the UI if you have an Adw.ToastOverlay
-        print(f"Palettes are up to date in: {user_path}")
-        
-        # If your UI needs to reload the list of palettes, call that here:
-        # self.load_palettes_into_ui() 
+
 
 
 

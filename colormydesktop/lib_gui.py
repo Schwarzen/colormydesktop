@@ -45,6 +45,7 @@ else:
 class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        
         self.portal_widgets = {}
         self.color_entries = {}
         self.setup_css_providers()
@@ -80,39 +81,221 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
      
         self.set_title("Color My Desktop")
         self.set_default_size(1200, 800)
+        self.set_decorated(False)
 
-   
+        # 1. THE BOTTOM LAYER (The Red "Tray")
+        # This is your "Z-Index 0"
+        self.drag_frame = Gtk.Box()
+        self.drag_frame.set_vexpand(True)
+        self.drag_frame.set_hexpand(True)
+        self.drag_frame.add_css_class("draggable-frame")
+
+        # Add drag logic to the bottom layer
+        drag_gesture = Gtk.GestureClick.new()
+        drag_gesture.connect("pressed", self.on_drag_pressed)
+        self.drag_frame.add_controller(drag_gesture)
+
+        # 2. THE TOP LAYER (Your UI)
+        # This is your "Z-Index 1"
         self.toast_overlay = Adw.ToastOverlay()
         self.nav_view = Adw.NavigationView()
+        self.toast_overlay.set_child(self.nav_view)
+        
+        # Give the UI layer a margin so the red "frame" is visible at the edges
+        self.toast_overlay.set_margin_start(20)
+        self.toast_overlay.set_margin_end(20)
+        self.toast_overlay.set_margin_top(10)
+        self.toast_overlay.set_margin_bottom(20)
+        self.toast_overlay.set_hexpand(True)
+        self.toast_overlay.set_vexpand(True)
+        
+        # IMPORTANT: Make this layer opaque so it hides the red underneath it
+        self.toast_overlay.add_css_class("ui-overlay-layer")
+
+        # 3. STACK THEM IN THE OVERLAY
+        self.root_overlay = Gtk.Overlay()
+        self.root_overlay.set_child(self.drag_frame)     # Bottom
+        self.root_overlay.add_overlay(self.toast_overlay) # Top
+        # --- THE CLOSE BUTTON ---
+        self.close_btn = Gtk.Button.new_from_icon_name("window-close-symbolic")
+        self.close_btn.add_css_class("close-btn-style")
+        self.close_btn.set_cursor_from_name("pointer") # Changes mouse to hand
+
+        # 1. THE FLOATING DRAG BAR
+        self.top_drag_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.top_drag_bar.set_hexpand(True)
+
+        # Make it tall enough to be easy to grab (e.g., 30px)
+        # Even if your margin is 10px, this can overlap the UI slightly
+
+
+        self.top_drag_bar.set_size_request(-1, 30)
+
+        # 2. POSITION IT IN THE OVERLAY
+        self.top_drag_bar.set_valign(Gtk.Align.START) # Stick to the very top
+        self.top_drag_bar.set_halign(Gtk.Align.FILL)  # Fill the width
+
+        # 3. ADD THE DRAG GESTURE
+        # This is much more reliable than "falling through" layers
+        drag_gesture = Gtk.GestureClick.new()
+        drag_gesture.connect("pressed", self.on_drag_pressed)
+        self.top_drag_bar.add_controller(drag_gesture)
+
+        # 4. ADD TO OVERLAY (Z-Index: Top)
+        # We add it AFTER the toast_overlay so it sits on top of everything
+        self.root_overlay.add_overlay(self.top_drag_bar)
+
+        # Optional: Add a grab cursor so users know it's draggable
+        self.top_drag_bar.set_cursor_from_name("grab")
+        
+        # 1. Use the name from your .desktop file (e.g., "com.your.app")
+        # This tells GTK to look into the system icon theme automatically.
+        self.app_icon = Gtk.Image.new_from_icon_name("io.github.schwarzen.colormydesktop")
+
+        # 2. Add it to your drag bar as before
+        self.app_icon.set_pixel_size(24)
+        self.app_icon.set_margin_start(10)
+        self.top_drag_bar.prepend(self.app_icon)
+
+
+        # Position in the red frame
+        self.close_btn.set_halign(Gtk.Align.END)
+        self.close_btn.set_valign(Gtk.Align.START)
+        self.close_btn.set_margin_top(4)
+        self.close_btn.set_margin_end(4)
+
+        self.close_btn.connect("clicked", lambda _: self.close())
+        self.root_overlay.add_overlay(self.close_btn)
+
+        # --- THE RED FRAME ---
+        # Make the red border show the "grab" cursor so users know they can drag it
+        self.drag_frame.set_cursor_from_name("grab")
+
+
+        # 2. POSITION THE BUTTON
+        # These properties place it in the top-right corner
+        self.close_btn.set_halign(Gtk.Align.END)
+        self.close_btn.set_valign(Gtk.Align.START)
+
+        # 3. ADD PADDING
+        # Since the red frame is 20px, we set margins to center it in the red area
+        self.close_btn.set_margin_top(5)
+        self.close_btn.set_margin_end(5)
+
+        # 4. ADD TO OVERLAY
+        # This adds the button as a new "layer" on top of everything
+        self.root_overlay.add_overlay(self.close_btn)
+
+        self.set_content(self.root_overlay)
+
+        # 4. CSS TO FIX THE COLORS
+        css_provider = Gtk.CssProvider()
+        css_style = """
+            .draggable-frame { background: @window_bg_color;
+                box-shadow: 0 10px 30px 5px rgba(0, 0, 0, 0.5);
+                border-radius: 16px; /* Match your UI corners */
+            
+            }
+            .ui-overlay-layer, preferencespage, .preferences-group {
+                box-shadow: none !important;
+                border: none;
+            }
+                /* Style the floating close button */
+            .close-btn-style {
+                color: white;
+                background: rgba(0, 0, 0, 0.2); /* Subtle dark background */
+                border-radius: 50%;
+                padding: 6px;
+            }
+
+            /* Highlight the button on hover */
+            .close-btn-style:hover {
+                background-color: #d7191c; /* A darker red */
+                box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            }
+            .accent {
+                /* Set the background to the system accent color */
+                background-color: var(--accent-bg-color);
+                /* Set the text color to the appropriate foreground color (usually white) */
+                color: rgb(100, 100, 100);
+                
+                border-top: 1px solid rgba(0, 0, 0, 0.1);
+                padding: 8px 12px;
+                margin-top: 4px;
+                font-weight: bold;
+            }
+
+            /* Ensure the text stays visible when hovered */
+            .accent:hover {
+                /* Slightly darken or lighten the background on hover */
+                background-color: shade(var(--accent-bg-color), 0.9);
+                color: var(--accent-fg-color);
+            }
+
+        """
+        css_provider.load_from_data(css_style.encode())
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), 
+            css_provider, 
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        # Main Page
         self.main_page_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-
-    
-        self.set_content(self.toast_overlay)           
-        self.toast_overlay.set_child(self.nav_view)   
-
-        #  BUILD THE MAIN PAGE CONTENT
-        self.header = Adw.HeaderBar()
-        self.main_page_content.append(self.header)
+        self.main_page_content.set_hexpand(True)
+        self.main_page_content.set_vexpand(True)
+ 
+        #  MAIN PAGE CONTENT
 
         self.page = Adw.PreferencesPage()
-        self.main_page_content.append(self.page)     
+        # Force the PreferencesPage to ignore its max-width
+        # Pass -1 for BOTH width and height to remove specific constraints
+        self.page.set_size_request(-1, -1) 
 
+        self.page.set_hexpand(True)     # Fill horizontal space
+        self.page.set_vexpand(True)     # Fill vertical space
+
+
+        # Some versions of Libadwaita add margins here; if needed, zero them out:
+        self.page.set_margin_start(0)
+        self.page.set_margin_end(0)
+        self.main_page_content.append(self.page)     
         self.group = Adw.PreferencesGroup()
         self.group.set_title("Theme Configuration")
      
+
         # SETUP GROUPS
-        self.load_group = Adw.PreferencesGroup(title="Profile Management")
+        self.load_group = Adw.PreferencesGroup(title="")
+        self.load_group.set_margin_start(0)
+        self.load_group.set_margin_end(0)
+        self.load_group.set_margin_top(0)
+        self.load_group.set_margin_bottom(0)
         self.load_group.set_name("load-group-id")
+        
+        
         self.page.add(self.load_group)
+
 
         # CREATE DROPDOWN WIDGETS - EXISTING 
         self.theme_list = Gtk.StringList.new(self.themes)
-        self.combo_row = Adw.ComboRow(title="Load Existing Profile")
-        self.combo_row.set_model(self.theme_list)
-        self.combo_row.set_selected(0) # Force "Default" selection
-        self.combo_row.connect("notify::selected", self.on_theme_select)
-        
+        # INSTALL BUTTON LIST (Single item)
+        self.install_item_list = Gtk.StringList.new(["Install Bundled Palettes"])
+        # create a store that specifically holds 'Gio.ListModel' objects
+        self.model_store = Gio.ListStore.new(Gio.ListModel)
+        self.model_store.append(self.theme_list)
+        self.model_store.append(self.install_item_list)
+        self.combined_model = Gtk.FlattenListModel.new(self.model_store)
 
+        # ATTACH TO COMBO ROW
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", self._on_factory_setup)
+        factory.connect("bind", self._on_factory_bind)
+
+        self.combo_row = Adw.ComboRow(title="Load Existing Profile")
+        self.combo_row.set_model(self.combined_model)
+        self.combo_row.set_factory(factory)
+        self.combo_row.connect("notify::selected", self.on_combo_changed)
+        
 
                 # --- NEW PROFILE BUTTON ---
         new_profile_btn = Gtk.Button.new_from_icon_name("list-add-symbolic")
@@ -128,19 +311,18 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         self.delete_profile_btn.set_tooltip_text("Delete Selected Profile")
         self.delete_profile_btn.set_visible(False)
         
-        # Hides the built-in arrow so only your button is visible
         # --- REFRESH PALETTES BUTTON ---
-        self.refresh_palettes_btn = Gtk.Button.new_from_icon_name("view-refresh-symbolic")
-        self.refresh_palettes_btn.set_valign(Gtk.Align.CENTER)
-        self.refresh_palettes_btn.add_css_class("flat")
-        self.refresh_palettes_btn.set_tooltip_text("Sync Bundled Palettes")
+        #self.refresh_palettes_btn = Gtk.Button.new_from_icon_name("view-refresh-symbolic")
+        #self.refresh_palettes_btn.set_valign(Gtk.Align.CENTER)
+        #self.refresh_palettes_btn.add_css_class("flat")
+        #self.refresh_palettes_btn.set_tooltip_text("Sync Bundled Palettes")
         
         # Connect the button to your setup function
-        self.refresh_palettes_btn.connect("clicked", self.on_refresh_palettes_clicked)
+        #self.refresh_palettes_btn.connect("clicked", self.on_refresh_palettes_clicked)
 
         # Add the buttons to the ComboRow suffix (right side)
         self.combo_row.add_suffix(new_profile_btn)
-        self.combo_row.add_suffix(self.refresh_palettes_btn) # Added here
+        #self.combo_row.add_suffix(self.refresh_palettes_btn)
         self.combo_row.add_suffix(self.delete_profile_btn)
 
         # Add the row to the group
@@ -206,7 +388,7 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
 
         # COLOR GROUP (The Hex Entries) ---
         self.color_group = Adw.PreferencesGroup()
-        self.color_group.set_title("Theme Colors")
+        self.color_group.set_title("")
         
         
         self.name_row = Adw.EntryRow(
@@ -286,7 +468,7 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
 
         
         self.preview_group = Adw.PreferencesGroup()
-        self.preview_group.set_title("Preview")
+        
         
 
 
@@ -376,10 +558,19 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         
         
         # Global Options Group
-      
-        self.group.set_title("Select themes to generate/apply")
+        self.group = Adw.PreferencesGroup()
         self.page.add(self.group)
+
+        # 2. Create an ActionRow to act as your "Group Header" inside the card
+        self.title_row = Adw.ActionRow()
+        self.title_row.set_title("Select themes to generate")
+        # Optional: add a subtle icon to make it look even better
+        self.title_row.set_icon_name("view-list-bullet-symbolic")
         
+        # 3. Add the title row to the group first
+        self.group.add(self.title_row)
+        self.title_row.add_css_class("title-4") # Makes it a standard GNOME header size
+
 
 
         # --- GNOME SHELL TOGGLE ---
@@ -709,16 +900,75 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
 
         self.on_window_width_changed()
         
+        
+    def on_drag_pressed(self, gesture, n_press, x, y):
+        # 1. Get the surface (must be a Gdk.Toplevel)
+        surface = self.get_native().get_surface()
+        
+        # 2. Get the device and timestamp from the event
+        event = gesture.get_last_event()
+        device = event.get_device()
+        timestamp = event.get_time()
+
+        if surface and device:
+            # 3. Use the GTK4 Gdk.Toplevel method: begin_move
+            # Parameters: (device, button, x, y, timestamp)
+            surface.begin_move(
+                device,
+                1,         # Left mouse button
+                x, y,      # Local coordinates (Surface-relative)
+                timestamp
+            )
+
+    def _on_factory_setup(self, factory, list_item):
+        # Create a container box to hold our label
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        label = Gtk.Label(xalign=0.5, hexpand=True)
+        box.append(label)
+        list_item.set_child(box)
+
+    def _on_factory_bind(self, factory, list_item):
+        box = list_item.get_child()
+        label = box.get_first_child()
+        item = list_item.get_item()
+        text = item.get_string()
+        
+        label.set_text(text)
+
+        if text == "Install Bundled Palettes":
+            # Apply the style to the BOX so the whole row turns blue/accented
+            box.add_css_class("accent")
+        else:
+            box.remove_css_class("accent")
+
+
+    def on_combo_changed(self, combo, pspec):
+        # 1. Get the selected item object from the model
+        selected_item = combo.get_selected_item()
+        if not selected_item:
+            return
+
+        # 2. Check if the item is a Gtk.StringObject (it should be)
+        # Then check the actual text string inside it
+        if selected_item.get_string() == "Install Bundled Palettes":
+            # --- RUN INSTALL LOGIC ---
+            self.on_refresh_palettes_clicked(None)
+            
+            # --- RESET SELECTION ---
+            # Jump back to 'Default' so the button doesn't stay 'Selected'
+            combo.set_selected(0)
+        else:
+            # --- RUN NORMAL THEME SELECTION ---
+            self.on_theme_select(combo, pspec)
+
+
+
+
+        
     def on_refresh_palettes_clicked(self, button):
-        """Callback to trigger the palette sync logic."""
         print("Refreshing palette data from bundle...")
         user_path = self.setup_palette_data()
-        
-        # Optional: Show a notification in the UI if you have an Adw.ToastOverlay
         print(f"Palettes are up to date in: {user_path}")
-        
-        # If your UI needs to reload the list of palettes, call that here:
-        # self.load_palettes_into_ui() 
         self.refresh_theme_list()
 
     def setup_subtitle_links(self):
