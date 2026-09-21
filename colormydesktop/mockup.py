@@ -20,7 +20,7 @@ class InteractiveMockup(Gtk.Box):
 
         self.update_colors({})
 
-        # 1. TOPBAR (CenterBox ensures the clock is always dead center)
+        #  TOPBAR (CenterBox ensures the clock is always dead center)
         topbar = Gtk.CenterBox()
         topbar.add_css_class("topbar")
         topbar.set_margin_top(10)
@@ -59,7 +59,7 @@ class InteractiveMockup(Gtk.Box):
         topbar.set_end_widget(right_box)
         self.append(topbar)
 
-        # 2. DESKTOP AREA (3x3 Grid)
+        #  DESKTOP AREA (3x3 Grid)
         desktop_grid = Gtk.Grid()
         desktop_grid.add_css_class("desktop-area")
         desktop_grid.set_hexpand(True)
@@ -80,7 +80,7 @@ class InteractiveMockup(Gtk.Box):
             cell.set_overflow(Gtk.Overflow.VISIBLE)
             return cell
 
-        # 3. FILL GRID WITH OVERLAY CELLS
+        #  FILL GRID WITH OVERLAY CELLS
         # We store them in a dictionary so we can easily inject windows into specific coordinates
         self.grid_cells = {}
         for col in range(3):
@@ -89,7 +89,7 @@ class InteractiveMockup(Gtk.Box):
                 desktop_grid.attach(cell, column=col, row=row, width=1, height=1)
                 self.grid_cells[(col, row)] = cell
 
-        # 4. WINDOW 1: Center under the clock (Col 1, Row 0)
+        #  WINDOW 1: Center under the clock (Col 1, Row 0)
         self.app_window1 = Gtk.Box()
         self.app_window1.add_css_class("app-window")
         self.app_window1.set_size_request(170, 180)  # Static Size
@@ -107,15 +107,15 @@ class InteractiveMockup(Gtk.Box):
         # Inject as a floating overlay into the Top-Center cell
         self.grid_cells[(1, 0)].add_overlay(self.app_window1)
 
-        # 5. WINDOW 2: Bottom Right (Col 2, Row 1)
+        #  WINDOW 2: Bottom Right (Col 2, Row 1)
         self.app_window2 = Gtk.Box()
-        self.app_window2.add_css_class("app-window2")
+        self.app_window2.add_css_class("nautilus-window")
         self.app_window2.set_size_request(240, 150)  # Static Size
         self.app_window2.set_halign(Gtk.Align.CENTER)
         self.app_window2.set_valign(Gtk.Align.CENTER)
         self.app_window2.set_margin_top(60)
         self.app_window2_1 = Gtk.Box()
-        self.app_window2_1.add_css_class("app-window2_1")
+        self.app_window2_1.add_css_class("nautilus-window2")
         self.app_window2_1.set_size_request(220, 125)  # Static Size
         self.app_window2_1.set_halign(Gtk.Align.CENTER)
         self.app_window2_1.set_valign(Gtk.Align.CENTER)
@@ -129,15 +129,24 @@ class InteractiveMockup(Gtk.Box):
 
         # Inject as a floating overlay into the Bottom-Right cell
         self.grid_cells[(0, 1)].add_overlay(self.app_window2)
+
+        window2_click = Gtk.GestureClick()
+        window2_click.connect(
+            "pressed",
+            lambda gesture, n_press, x, y: self.on_element_clicked(
+                None, "nautilus-window"
+            ),
+        )
+        self.app_window2.add_controller(window2_click)
         # ... (Window 1 and Window 2 setup code) ...
 
         # To force Window 2's cell to the absolute top of the Z-index stack:
         cell_to_bring_forward = self.grid_cells[(0, 1)]
 
-        # 1. Remove it from the grid
+        #  Remove it from the grid
         desktop_grid.remove(cell_to_bring_forward)
 
-        # 2. Re-attach it at the exact same coordinates
+        #  Re-attach it at the exact same coordinates
         # Because it is the newest addition, GTK draws it on top of all other cells!
         desktop_grid.attach(cell_to_bring_forward, column=0, row=1, width=1, height=1)
 
@@ -166,9 +175,9 @@ class InteractiveMockup(Gtk.Box):
         final_colors.update(color_data_map)
         update_runtime_color_map(color_data_map)
         # --- DEBUG PRINT BLOCK ---
-        print("\n=== [DEBUG] SAVING LIVE PALETTE SELECTION ===")
-        print(json.dumps(final_colors, indent=4))
-        print("============================================\n")
+        # print("\n=== [DEBUG] SAVING LIVE PALETTE SELECTION ===")
+        # print(json.dumps(final_colors, indent=4))
+        # print("============================================\n")
 
         def parse_css_background(input_value, fallback_hex):
             """
@@ -224,6 +233,13 @@ class InteractiveMockup(Gtk.Box):
         # Generate custom layout snippets using the parser
         topbar_style = parse_css_background(final_colors.get("topbarcolor"), "#1a4d8c")
         topbar_hover_style = parse_css_background(final_colors.get("accent"), "#133863")
+        clock_style = final_colors.get("clockcolor", "#f9f9f9")
+        nautilus_style = parse_css_background(
+            final_colors.get("nautilusprimarycolor"), "#1a4d8c"
+        )
+        nautilus_secondary_style = parse_css_background(
+            final_colors.get("nautilussecondarycolor"), "#1a4d8c"
+        )
 
         desktop_style = tint_desktop_from_primary(
             final_colors.get("primary", "#1a4d8c")
@@ -243,7 +259,6 @@ class InteractiveMockup(Gtk.Box):
         .topbar {{
             {topbar_style}
             padding: 6px;
-            cursor: pointer;
         }}
         /* Darkens the topbar when hovered */
         .topbar:hover {{
@@ -260,21 +275,23 @@ class InteractiveMockup(Gtk.Box):
         .app-window:hover {{
             {datemenu_hover_style}
         }}
-        .app-window2 {{
-            {primary_style}
+        .nautilus-window {{
+            {nautilus_style}
             border-radius: 8px;
             box-shadow: 0px 8px 24px rgba(0,0,0,0.6);
         }}
-        .app-window2_1 {{
-            {secondary_style}
+        .nautilus-window:hover {{
+            {topbar_hover_style}
+        }}
+        .nautilus-window2 {{
+            {nautilus_secondary_style}
             border-radius: 8px;
         }}
         .mockup-btn, .mockup-btn label {{
             background: transparent;
-            color: {final_colors.get("text", "#ffffff")};
+            color: {clock_style};
             padding: 4px 12px;
             font-weight: bold;
-            cursor: pointer;
         }}
         
         .mockup-btn:hover {{

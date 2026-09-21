@@ -33,7 +33,7 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
                 <property name="spacing">24</property>
                 <property name="margin-start">30</property>
                 <property name="margin-end">30</property>
-                <property name="margin-top">40</property>
+                <property name="margin-top">20</property>
                 <property name="margin-bottom">20</property>
                 <child>
                   <object class="AdwPreferencesGroup" id="load_group">
@@ -47,26 +47,13 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
                         <property name="title">Load Existing Profile</property>
                         <property name="activatable-widget">combo_row</property>
                         <child type="suffix">
-                          <object class="GtkButton" id="new_profile_btn">
-                            <property name="icon-name">list-add-symbolic</property>
-                            <property name="valign">3</property>
-                            <property name="tooltip-text">Start New Profile</property>
-                            <property name="margin-end">4</property>
-                            <style>
-                              <class name="flat"/>
-                            </style>
-                          </object>
-                        </child>
-                        <child type="suffix">
                           <object class="GtkButton" id="delete_profile_btn">
                             <property name="icon-name">user-trash-symbolic</property>
                             <property name="valign">3</property>
                             <property name="tooltip-text">Delete Selected Profile</property>
-                            <property name="margin-end">10</property>
-                            <property name="visible">false</property>
+                            <property name="margin-end">4</property>
                             <style>
                               <class name="flat"/>
-                              <class name="error"/>
                             </style>
                           </object>
                         </child>
@@ -124,10 +111,10 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
                             <property name="spacing">0</property>
                             <property name="margin-top">10</property>
                             <child>
-                              <object class="GtkImage" id="mockup_image">
-                                <property name="name">mockup-preview-image</property>
-                                <property name="pixel-size">425</property>
+                              <object class="GtkBox" id="preview_holder">
+                                <property name="name">preview_holder</property>
                                 <property name="hexpand">true</property>
+                                <property name="vexpand">true</property>
                               </object>
                             </child>
                           </object>
@@ -144,41 +131,159 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
                       </object>
                     </child>
                     <child>
-                      <object class="AdwSwitchRow" id="gnome_switch">
+                      <object class="AdwActionRow" id="gnome_row">
                         <property name="title">Gnome-Shell</property>
                         <property name="subtitle">Refresh</property>
-                        <property name="active">false</property>
+                        <child type="suffix">
+                          <object class="GtkButton" id="gnome_folder_btn">
+                            <property name="valign">3</property>
+                            <property name="icon-name">folder-symbolic</property>
+                            <property name="visible" bind-source="gnome_switch" bind-property="active" bind-flags="sync-create"/>
+                            <style>
+                              <class name="flat"/>
+                              <class name="circular"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child type="suffix">
+                          <object class="GtkSwitch" id="gnome_switch">
+                            <property name="valign">3</property>
+                            <property name="active">false</property>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>
-                      <object class="AdwSwitchRow" id="plasma_switch">
-                        <property name="title">KDEPlasma</property>
+                      <object class="AdwActionRow" id="plasma_row">
+                        <property name="title">KDE-Plasma</property>
                         <property name="subtitle">Refresh</property>
-                        <property name="active">false</property>
+                        <child type="suffix">
+                          <object class="GtkButton" id="plasma_folder_btn">
+                            <property name="valign">3</property>
+                            <property name="icon-name">folder-symbolic</property>
+                            <property name="visible" bind-source="plasma_switch" bind-property="active" bind-flags="sync-create"/>
+                            <style>
+                              <class name="flat"/>
+                              <class name="circular"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child type="suffix">
+                          <object class="GtkSwitch" id="plasma_switch">
+                            <property name="valign">3</property>
+                            <property name="active">false</property>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>
-                      <object class="AdwSwitchRow" id="gtk4_switch">
+                      <object class="AdwActionRow" id="gtk4_row">
                         <property name="title">GTK4</property>
-                        <property name="active">false</property>
+                        <child type="suffix">
+                          <object class="GtkButton" id="gtk4_folder_btn">
+                            <property name="valign">3</property>
+                            <property name="icon-name">folder-symbolic</property>
+                            <property name="visible" bind-source="gtk4_switch" bind-property="active" bind-flags="sync-create"/>
+                            <style>
+                              <class name="flat"/>
+                              <class name="circular"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child type="suffix">
+                          <object class="GtkSwitch" id="gtk4_switch">
+                            <property name="valign">3</property>
+                            <property name="active">false</property>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>
-                      <object class="AdwSwitchRow" id="zen_switch">
-                        <property name="title">Zen Browser</property>
-                        <property name="active">false</property>
+                      <object class="AdwActionRow" id="papirus_row">
+                        <property name="title">Papirus</property>
+                        <child type="suffix">
+                          <object class="GtkButton" id="papirus_folder_btn">
+                            <property name="valign">3</property>
+                            <property name="icon-name">folder-symbolic</property>
+                            <property name="visible" bind-source="papirus_switch" bind-property="active" bind-flags="sync-create"/>
+                            <style>
+                              <class name="flat"/>
+                              <class name="circular"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child type="suffix">
+                          <object class="GtkSwitch" id="papirus_switch">
+                            <property name="valign">3</property>
+                            <property name="active">false</property>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>
-                      <object class="AdwSwitchRow" id="youtube_switch">
-                        <property name="title">Youtube (Zen)</property>
-                        <property name="active">false</property>
+                      <object class="AdwActionRow" id="zen_row">
+                        <property name="title">Zen-browser</property>
+                        <child type="suffix">
+                          <object class="GtkButton" id="zen_folder_btn">
+                            <property name="valign">3</property>
+                            <property name="icon-name">folder-symbolic</property>
+                            <property name="visible" bind-source="zen_switch" bind-property="active" bind-flags="sync-create"/>
+                            <style>
+                              <class name="flat"/>
+                              <class name="circular"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child type="suffix">
+                          <object class="GtkSwitch" id="zen_switch">
+                            <property name="valign">3</property>
+                            <property name="active">false</property>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>
-                      <object class="AdwSwitchRow" id="vesktop_switch">
+                      <object class="AdwActionRow" id="youtube_row">
+                        <property name="title">Youtube(Zen)</property>
+                        <child type="suffix">
+                          <object class="GtkButton" id="ytb_folder_btn">
+                            <property name="valign">3</property>
+                            <property name="icon-name">folder-symbolic</property>
+                            <property name="visible" bind-source="youtube_switch" bind-property="active" bind-flags="sync-create"/>
+                            <style>
+                              <class name="flat"/>
+                              <class name="circular"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child type="suffix">
+                          <object class="GtkSwitch" id="youtube_switch">
+                            <property name="valign">3</property>
+                            <property name="active">false</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="vesktop_row">
                         <property name="title">Vesktop</property>
-                        <property name="active">false</property>
+                        <child type="suffix">
+                          <object class="GtkButton" id="vesktop_folder_btn">
+                            <property name="valign">3</property>
+                            <property name="icon-name">folder-symbolic</property>
+                            <property name="visible" bind-source="vesktop_switch" bind-property="active" bind-flags="sync-create"/>
+                            <style>
+                              <class name="flat"/>
+                              <class name="circular"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child type="suffix">
+                          <object class="GtkSwitch" id="vesktop_switch">
+                            <property name="valign">3</property>
+                            <property name="active">false</property>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>

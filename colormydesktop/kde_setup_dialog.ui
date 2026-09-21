@@ -6,7 +6,7 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
 -->
 <interface>
   <requires lib="gtk" version="4.0"/>
-  <template class="GnomeSetupDialog" parent="GtkBox">
+  <template class="KDESetupDialog" parent="GtkBox">
     <property name="orientation">1</property>
     <property name="valign">3</property>
     <child>
@@ -135,7 +135,7 @@ This setup installs a &lt;b&gt;systemd user unit&lt;/b&gt; on your host system. 
                     <property name="spacing">6</property>
                     <child>
                       <object class="GtkLabel">
-                        <property name="label">systemctl --user daemon-reload &amp;&amp; systemctl --user enable --now gnome-refresher.path</property>
+                        <property name="label">systemctl --user daemon-reload &amp;&amp; systemctl --user enable --now kde-refresher.path</property>
                         <property name="selectable">true</property>
                         <property name="wrap">true</property>
                         <property name="hexpand">true</property>

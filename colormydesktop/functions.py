@@ -2,18 +2,20 @@
 # Copyright 2026 Schwarzen
 # SPDX-License-Identifier: Apache-2.0
 
+from contextvars import Context
 import os
 import re
 import subprocess
 import threading
 import sys
 import json
+import glob
 from gi.repository import Gtk, Adw, Gdk, GLib, Gio
 from colormydesktop.mockup import InteractiveMockup
-from .dialogs import DialogMixin, DynamicPopupWindow
+from .dialogs import DialogMixin
 from .advancedpref import AdvancedMixin
 from colormydesktop.css import BASE_STYLE_SHEET
-
+from colormydesktop.broker import broker
 
 # --- CONFIGURATION ---
 if os.environ.get("FLATPAK_ID"):
@@ -37,27 +39,77 @@ else:
 
 
 class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
-    def __init__(self, ui_context, **kwargs):
-
+    def __init__(self, ui_context=None, **kwargs):
+        # Explicitly skip passing kwargs to Adw.ApplicationWindow if initialized as a headless engine
         super().__init__(**kwargs)
-        # {{{ SECTION: PRE-INITIALIZATION
-        self.ui = ui_context
-        self.ui.advanced_options_action_btn.connect(
-            "clicked", self.on_advanced_options_clicked
-        )
+
+        # ---------------------------------------------------------
+        # PHASE 1: INDEPENDENT STATE DATA ALLOCATION
+        # ---------------------------------------------------------
+        self._ui_instance = None
         self.portal_widgets = {}
         self.color_entries = {}
-        self.setup_css_providers()
         self.last_manually_enterd_zen_path = ""
+        self.current_colors = {}
+        self.status_labels = {}
+
+        # Core data models are completely safe to allocate without UI visibility
+        self.PALETTES = PALETTES
+        self.SCSS_USR = SCSS_USR
+        self.theme_list = Gtk.StringList.new([])
+        self.install_item_list = Gtk.StringList.new(["Install Bundled Palettes"])
+        self.model_store = Gio.ListStore.new(Gio.ListModel)
+        self.model_store.append(self.theme_list)
+        self.model_store.append(self.install_item_list)
+        self.combined_model = Gtk.FlattenListModel.new(self.model_store)
+
+    @property
+    def ui(self):
+        """Dynamically tracks and returns the bound home view instance."""
+        return self._ui_instance
+
+    @ui.setter
+    def ui(self, new_home_view):
+        """
+        Reactive Pipeline Trigger.
+        Fires automatically the exact millisecond main.py registers the home view.
+        """
+        if new_home_view is None or self._ui_instance == new_home_view:
+            return
+
+        self._ui_instance = new_home_view
+
+        # Execute deferred system & layout setups safely
+        self._initialize_core_subsystems()
+        self._inject_application_styles()
+        self._wire_user_interface_signals(new_home_view)
+        self.check_gnome_refresh_status()
+
+    # ---------------------------------------------------------
+    # PHASE 2: DEFERRED SUBSYSTEM ORCHESTRATION
+    # ---------------------------------------------------------
+    def _initialize_core_subsystems(self):
+        """Orchestrates configuration directories, file state engines, and disk caching."""
+        self.setup_css_providers()
         self.load_persistent_settings()
         self.setup_user_data()
         self.load_all_cached_portals()
         self.is_plasma_refresh_ready()
         self.is_gnome_refresh_ready()
-        self.PALETTES = PALETTES
-        self.SCSS_USR = SCSS_USR
 
-        # Check for SCSS Directory
+        # --- DYNAMIC DEBUG LOGS ADDED BACK HERE ---
+        current_zen_path = getattr(
+            self, "last_manually_entered_zen_path", "~/.zen/*/chrome"
+        )
+        print(f"DEBUG: Loaded Zen Path: {os.path.expanduser(current_zen_path)}")
+
+        # (Assuming SCSS_DIR or SCSS_USR holds your path layout)
+        print(f"Synced SCSS to: {getattr(self, 'SCSS_USR', '')}")
+        print("Refreshing palette data from bundle...")
+        print("Palette files synced to SCSS root (No overwrites).")
+        print(f"Palettes are up to date in: {getattr(self, 'SCSS_USR', '')}")
+
+        # Dynamic SCSS parsing safely deferred until workspace variables resolve
         if os.path.exists(SCSS_DIR):
             raw_themes = [
                 f[1:-5]
@@ -70,446 +122,147 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             print("CRITICAL: SCSS_DIR missing even after setup_user_data")
             self.themes = ["Default"]
 
-        self.current_colors = {}
-        self.status_labels = {}
-
-        self.nautilus_active = False
-        self.nautilus_hex_var = ""
-        self.datemenu_active = False
-        self.datemenu_hex_var = ""
-        # }}}
-        # {{{ SECTION: MAIN UI
-
-        # THE BOTTOM LAYER (frame)
-        #   self.drag_frame = Gtk.Box()
-        #  self.drag_frame.set_vexpand(True)
-        # self.drag_frame.set_hexpand(True)
-        # self.drag_frame.add_css_class("draggable-frame")
-
-        # Add drag logic to the bottom layer
-        # drag_gesture = Gtk.GestureClick.new()
-        # drag_gesture.connect("pressed", self.on_drag_pressed)
-        # self.drag_frame.add_controller(drag_gesture)
-
-        # Give the UI layer a margin so the red "frame" is visible at the edges
-        # self.toast_overlay.set_margin_start(20)
-        # self.toast_overlay.set_margin_end(20)
-        #        self.toast_overlay.set_margin_top(10)
-        #       self.toast_overlay.set_margin_bottom(20)
-        #      self.toast_overlay.set_hexpand(True)
-        #        self.toast_overlay.set_vexpand(True)
-        #
-        # IMPORTANT: Make this layer opaque so it hides the red underneath it
-        #        self.toast_overlay.add_css_class("ui-overlay-layer")
-
-        # THE FLOATING DRAG BAR
-        #        self.top_drag_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        #       self.top_drag_bar.set_hexpand(True)
-
-        # Make it tall enough to be easy to grab (e.g., 30px)
-        # Even if your margin is 10px, this can overlap the UI slightly
-
-        #      self.top_drag_bar.set_size_request(-1, 30)
-
-        # ADD THE DRAG GESTURE
-        #   drag_gesture = Gtk.GestureClick.new()
-        #  drag_gesture.connect("pressed", self.on_drag_pressed)
-        # self.top_drag_bar.add_controller(drag_gesture)
-
-        # self.root_overlay.add_overlay(self.top_drag_bar)
-
-        # Add a grab cursor so users know it's draggable
-        # self.top_drag_bar.set_cursor_from_name("grab")
-
+    def _inject_application_styles(self):
+        """Applies application overrides directly to the display scope."""
         self.app_icon = Gtk.Image.new_from_icon_name(
             "io.github.schwarzen.colormydesktop"
         )
 
-        # FIX: investigate new close logic and compare to old function here
-        # self.close_btn.connect("clicked", lambda _: self.close())
-        # self.root_overlay.add_overlay(self.close_btn)
-
-        # CSS TO FIX THE COLORS
         css_provider = Gtk.CssProvider()
         css_style = """
-            .draggable-frame { background: @window_bg_color;
-                box-shadow: 0 10px 30px 5px rgba(0, 0, 0, 0.5);
-                border-radius: 16px; /* Match your UI corners */
-            
-            }
-            .ui-overlay-layer, preferencespage, .preferences-group {
-                box-shadow: none !important;
-                border: none;
-            }
-                /* Style the floating close button */
-            .close-btn-style {
-                color: white;
-                background: rgba(0, 0, 0, 0.2); /* Subtle dark background */
-                border-radius: 50%;
-                padding: 6px;
-            }
-
-            /* Highlight the button on hover */
-            .close-btn-style:hover {
-                background-color: #d7191c; /* A darker red */
-                box-shadow: 0 0 5px rgba(0,0,0,0.3);
-            }
-            .accent {
-                /* Set the background to the system accent color */
-                background-color: var(--accent-bg-color);
-                /* Set the text color to the appropriate foreground color (usually white) */
-                color: rgb(100, 100, 100);
-                
-                border-top: 1px solid rgba(0, 0, 0, 0.1);
-                padding: 8px 12px;
-                margin-top: 4px;
-                font-weight: bold;
-            }
-
-            /* Ensure the text stays visible when hovered */
-            .accent:hover {
-                /* Slightly darken or lighten the background on hover */
-                background-color: shade(var(--accent-bg-color), 0.9);
-                color: var(--accent-fg-color);
-            }
-
+            .draggable-frame { background: @window_bg_color; box-shadow: 0 10px 30px 5px rgba(0, 0, 0, 0.5); border-radius: 16px; }
+            .ui-overlay-layer, preferencespage, .preferences-group { box-shadow: none !important; border: none; }
+            .close-btn-style { color: white; background: rgba(0, 0, 0, 0.2); border-radius: 50%; padding: 6px; }
+            .close-btn-style:hover { background-color: #d7191c; box-shadow: 0 0 5px rgba(0,0,0,0.3); }
+            .accent { background-color: var(--accent-bg-color); color: rgb(100, 100, 100); border-top: 1px solid rgba(0, 0, 0, 0.1); padding: 8px 12px; margin-top: 4px; font-weight: bold; }
+            .accent:hover { background-color: shade(var(--accent-bg-color), 0.9); color: var(--accent-fg-color); }
         """
         css_provider.load_from_data(css_style.encode())
-        Gtk.StyleContext.add_provider_for_display(
-            Gdk.Display.get_default(),
-            css_provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+
+        display = Gdk.Display.get_default()
+        if display is not None:
+            Gtk.StyleContext.add_provider_for_display(
+                display, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+            )
+
+    def _wire_user_interface_signals(self, target_ui):
+        """Binds structural data layers, controllers, and callback routines onto UI elements."""
+        # 1. Base Action Triggers
+        target_ui.advanced_options_action_btn.connect(
+            "clicked", self.on_advanced_options_clicked
         )
-        # }}}
-        # SECTION: UI BACKEND{{{
-        # CREATE DROPDOWN WIDGETS - EXISTING
-        self.theme_list = Gtk.StringList.new([])
-        self.install_item_list = Gtk.StringList.new(["Install Bundled Palettes"])
-        self.model_store = Gio.ListStore.new(Gio.ListModel)
-        self.model_store.append(self.theme_list)
-        self.model_store.append(self.install_item_list)
-        self.combined_model = Gtk.FlattenListModel.new(self.model_store)
-        # Connect layout rendering factory models
+
+        # 2. List Models and Data Factories Configuration
         factory = Gtk.SignalListItemFactory()
         factory.connect("setup", self._on_factory_setup)
         factory.connect("bind", self._on_factory_bind)
 
-        # Mount  memory stores straight into the blueprint combo row
-        self.ui.combo_row.set_model(self.combined_model)
-        self.ui.combo_row.set_factory(factory)
-        self.ui.combo_row.connect("notify::selected", self.on_combo_changed)
-        self.ui.combo_row.set_activatable_widget(self.ui.combo_row)
-        # CONNECT SIGNALS
-        self.ui.combo_row.connect("notify::selected", self.on_theme_select)
-        # =================================================================
-        #  RUN  EXISTING RESCAN ENGINE IMMEDIATELY ON LAUNCH
-        # This will crawl SCSS_DIR and populate the dropdown instantly
-        # =================================================================
+        cr = target_ui.combo_row
+        cr.set_model(self.combined_model)
+        cr.set_factory(factory)
+        cr.connect("notify::selected", self.on_combo_changed)
+        cr.set_activatable_widget(cr)
+        cr.connect("notify::selected", self.on_theme_select)
+
+        # Crawl files now that the bound widget structure exists in memory
         self.refresh_theme_list()
 
-        # FIX: --- NEW PROFILE BUTTON ---
-        new_profile_btn = Gtk.Button.new_from_icon_name("list-add-symbolic")
-        new_profile_btn.set_valign(Gtk.Align.CENTER)
-        new_profile_btn.add_css_class("flat")
-        new_profile_btn.set_tooltip_text("Start New Profile")
+        # 3. Component Assignments
+        self.gnome_switch = target_ui.gnome_switch
+        self.gnome_row = target_ui.gnome_row
+        self.plasma_switch = target_ui.plasma_switch
+        self.plasma_row = target_ui.plasma_row
+        self.gtk4_switch = target_ui.gtk4_switch
+        self.zen_switch = target_ui.zen_switch
+        self.youtube_switch = target_ui.youtube_switch
+        self.vesktop_switch = target_ui.vesktop_switch
+        self.papirus_switch = target_ui.papirus_switch
+        self.build_btn = target_ui.build_btn
 
-        # --- DELETE PROFILE BUTTON ---
-        # self.delete_profile_btn = Gtk.Button.new_from_icon_name("user-trash-symbolic")
-        # self.delete_profile_btn.set_valign(Gtk.Align.CENTER)
-        # self.delete_profile_btn.add_css_class("flat")
-        # self.delete_profile_btn.add_css_class(
-        #    "error"
-        # )  # Makes it red on hover in some themes
-        # self.delete_profile_btn.set_tooltip_text("Delete Selected Profile")
-        # self.delete_profile_btn.set_visible(False)
-
-        # --- REFRESH PALETTES BUTTON ---
-        # self.refresh_palettes_btn = Gtk.Button.new_from_icon_name("view-refresh-symbolic")
-        # self.refresh_palettes_btn.set_valign(Gtk.Align.CENTER)
-        # self.refresh_palettes_btn.add_css_class("flat")
-        # self.refresh_palettes_btn.set_tooltip_text("Sync Bundled Palettes")
-
-        # Connect the button to your setup function
-        # self.refresh_palettes_btn.connect("clicked", self.on_refresh_palettes_clicked)
-
-        # self.combo_row.add_suffix(new_profile_btn)
-        # self.combo_row.add_suffix(self.refresh_palettes_btn)
-        # self.combo_row.add_suffix(self.delete_profile_btn)
-        # self.load_group.add(self.combo_row)
-
-        def on_new_profile_clicked(button):
-            self.on_window_width_changed()
-            self.combo_row.set_selected(0)
-            self.name_row.set_text("New Profile")
-            self.bash_trigger_row.set_visible(True)
-
-        def on_delete_clicked(button):
-            selected_index = self.combo_row.get_selected()
-            selected_theme = self.theme_list.get_string(selected_index)
-
-            if selected_index == 0 or selected_theme == "Default":
-                # Don't delete the factory default
-                return
-
-            # Create a confirmation dialog
-            dialog = Adw.MessageDialog(
-                transient_for=self,
-                heading=f"Delete Profile?",
-                body=f"Are you sure you want to permanently delete '{selected_theme}'?",
-            )
-            dialog.add_response("cancel", "Cancel")
-            dialog.add_response("delete", "Delete")
-            dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
-            dialog.set_default_response("cancel")
-
-            dialog.connect("response", self.on_delete_confirm, selected_theme)
-            dialog.present()
-
-        # Clicking this button triggers the row's internal dropdown
-
-        # new_profile_btn.connect("clicked", on_new_profile_clicked)
-        # FIX:   self.delete_profile_btn.connect("clicked", on_delete_clicked)
-
-        # Name sanitize
+        # 4. Input Constraints and Sanitizers
         def on_name_insert_text(editable, new_text, length, position):
-            # Added a space inside the brackets [ ]
             if not re.match(r"^[a-zA-Z0-9_ -]*$", new_text):
                 editable.stop_emission_by_name("insert-text")
 
-        # --- HIDDEN BASH TRIGGER ROW ---
-        # Using an ActionRow makes it look like a standard part of the list
-        self.bash_trigger_row = Adw.ActionRow(title="Save new color profile")
-        self.bash_trigger_row.set_subtitle("Save these custom hex colors to a new file")
-        self.bash_trigger_row.set_visible(False)  # Hidden by default
+        # 5. Native Gesture Architecture Routing
+        from colormydesktop.lib_gui import GnomeSetupDialog
+        from colormydesktop.broker import ContextBroker
 
-        self.bash_trigger_btn = Gtk.Button(label="Save")
-        self.bash_trigger_btn.set_valign(Gtk.Align.CENTER)
-        self.bash_trigger_btn.add_css_class("suggested-action")
+        gnome_gesture = Gtk.GestureClick.new()
+        gnome_gesture.connect(
+            "released",
+            lambda g, n, x, y: (
+                ContextBroker.navigate(
+                    self.gnome_switch, GnomeSetupDialog, "gnome_setup_dialog"
+                )
+                if y > 30 and 120 < x < 300
+                else None
+            ),
+        )
+        self.gnome_switch.add_controller(gnome_gesture)
 
-        # Connect to bash function
-        self.bash_trigger_btn.connect("clicked", self.on_configure_clicked)
-        self.bash_trigger_row.add_suffix(self.bash_trigger_btn)
-        #        self.color_group.add(self.bash_trigger_row)
-
-        ###########        self.title_row.add_css_class("title-4")  # Makes it a standard GNOME header size
-
-        # --- GNOME SHELL TOGGLE ---
-        self.gnome_switch = self.ui.gnome_switch
-        # --- THE INVISIBLE CLICK LOGIC ---
-        # We use a gesture instead of an overlay to avoid breaking the UI layout
-        click_gesture = Gtk.GestureClick.new()
-
-        def on_subtitle_clicked(gesture, n_press, x, y):
-            # Check if the click is in the bottom-left area (the subtitle area)
-            # Row height is usually ~60px, so y > 30 is the bottom half
-            if y > 30 and 120 < x < 300:
-                self.show_gnome_setup_dialog()
-
-        click_gesture.connect("released", on_subtitle_clicked)
-        ############        self.gnome_switch.add_controller(click_gesture)
-        # Add this after the gesture code
-        cursor_controller = Gtk.EventControllerMotion.new()
-
-        def on_motion(controller, x, y):
-            if y > 30 and 120 < x < 300:
+        gnome_motion = Gtk.EventControllerMotion.new()
+        gnome_motion.connect(
+            "motion",
+            lambda c, x, y: (
                 self.gnome_switch.set_cursor(Gdk.Cursor.new_from_name("pointer", None))
-            else:
-                self.gnome_switch.set_cursor(None)
-
-        cursor_controller.connect("motion", on_motion)
-        ##########        self.gnome_switch.add_controller(cursor_controller)
-
-        # Connect the signal to a handler that checks the specific folder
-        self.gnome_handler_id = self.gnome_switch.connect(
-            "notify::active",
-            lambda widget, pspec: self.on_feature_toggled(
-                widget, pspec, ["~/.local/share/themes"], "GNOME"
+                if y > 30 and 120 < x < 300
+                else self.gnome_switch.set_cursor(None)
             ),
         )
-        self.add_folder_action(self.gnome_switch, "GNOME", ["~/.local/share/themes"])
-        # For GNOME path arg
-        self.gnome_path = self.get_path_argument("~/.local/share/themes")
+        self.gnome_switch.add_controller(gnome_motion)
 
-        # --- KDE PLASMA TOGGLE ---
-        self.plasma_switch = self.ui.plasma_switch
+        plasma_gesture = Gtk.GestureClick.new()
+        plasma_gesture.connect(
+            "released",
+            lambda g, n, x, y: (
+                self.show_plasma_setup_dialog() if y > 30 and 120 < x < 350 else None
+            ),
+        )
+        self.plasma_switch.add_controller(plasma_gesture)
 
-        # --- THE INVISIBLE CLICK LOGIC (PLASMA) ---
-        plasma_click_gesture = Gtk.GestureClick.new()
-
-        def on_plasma_subtitle_clicked(gesture, n_press, x, y):
-            # Adjusted x range (120 to 350) for the longer KDE text
-            if y > 30 and 120 < x < 350:
-                # Assuming this navigates or shows the KDE setup
-                self.show_plasma_setup_dialog()
-
-        plasma_click_gesture.connect("released", on_plasma_subtitle_clicked)
-        #########        self.plasma_switch.add_controller(plasma_click_gesture)
-
-        # --- CURSOR LOGIC (PLASMA) ---
-        plasma_cursor_controller = Gtk.EventControllerMotion.new()
-
-        def on_plasma_motion(controller, x, y):
-            if y > 30 and 120 < x < 350:
+        plasma_motion = Gtk.EventControllerMotion.new()
+        plasma_motion.connect(
+            "motion",
+            lambda c, x, y: (
                 self.plasma_switch.set_cursor(Gdk.Cursor.new_from_name("pointer", None))
-            else:
-                self.plasma_switch.set_cursor(None)
-
-        plasma_cursor_controller.connect("motion", on_plasma_motion)
-        #########        self.plasma_switch.add_controller(plasma_cursor_controller)
-
-        # Connect the signal to a handler that checks the specific folder
-        plasma_folders = ["~/.local/share/plasma", "~/.local/share/color-schemes"]
-
-        #  Use the list in the toggle connection
-        self.plasma_handler_id = self.plasma_switch.connect(
-            "notify::active",
-            lambda widget, pspec: self.on_feature_toggled(
-                widget, pspec, plasma_folders, "KDE Plasma"
+                if y > 30 and 120 < x < 350
+                else self.plasma_switch.set_cursor(None)
             ),
         )
+        self.plasma_switch.add_controller(plasma_motion)
 
-        #  Use the SAME list in the folder action helper
-        # This ensures the dialog shows both "Path 1" and "Path 2"
-        self.add_folder_action(self.plasma_switch, "KDE Plasma", plasma_folders)
-        # For Plasma path arg
-        self.plasma_path = self.get_path_argument("~/.local/share/plasma")
-        self.schemes_path = self.get_path_argument("~/.local/share/color-schemes")
-
-        # --- GTK4 TOGGLE ---
-        self.gtk4_switch = self.ui.gtk4_switch
-        # Connect the signal to a handler that checks the specific folder
-        self.gtk4_handler_id = self.gtk4_switch.connect(
-            "notify::active",
-            lambda widget, pspec: self.on_feature_toggled(
-                widget, pspec, ["~/.config/gtk-4.0"], "GTK4"
-            ),
-        )
-        self.add_folder_action(self.gtk4_switch, "GTK4", ["~/.config/gtk-4.0"])
-        # For GTK path arg
-        self.gtk4_path = self.get_path_argument("~/.config/gtk-4.0")
-
-        # --- ZEN BROWSER TOGGLE ---
+        # 6. Dynamic Evaluation & System Argument Resolution
         current_zen_path = getattr(
             self, "last_manually_entered_zen_path", "~/.zen/*/chrome"
         )
-        self.zen_switch = self.ui.zen_switch
-        # Connect the signal to a handler that checks the specific folder
-        self.zen_handler_id = self.zen_switch.connect(
-            "notify::active",
-            lambda widget, pspec: self.on_feature_toggled(
-                widget,
-                pspec,
-                [getattr(self, "last_manually_entered_zen_path", "~/.zen/*/chrome")],
-                "Zen",
-            ),
-        )
-        self.add_folder_action(self.zen_switch, "Zen", [current_zen_path])
-        # For zen path arg
+        self.gnome_path = self.get_path_argument("~/.local/share/themes")
+        self.plasma_path = self.get_path_argument("~/.local/share/plasma")
+        self.schemes_path = self.get_path_argument("~/.local/share/color-schemes")
+        self.gtk4_path = self.get_path_argument("~/.config/gtk-4.0")
         self.zen_path = self.get_path_argument(current_zen_path)
-
-        # --- YOUTUBE TOGGLE ---
-        self.youtube_switch = self.ui.youtube_switch
-        self.youtube_handler_id = self.youtube_switch.connect(
-            "notify::active",
-            lambda widget, pspec: self.on_feature_toggled(
-                widget,
-                pspec,
-                [getattr(self, "last_manually_entered_zen_path", "~/.zen/*/chrome")],
-                "Zen",
-            ),
-        )
-        self.add_folder_action(self.youtube_switch, "Zen", [current_zen_path])
-        # For zen path arg
-        self.zen_path = self.get_path_argument(current_zen_path)
-
-        # --- VESKTOP TOGGLE ---
-        self.vesktop_switch = self.ui.vesktop_switch
-        self.vesktop_handler_id = self.vesktop_switch.connect(
-            "notify::active",
-            lambda widget, pspec: self.on_feature_toggled(
-                widget, pspec, ["~/.config/vesktop/themes"], "Vesktop"
-            ),
-        )
-        self.add_folder_action(
-            self.vesktop_switch, "Vesktop", ["~/.config/vesktop/themes"]
-        )
-        # For vesktop path arg
         self.vesktop_path = self.get_path_argument("~/.config/vesktop/themes")
-
-        # --- PAPIRUS ICON SYNC TOGGLE ---
-        self.papirus_switch = Adw.SwitchRow()
-        # self.papirus_switch.set_title("Sync Papirus Icons with Theme")
-        # self.papirus_switch.set_active(False)  # Default off
-        # Connect the signal to a handler that checks the specific folder
-        self.papirus_handler_id = self.papirus_switch.connect(
-            "notify::active",
-            lambda widget, pspec: self.on_feature_toggled(
-                widget, pspec, ["~/.local/share/icons"], "Papirus"
-            ),
-        )
-        self.add_folder_action(self.papirus_switch, "Papirus", ["~/.local/share/icons"])
-        # For Papirus path arg
         self.papirus_path = self.get_path_argument("~/.local/share/icons")
-        #        self.group.add(self.papirus_switch)
 
-        # BUILD BUTTON
-        self.build_btn = self.ui.build_btn
-        self.build_btn.add_css_class("suggested-action")  # color
+        # 7. Operational Compilation & Logger Blocks
+        self.build_btn.add_css_class("suggested-action")
         self.build_btn.set_margin_top(24)
         self.build_btn.set_margin_bottom(24)
+        self.build_btn.connect("clicked", self.on_run_build_clicked)
 
         self.log_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        self.log_container.set_visible(False)  # Hidden until build starts
-        #        self.main_page_content.append(self.log_container)
-
-        #  Add a progress bar for visual feedback
+        self.log_container.set_visible(False)
         self.progress_bar = Gtk.ProgressBar()
         self.log_container.append(self.progress_bar)
 
-        # Create the scrollable terminal area
         self.scrolled_window = Gtk.ScrolledWindow(min_content_height=150)
-        self.scrolled_window.add_css_class("card")  # Adds a nice border/background
-
+        self.scrolled_window.add_css_class("card")
         self.log_view = Gtk.TextView(editable=False, monospace=True)
         self.scrolled_window.set_child(self.log_view)
-        #        self.log_container.append(self.scrolled_window)
 
-        # Connect the signal to the method above
-        self.build_btn.connect("clicked", self.on_run_build_clicked)
-
-        #######        self.main_page_content.append(self.build_btn)
-
-        # CREATE A MAINTENANCE GROUP (At the top)
-        maintenance_group = Adw.PreferencesGroup()
-        #        self.adv_pref_page.add(maintenance_group)
-
-        # Create and add the Reset Button to that group
-        self.reset_btn = Adw.ActionRow()
-        self.reset_btn.set_title("Reset App Permissions")
-        self.reset_btn.set_subtitle("Remove all manual folder access and overrides")
-        self.reset_btn.set_activatable(True)
-        self.reset_btn.connect("activated", self.show_reset_instructions)
-
-        maintenance_group.add(self.reset_btn)
-
-        self.grid_group = Adw.PreferencesGroup()
-        #  Add the group to the page
-        #        self.adv_pref_page.add(self.grid_group)
-        #  Create the FlowBox (The Grid)
-        self.flowbox = Gtk.FlowBox()
-        self.flowbox.set_valign(Gtk.Align.START)
-        self.flowbox.set_max_children_per_line(3)  # Forces 3 columns
-        self.flowbox.set_selection_mode(Gtk.SelectionMode.NONE)
-        self.flowbox.set_homogeneous(True)  # Makes all boxes the same size
-
-        # Add the grid to the group
-        self.grid_group.add(self.flowbox)
-
-        def is_writable(path):
-            # Expands XDG paths like xdg-data/plasma to full host paths
-            # Note: Inside Flatpak, these are usually mounted at /run/host/... or standard ~/.local/share
-            full_path = os.path.expanduser(path)
-            return os.access(full_path, os.W_OK)
+    def is_writable(self, path):
+        full_path = os.path.expanduser(path)
+        return os.access(full_path, os.W_OK)
 
         # }}}
         # {{{ SECTION: POST-INITIALIZATION
@@ -534,6 +287,27 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         ## }}}
 
     # {{{ SECTION : FUNCTIONS
+    def on_delete_clicked(self):
+        selected_index = self.ui.combo_row.get_selected()
+        selected_theme = self.theme_list.get_string(selected_index)
+        if selected_index == 0 or selected_theme == "Default":
+            # Don't delete the factory default
+            return
+
+            # Create a confirmation dialog
+        dialog = Adw.MessageDialog(
+            transient_for=self,
+            heading=f"Delete Profile?",
+            body=f"Are you sure you want to permanently delete '{selected_theme}'?",
+        )
+        dialog.add_response("cancel", "Cancel")
+        dialog.add_response("delete", "Delete")
+        dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response("cancel")
+
+        dialog.connect("response", self.on_delete_confirm, selected_theme)
+        dialog.present()
+
     def on_drag_pressed(self, gesture, n_press, x, y):
         # 1. Get the surface (must be a Gdk.Toplevel)
         surface = self.get_native().get_surface()
@@ -606,14 +380,28 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
     def on_advanced_options_clicked(self, button):
         from colormydesktop.lib_gui import AdvancedPage
 
-        # METHOD: Uses DynamicPopupWindow to spawn, sub pages then dyanmicaly swap by targetting the broker navigation tool
-        DynamicPopupWindow.spawn(
-            parent_window=self.ui.get_root(),
-            title="Advanced Options",
-            content_widget=AdvancedPage(),
+        home_view = broker.get_page("home_view")
+
+        broker.navigate(
+            current_widget=home_view,
+            target_page_class=AdvancedPage,
+            page_id="advanced_options",
         )
 
         ########################
+
+    def get_saved_zen_path(self):
+        config_path = os.path.expanduser(
+            "~/.var/app/io.github.schwarzen.colormydesktop/config/color-my-desktop/settings.json"
+        )
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, "r") as f:
+                    data = json.load(f)
+                    return data.get("zen_path", "")
+            except (json.JSONDecodeError, IOError):
+                return ""
+        return ""
 
     def show_toast(self, message: str):
         from colormydesktop.broker import ContextBroker
@@ -633,24 +421,64 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             print(f"[Toast Fallback]: {message}")
 
     # }}}
-    # FIX: non-integrated legacy function requiring new logic {{{
-    def setup_subtitle_links(self):
-        # 1. Use your search function to find the label
-        gnome_label = self.find_label_by_text(self.gnome_switch, "Refresh")
 
-        if gnome_label:
-            # 2. Create a 'Gesture' to catch clicks anywhere on that label
-            click_gesture = Gtk.GestureClick.new()
-            # 3. Connect the gesture to your function
-            click_gesture.connect(
-                "released", lambda gesture, n, x, y: self.show_gnome_setup_dialog()
-            )
-            # 4. Add the gesture to the label
-            gnome_label.add_controller(click_gesture)
+    def verify_switch_permissions_quietly(manager, switch_widget) -> bool:
+        """
+        Evaluates permissions for a stashed switch widget context.
+        Returns True if all required paths pass inspection, otherwise False.
+        """
+        if not switch_widget or not hasattr(switch_widget, "get_active"):
+            return False
 
-            # 5. Make the label look like a link manually
-            gnome_label.set_markup(
-                "<span color='blue' underline='single'>Click to Install</span>"
+        # Extract the tracked properties we stashed on the widget
+        folders = getattr(switch_widget, "_assigned_folders", [])
+        feature_name = getattr(switch_widget, "_feature_name", "")
+
+        if isinstance(folders, str):
+            folders = [folders]
+
+        if not folders:
+            return False
+
+        for folder_pattern in folders:
+            has_access = False
+
+            # 1. Manual Path Check
+            if feature_name in ["Zen", "YouTube"]:
+                manual_path = getattr(manager, "last_manually_entered_zen_path", None)
+                if manual_path and os.access(os.path.expanduser(manual_path), os.W_OK):
+                    has_access = True
+
+            # 2. Portal Check
+            if not has_access:
+                safe_key = manager.get_safe_key(folder_pattern)
+                portal_path = getattr(manager, f"active_portal_{safe_key}", None)
+                if portal_path and os.access(portal_path, os.W_OK):
+                    has_access = True
+
+            # 3. Host Fallback
+            if not has_access:
+                expanded_pattern = os.path.expanduser(folder_pattern)
+                matches = list(glob.iglob(expanded_pattern))
+                if (
+                    matches and any(os.access(m, os.W_OK) for m in matches)
+                ) or os.access(expanded_pattern, os.W_OK):
+                    has_access = True
+
+            # If any single path validation fails, drop out instantly
+            if not has_access:
+                return False
+
+        return True
+
+    def on_copy_clicked(self, payload: dict):
+        """Extracts a path from the payload, expands it, and copies it to the clipboard."""
+        path_to_copy = payload.get("path")
+
+        if path_to_copy:
+            expanded_path = os.path.expanduser(path_to_copy)
+            Gdk.Display.get_default().get_clipboard().set_content(
+                Gdk.ContentProvider.new_for_value(expanded_path)
             )
 
     def find_label_by_text(self, widget, text):
@@ -668,22 +496,28 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
 
     # }}}
 
-    # FIX:  more auto refresh logic here {{{
+    #  auto refresh logic here {{{
     @staticmethod
     def initial_status(self, toggled, accent_blue="#3584e4"):
         # Safely check and get the GNOME refresh switch state
-
+        gnome_options = broker.get_page("gnome_options")
+        gnome_refresh_switch = getattr(gnome_options, "refresh_switch", None)
+        gnome_toggled = (
+            gnome_refresh_switch.get_active() if gnome_refresh_switch else False
+        )
         switch_text = (
             "Auto refresh active"
-            if toggled
+            if gnome_toggled
             else f"Auto refresh inactive - (<span color='{accent_blue}' underline='single'>See advanced GNOME options</span>)"
         )
         if hasattr(self, "gnome_switch"):
-            self.gnome_switch.set_subtitle(switch_text)
-            self.gnome_switch.set_use_markup(True)
+            self.gnome_row.set_subtitle(switch_text)
+            self.gnome_row.set_use_markup(True)
+
+        kde_options = broker.get_page("kde_options")
 
         # Safely check and get the KDE/Plasma refresh switch state
-        plasma_refresh_switch = getattr(self, "plasma_refresh_switch", None)
+        plasma_refresh_switch = getattr(kde_options, "kde_refresh_switch", None)
         plasma_toggled = (
             plasma_refresh_switch.get_active() if plasma_refresh_switch else False
         )
@@ -694,57 +528,27 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             else f"Auto refresh inactive - (<span color='{accent_blue}' underline='single'>See advanced KDE options</span>)"
         )
         if hasattr(self, "plasma_switch"):
-            self.plasma_switch.set_subtitle(plasma_switch_text)
-            self.plasma_switch.set_use_markup(True)
+            self.plasma_row.set_subtitle(plasma_switch_text)
+            self.plasma_row.set_use_markup(True)
 
     # }}}
-    #
-    # FIX: Legacy function that has secondary use which needs to be re-integrated separately {{{
-    #  def on_nav_popped(self, nav_view, page):
-    # if page == self.adv_nav_page:
-    # print("Left Advanced page, syncing status...")
-    # accent_blue = "#3584e4"
-    # if hasattr(self, "refresh_switch"):
-    # toggled = self.refresh_switch.get_active()
-    # else:
-    # toggled = False
-    # switch_text = (
-    # "Auto refresh active"
-    # if toggled
-    # else f"Auto refresh inactive - (<span color='{accent_blue}' underline='single'>See advanced GNOME options</span>)"
-    # )
-    # self.gnome_switch.set_subtitle(switch_text)
-    # self.gnome_switch.set_use_markup(True)
-    # if hasattr(self, "plasma_refresh_switch"):
-    # toggled = self.plasma_refresh_switch.get_active()
-    # else:
-    # toggled = False
-    # plasma_switch_text = (
-    # "Auto refresh active"
-    # if toggled
-    # else f"Auto refresh inactive - (<span color='{accent_blue}' underline='single'>See advanced KDE options</span>)"
-    # )
-    # self.plasma_switch.set_subtitle(plasma_switch_text)
-    # self.plasma_switch.set_use_markup(True)
-    # FIX: }}}
-    # FIX: GNOME and plasma refresh logic and portal logic requires re-integration {{{
+
     def check_gnome_refresh_status(self):
         is_flatpak = os.path.exists("/.flatpak-info")
 
         if not is_flatpak:
             ready = True
-            status_text = "Status: Active (Native Mode)"
         else:
             ready = self.is_gnome_refresh_ready()
-            status_text = "Ready" if ready else "Not Setup - Requires one time install"
-
-        if hasattr(self, "gnome_refresh_row"):
-            self.gnome_refresh_row.set_subtitle(status_text)
 
         if hasattr(self, "refresh_switch") and hasattr(self, "gnome_handler_id"):
-            self.refresh_switch.handler_block(self.gnome_handler_id)
-            self.refresh_switch.set_active(ready)
-            self.refresh_switch.handler_unblock(self.gnome_handler_id)
+            broker.get_gage("gnome_options").refresh_switch.handler_block(
+                self.gnome_handler_id
+            )
+            broker.get_gage("gnome_options").refresh_switch.set_active(ready)
+            broker.get_gage("gnome_options").refresh_switch.handler_unblock(
+                self.gnome_handler_id
+            )
 
         return ready
 
@@ -763,17 +567,15 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             status_text = "Ready" if ready else "Not Setup - Requires one time install"
 
         # 3. UPDATE THE UI ROW
-        if hasattr(self, "plasma_refresh_row"):
-            self.plasma_refresh_row.set_subtitle(status_text)
+        if hasattr(self, "kde_refresh_row"):
+            self.kde_refresh_row.set_subtitle(status_text)
 
         # 4. UPDATE THE SWITCH
         # Use the specific Plasma switch and handler ID
-        if hasattr(self, "plasma_refresh_switch") and hasattr(
-            self, "plasma_handler_id"
-        ):
-            self.plasma_refresh_switch.handler_block(self.plasma_handler_id)
-            self.plasma_refresh_switch.set_active(ready)
-            self.plasma_refresh_switch.handler_unblock(self.plasma_handler_id)
+        if hasattr(self, "kde_refresh_switch") and hasattr(self, "plasma_handler_id"):
+            self.kde_refresh_switch.handler_block(self.plasma_handler_id)
+            self.kde_refresh_switch.set_active(ready)
+            self.kde_refresh_switch.handler_unblock(self.plasma_handler_id)
 
             print(f"DEBUG: Plasma Row updated to {status_text} (Flatpak: {is_flatpak})")
 
@@ -800,7 +602,6 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             return False
 
         # 3. Check App Data Trigger
-        # For GNOME, we look in the persistent data folder defined in the .path unit
         trigger_file = os.path.expanduser(
             "~/.var/app/io.github.schwarzen.colormydesktop/data/colormydesktop/refresh.trigger"
         )
@@ -951,7 +752,6 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
                     setattr(self, f"active_portal_{safe_key}", sandboxed_path)
 
                     # 4. REFRESH UI: Re-run the setup dialog to update icons to green
-                    self.show_plasma_setup_dialog()
                     self.toast_overlay.add_toast(Adw.Toast.new("Installer Successful!"))
 
                 except Exception as e:
@@ -1001,15 +801,31 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         dialog.destroy()
 
     def trigger_refresh(self):
-        # 1. Check if the feature is even enabled in the UI
-        # This prevents accidental triggers from other parts of the code
+        import os
+        import subprocess
+        from colormydesktop.broker import ContextBroker
+
+        # 1. Check local instance "plasma_switch" status
         if (
-            not hasattr(self, "plasma_refresh_switch")
-            or not self.plasma_refresh_switch.get_active()
+            not hasattr(self, "plasma_switch")
+            or not self.plasma_switch
+            or not self.plasma_switch.get_active()
         ):
+            print("refresh skipped: local plasma_switch is inactive or missing")
             return
 
-        # 1. Check for the Flatpak sandbox marker
+        kde_options = ContextBroker.get_page("kde_options")
+
+        # 2. Check broker "refresh_switch" status (matching the GNOME logic style)
+        kde_refresh_switch = getattr(kde_options, "switches", {}).get(
+            "kde_refresh_switch"
+        )
+
+        if not kde_refresh_switch or not kde_refresh_switch.get_active():
+            print("refresh skipped: refresh_switch is inactive or missing")
+            return
+
+        # 3. Proceed with execution if both criteria are met
         is_flatpak = os.path.exists("/.flatpak-info")
 
         if is_flatpak:
@@ -1027,66 +843,11 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         else:
             # --- NATIVE LOGIC: Run the command directly ---
             try:
-                # We use the same logic from your systemd service for consistency
                 cmd = "/usr/bin/bash -c '/usr/bin/plasma-apply-colorscheme BreezeDark && sleep 0.5 && /usr/bin/plasma-apply-colorscheme Color-My-Desktop-Scheme'"
                 subprocess.Popen(cmd, shell=True)
                 print("Native: Direct Plasma refresh command executed.")
             except Exception as e:
                 print(f"Native Refresh Error: {e}")
-
-    def get_host_script_uri(self):
-        # 1. Get the actual username from the environment
-        # Inside Flatpak, 'USER' is usually passed through
-        user = os.environ.get("USER") or os.path.basename(os.path.expanduser("~"))
-
-        # 2. Construct the path as the HOST sees it
-        # Flatpak's internal XDG_DATA_HOME (~/.local/share) maps to this on the host:
-        app_id = "io.github.schwarzen.colormydesktop"
-        host_path = f"/home/{user}/.var/app/{app_id}/data/setup_refresh.sh"
-
-        # 3. Convert to a proper URI
-        return f"file://{host_path}"
-
-    def on_setup_clicked(self, button=None):
-        # 1. Use the INTERNAL path (sandbox-local)
-        # The portal handles the mapping to the host automatically via the File Descriptor
-        xdg_data = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
-        internal_path = os.path.join(xdg_data, "setup_refresh.sh")
-
-        print(f"Opening local file via portal: {internal_path}")
-
-        bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
-        proxy = Gio.DBusProxy.new_sync(
-            bus,
-            Gio.DBusProxyFlags.NONE,
-            None,
-            "org.freedesktop.portal.Desktop",
-            "/org/freedesktop/portal/desktop",
-            "org.freedesktop.portal.OpenURI",  # Interface remains the same
-            None,
-        )
-
-        try:
-            # 2. Open the file to get a File Descriptor
-            # 'O_RDONLY' is enough to run/execute
-            f = os.open(internal_path, os.O_RDONLY)
-
-            # 3. Use the 'OpenFile' method instead of 'OpenURI'
-            # Signature: (parent_window 's', file_descriptor 'h', options 'a{sv}')
-            proxy.call_sync(
-                "OpenFile",
-                GLib.Variant("(sha{sv})", ("", f, GLib.Variant("a{sv}", {}))),
-                Gio.DBusCallFlags.NONE,
-                -1,
-                None,
-            )
-
-            # Always close your local FD handle after the D-Bus call
-            os.close(f)
-            print("OpenFile request sent successfully.")
-
-        except Exception as e:
-            print(f"Portal failed to open file: {e}")
 
     def save_portal_path(self, folder_path, portal_path):
         # Use the app's specific config directory to ensure it's writable
@@ -1130,21 +891,32 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
                     safe_key = self.get_safe_key(host_path)
                     setattr(self, f"active_portal_{safe_key}", portal_path)
 
-    def on_plasma_refresh_toggled(self, switch, pspec):
-        is_active = switch.get_active()
+    def on_plasma_refresh_toggled(
+        self, is_active, switch_widget, kde_options_page=None
+    ):
+        import os
+        from colormydesktop.broker import ContextBroker
+
+        # NOTE: Update this import to match your actual Plasma Setup page class
+        from colormydesktop.lib_gui import KDESetupDialog
+
+        current_widget = kde_options_page if kde_options_page else switch_widget
         is_flatpak = os.path.exists("/.flatpak-info")
 
-        # 1. ONLY perform the 'Installation' check if we are in a Flatpak
         if is_flatpak:
             if is_active and not self.check_plasma_refresh_status():
-                # Not installed in Flatpak: Reset switch and show setup
-                switch.set_active(False)
-                self.show_plasma_setup_dialog()
+                # 1. Validation failed: Reset the switch instantly
+                if switch_widget:
+                    switch_widget.set_active(False)
+
+                # 2. Trigger broker navigation instead of calling a hardcoded dialog
+                ContextBroker.navigate(
+                    current_widget=current_widget,
+                    target_page_class=KDESetupDialog,
+                    page_id="kde_setup_dialog",
+                )
             elif not is_active:
                 print("Plasma Auto-Reload Disabled (Flatpak mode)")
-
-        # 2. NATIVE MODE: If it's active, we just assume it works
-        # (since we trigger commands directly on the host)
         else:
             if is_active:
                 print("Plasma Auto-Reload Enabled (Native mode - direct commands)")
@@ -1186,6 +958,14 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         from colormydesktop.broker import ContextBroker
 
         gnome_options = ContextBroker.get_page("gnome_options")
+        # 1. Check local instance "plasma_switch" status
+        if (
+            not hasattr(self, "gnome_switch")
+            or not self.gnome_switch
+            or not self.gnome_switch.get_active()
+        ):
+            print("refresh skipped: local gnome_switch is inactive or missing")
+            return
         # Check if "refresh" switch exists in gnome_options and is active
         refresh_switch = getattr(gnome_options, "switches", {}).get("refresh_switch")
 
@@ -1290,7 +1070,6 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         self.tertiary_row.set_text(tertiary_hex)
 
         # Trigger UI sync
-        self.update_mockup_css()
 
     def on_delete_confirm(self, dialog, response, theme_name):
         if response == "delete":
@@ -1352,119 +1131,6 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
                 print(f"DEBUG: Failed to load settings: {e}")
                 self.last_manually_entered_zen_path = ""
 
-    # FIX: Legacy function, replaced by update_colors in mockup.py, however still heavily integrated {{{
-    def update_mockup_css(self):
-        #       print("DEBUG: update_mockup_css triggered!")
-
-        # --- SAFETY CHECK: Ensure the UI layout components are initialized ---
-        #    if not hasattr(self.ui, "color_entries"):
-        # print(
-        # "DEBUG: color_entries map not found on UI context yet, skipping pre-render execution."
-        # )
-        # return
-
-        print("DEBUG Active UI Keys:", list(self.ui.color_entries.keys()))
-
-        # =================================================================
-        # RE-IMPLEMENTED: THE CHOSEN GET_SAFE_HEX EXTRACTION ENGINE
-        # Reads values directly off your optimized modular EntryRows natively
-        # =================================================================
-        def get_safe_hex(css_id, fallback="#ffffff"):
-            row = self.ui.color_entries.get(css_id, None)
-            if row:
-                # FIX: Check if it's an Adw.EntryRow and grab its text property explicitly
-                if hasattr(row, "get_text"):
-                    val = row.get_text().strip()
-                elif hasattr(row, "get_editable"):
-                    val = row.get_editable().get_text().strip()
-                else:
-                    # Fallback property access string lookup check
-                    val = getattr(row, "text", "").strip()
-
-                if val and not val.startswith("#"):
-                    val = f"#{val}"
-                return val if val else fallback
-            return fallback
-
-        # Sync the core palette vectors matching your configuration loop id keys exactly
-        p = get_safe_hex("primary")
-        s = get_safe_hex("secondary", "#1a4d8c")
-        t = get_safe_hex("accent", "#102f54")
-        txt = get_safe_hex("text", "#ffffff")
-        topbarcolor = get_safe_hex("topbarcolor", p)
-
-        # 2. Redirect the target pointer check to look inside self.ui!
-        #    if (
-        # hasattr(self.ui, "interactive_preview")
-        # and self.ui.interactive_preview is not None
-        # ):
-        # print(
-        # f"DEBUG LIVE UPDATE: Pushing text directly to UI context -> P: {p}, S: {s}, A: {t}, TXT: {txt}, TOPBAR: {topbarcolor}"
-        # )
-        #
-        ## This calls update_colors on the widget instance inside PageHomeView
-        # self.ui.interactive_preview.update_colors(
-        # p=p, s=s, t=t, txt=txt, topbarcolor=topbarcolor
-        # )
-        #
-        ## 3. Combine the definitions with your existing static style rules
-        #
-        ## 4. Inject into the Gtk application environment context layer
-        # provider = Gtk.CssProvider()
-        #
-        # Gtk.StyleContext.add_provider_for_display(
-        # Gdk.Display.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-        # )
-        #
-        ## 5. Tell your custom Cairo canvas object to repaint itself instantly
-        # if hasattr(self, "interactive_preview"):
-        # self.interactive_preview.queue_draw()
-        #
-        ## Create your Gdk.RGBA mapping color parsers natively
-        # rgba_p = Gdk.RGBA()
-        # rgba_p.parse(p)
-        #
-        ##  CALCULATE LUMINANCE (0.0 to 1.0)
-        # luminance = (
-        # (rgba_p.red * 0.299) + (rgba_p.green * 0.587) + (rgba_p.blue * 0.114)
-        # )
-        #
-        ##  Define a "Floor" color (Deep Charcoal with a hint of blue/grey)
-        # floor_r, floor_g, floor_b = 24, 26, 30
-        #
-        ##  Dynamic LERP Factor based on Luminance
-        # mix = 0.15 if luminance > 0.4 else 0.30
-        #
-        ##  LERP Calculation: (Primary * mix) + (Floor * (1 - mix))
-        # bg_r = int((rgba_p.red * 255 * mix) + (floor_r * (1 - mix)))
-        # bg_g = int((rgba_p.green * 255 * mix) + (floor_g * (1 - mix)))
-        # bg_b = int((rgba_p.blue * 255 * mix) + (floor_b * (1 - mix)))
-        #
-        # bg_color = "#{:02x}{:02x}{:02x}".format(
-        # max(0, min(255, bg_r)), max(0, min(255, bg_g)), max(0, min(255, bg_b))
-        # )
-        #
-        ## --- CONTRAST CHECK ---
-        # try:
-        # if hasattr(self.ui, "contrast_info_row") and hasattr(
-        # self, "get_contrast_ratio"
-        # ):
-        # ratio = self.get_contrast_ratio(p, txt)
-        #
-        # if ratio >= 4.5:
-        # status = "✅ Perfect"
-        # self.ui.contrast_info_row.remove_css_class("error")
-        # else:
-        # status = "⚠️ Poor Contrast"
-        # self.ui.contrast_info_row.add_css_class("error")
-        #
-        # self.ui.contrast_info_row.set_subtitle(
-        # f"Contrast: {ratio:.1f}:1 — {status}"
-        # )
-        # except Exception as e:
-        # print(f"DEBUG Contrast processing exception skipped: {e}")
-
-    # }}}
     def on_fix_contrast_clicked(self, button):
         p_hex = self.primary_row.get_text()
         rgba = Gdk.RGBA()
@@ -1485,9 +1151,6 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         new_text = "#ffffff" if lum < 0.5 else "#000000"
         self.text_row.set_text(new_text)
 
-        # Trigger refresh
-        self.update_mockup_css()
-
     def is_valid_hex(self, color):
         # Strip whitespace to avoid simple input errors
         color = color.strip()
@@ -1503,182 +1166,6 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         rgba = Gdk.RGBA()
         return rgba.parse(color)
 
-    # FIX: legacy function, possibly ready to be fully pruned {{{
-    #   def create_color_entry(
-    #        self, label, default_hex, css_id, use_subtitle=False, show_magic=False
-    #    ):
-    # if not hasattr(self, "color_entries"):
-    # self.color_entries = {}
-    #
-    # def create_slick_btn(icon_name, click_handler, target):
-    # container = Gtk.Overlay()
-    # container.set_valign(Gtk.Align.CENTER)
-    # container.set_size_request(26, 26)
-    # container.set_cursor(Gdk.Cursor.new_from_name("pointer", None))
-    # container.add_css_class("color-preview-container")
-    #
-    ## The Background Box (The colored/tinted part)
-    # bg_box = Gtk.Label()
-    # bg_box.set_size_request(26, 26)
-    ## Use the same ID for both so they both show the row's color
-    # bg_box.set_name(f"{css_id}-preview")
-    # bg_box.add_css_class("color-preview-dot")
-    # container.set_child(bg_box)
-    #
-    ## The Icon (The dropper or palette)
-    # icon = Gtk.Image.new_from_icon_name(icon_name)
-    # icon.add_css_class("preview-dropper-icon")
-    # icon.set_name(f"{css_id}-icon")  # For the dynamic contrast logic
-    # container.add_overlay(icon)
-    #
-    ## Gesture
-    # gesture = Gtk.GestureClick.new()
-    # gesture.connect("pressed", click_handler, target)
-    # container.add_controller(gesture)
-    #
-    # return container
-    #
-    ##  CREATE THE ROW (This defines the 'row' variable)
-    # if use_subtitle:
-    # row = Adw.ActionRow(title=label)
-    # entry = Gtk.Entry()
-    # entry.set_text(default_hex)
-    # entry.set_valign(Gtk.Align.CENTER)
-    # entry.add_css_class("flat")
-    #
-    ## This is the widget the picker will update
-    # target_widget = entry
-    #
-    ## Connect live updates
-    ##entry.connect("changed", lambda *args: self.update_mockup_css())
-    # entry.connect("changed", lambda e: self.update_preview(e, css_id))
-    #
-    # if show_magic:
-    # btn = Gtk.Button.new_from_icon_name("view-refresh-symbolic")
-    # btn.add_css_class("flat")
-    # btn.connect("clicked", self.on_generate_variants_clicked)
-    # entry.set_suffix_widget(btn)
-    #
-    # row.add_suffix(entry)
-    # self.color_entries[css_id] = entry
-    # else:
-    # row = Adw.EntryRow(title=label)
-    # row.set_text(default_hex)
-    #
-    ## In an EntryRow, the row itself is the target
-    # target_widget = row
-    #
-    ## Connect live updates
-    # row.connect("notify::text", lambda *args: self.update_mockup_css())
-    # row.connect("notify::text", lambda r, pspec: self.update_preview(r, css_id))
-    #
-    # if show_magic:
-    # btn = Gtk.Button.new_from_icon_name("view-refresh-symbolic")
-    #            btn.add_css_class("flat")
-    # btn.connect("clicked", self.on_generate_variants_clicked)
-    # row.add_suffix(btn)
-    #
-    # self.color_entries[css_id] = row
-    #
-    ## --- ADD THE TWO PREFIX BUTTONS ---
-    ##  The Advanced Picker (Dropper Icon)
-    # advanced_btn = create_slick_btn(
-    # "color-select-symbolic", self.on_advanced_picker_clicked, target_widget
-    # )
-    #
-    ## The Quick Picker (Palette/Grid Icon)
-    # quick_btn = create_slick_btn(
-    # "applications-graphics-symbolic",
-    # self.on_quick_picker_clicked,
-    # target_widget,
-    # )
-    #
-    ## Add them both as prefixes (they will sit side-by-side)
-    # row.add_prefix(advanced_btn)
-    # row.add_prefix(quick_btn)
-    ##  ATTACH PICKER GESTURE TO OVERLAY
-    # click_gesture = Gtk.GestureClick.new()
-    # click_gesture.connect("pressed", self.on_advanced_picker_clicked, target_widget)
-    #
-    ## SETUP CONTRAST LABELS & BUTTONS
-    # status_label = Gtk.Label()
-    # status_label.add_css_class("caption")
-    # status_label.set_margin_end(6)
-    #
-    # if not hasattr(self, "status_labels"):
-    # self.status_labels = {}
-    # self.status_labels[css_id] = status_label
-    #
-    # fix_btn = Gtk.Button()
-    # fix_btn.add_css_class("flat")
-    # fix_btn.set_valign(Gtk.Align.CENTER)
-    # fix_btn.set_visible(False)
-    # fix_btn.connect("clicked", self.on_fix_contrast_clicked)
-    #
-    # if not hasattr(self, "status_buttons"):
-    # self.status_buttons = {}
-    # self.status_buttons[css_id] = fix_btn
-    #
-    ## Add them to the row suffix
-    # row.add_suffix(status_label)
-    # row.add_suffix(fix_btn)
-    #
-    # return row
-    #
-    #    row.default_val = default_hex
-    # self.current_colors[css_id] = default_hex
-    #
-    ##  Create the CLICKABLE button instead of a Gtk.Image
-    ## Using new_from_icon_name is the cleanest way to make an icon-button
-    # preview_btn = Gtk.Button.new_from_icon_name("applications-graphics-symbolic")
-    # preview_btn.set_name(f"{css_id}-preview")
-    # preview_btn.add_css_class("flat")  # Keeps it integrated with the row
-    # preview_btn.add_css_class("color-preview-box")  # For your background-color CSS
-    # preview_btn.set_valign(Gtk.Align.CENTER)
-    #
-    ##  Setup the Color Dialog (GTK 4.10+)
-    ## Note: Use self.win or self as the parent window
-    # color_dialog = Gtk.ColorDialog.new()
-    # color_dialog.set_title(f"Choose {label}")
-    #
-    ## Connect the signal (Ensuring 'row' is passed to update the text later)
-    # preview_btn.connect("clicked", self.on_eye_dropper_clicked, color_dialog, row)
-    #
-    ##  Add the BUTTON to the row suffix
-    # row.add_suffix(preview_btn)
-    #
-    ## Setup Preview Box as before
-    #
-    # preview = Gtk.Image.new_from_icon_name("color-select-symbolic")
-    # preview.set_pixel_size(24)
-    # preview.add_css_class("color-preview-box")
-    # preview.set_name(f"{css_id}-preview")
-    # row.add_suffix(preview)
-    ## Connect a gesture or click handler to the preview box itself
-    # click_gesture = Gtk.GestureClick()
-    # click_gesture.connect("released", self.on_advanced_picker_clicked, row)
-    # preview.add_controller(click_gesture)
-    #
-    # VISUAL VALIDATION ONLY (On Leave)
-    #     def on_leave(controller):
-    # current_text = row.get_text().strip()
-    # if not self.is_valid_hex(current_text):
-    ## Mark it red so the user knows it's wrong, but don't delete it
-    # row.add_css_class("error")
-    # else:
-    # row.remove_css_class("error")
-    #
-    ## Standardize hex if it's a plain hex string
-    # if re.match(r"^([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", current_text):
-    # row.set_text(f"#{current_text}")
-    #
-    # focus_ctrl = Gtk.EventControllerFocus()
-    # focus_ctrl.connect("leave", on_leave)
-    # row.add_controller(focus_ctrl)
-    # }}}
-    ## LOGIC PROTECTION (In Preview Update)
-
-    # METHOD:   updates the color selection boxes (could possibly combine with update_colors in mockup.py)
     def update_preview(self, entry, css_id):
         #  Get the current text
         try:
@@ -1720,11 +1207,6 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             # Apply CSS
             if hasattr(self, "dynamic_color_provider"):
                 self.dynamic_color_provider.load_from_string(full_css)
-
-            # --- DYNAMIC CONTRAST LOGIC ---
-            # Now we use the dictionaries created in create_color_entry
-            # You can add your contrast checking logic here
-            # label.set_markup("<span foreground='green'>✔ Pass</span>")
 
     def on_advanced_picker_clicked(self, gesture, n_press, x, y, entry_row):
         # Create the dialog
@@ -1816,10 +1298,18 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         path = os.path.join(SCSS_DIR, f"_{filename}.scss")
         if not os.path.exists(path):
             return ""
+
         with open(path, "r") as f:
             content = f.read()
-            match = re.search(rf"\${variable}:\s*([^;]+);", content)
-            return match.group(1).strip() if match else ""
+            #  FIXED: \$? makes the dollar sign optional, allowing it to read comments
+            match = re.search(rf"\$?{variable}:\s*([^;/\n]+)", content)
+
+            if match:
+                # Extract value and strip spaces, trailing semicolons, or comment symbols
+                value = match.group(1).strip()
+                return value.replace("*/", "").replace("/*", "").strip()
+
+            return ""
 
     def on_theme_select(self, combo_row, gparamspec):
         selected_index = combo_row.get_selected()
@@ -1830,27 +1320,25 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         if selected_index <= 0:
             print("Resetting to Default theme values...")
             self.ui.name_row.set_text("Default")
-            self.ui.color_entries["primary"].set_text("#246cc5")
+            self.ui.color_entries["primary"].set_text("#21233b")
             self.ui.color_entries["secondary"].set_text("#241f31")
             self.ui.color_entries["accent"].set_text("#1e1e1e")
             self.ui.color_entries["text"].set_text("#f9f9f9")
-            self.topbar_row.set_text("#246cc5")
-            self.topbar_switch.set_active(False)
-            self.clock_row.set_text("#246cc5")
-            self.clock_switch.set_active(False)
-            self.update_mockup_css()
+            broker.topbar_switch.set_active(False)
+
             return
 
             # ---  RESET TO DEFAULT CASE ---
         if is_default:
             print("Resetting to Default theme values...")
             self.name_row.set_text("Default")
-            self.ui.color_entries["primary"].set_text("#246cc5")
+            self.ui.color_entries["primary"].set_text("#21233b")
             self.ui.color_entries["secondary"].set_text("#241f31")
             self.ui.color_entries["accent"].set_text("#1e1e1e")
             self.ui.color_entries["text"].set_text("#f9f9f9")
+
+            broker.topbar_switch.set_active(False)
             # Refresh mockup for default values
-            self.update_mockup_css()
             return
 
         selected_theme = self.theme_list.get_string(selected_index)
@@ -1914,27 +1402,80 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             )
 
             tb_val = self.get_scss_value(selected_theme, "topbar-color")
-            if tb_val:
-                self.topbar_row.set_text(tb_val)
-                self.topbar_switch.set_active(True)
+            tb_custom = self.get_scss_value(selected_theme, "CUSTOM_TOPBAR")
+            if "yes" in tb_custom:
+                broker.topbar_entry.set_text(tb_val)
+                broker.topbar_switch.set_active(True)
             else:
                 # If the file doesn't have it, reset to a safe default but don't clear it!
-                self.topbar_row.set_text(self.get_scss_value(selected_theme, "primary"))
-                self.topbar_switch.set_active(False)
+                broker.topbar_entry.set_text(
+                    self.get_scss_value(selected_theme, "primary")
+                )
+                broker.topbar_switch.set_active(False)
+
             clock_val = self.get_scss_value(selected_theme, "clock-color")
-            if clock_val:
-                self.clock_row.set_text(clock_val)
-                self.clock_switch.set_active(True)
+            clock_custom = self.get_scss_value(selected_theme, "CUSTOM_CLOCK")
+            if "yes" in clock_custom:
+                broker.clock_entry.set_text(clock_val)
+                broker.clock_switch.set_active(True)
             else:
                 # If the file doesn't have it, reset to a safe default but don't clear it!
-                self.clock_row.set_text(self.get_scss_value(selected_theme, "text"))
-                self.clock_switch.set_active(False)
+                broker.clock_entry.set_text(self.get_scss_value(selected_theme, "text"))
+                broker.clock_switch.set_active(False)
 
-            self.update_mockup_css()
+            gnome_menu_val = f"{self.get_scss_value(selected_theme, 'gnome-menu-start')},{self.get_scss_value(selected_theme, 'gnome-menu-end')}"
+            gnome_menu_custom = self.get_scss_value(selected_theme, "CUSTOM_GNOME_MENU")
+            if "yes" in gnome_menu_custom:
+                broker.datemenu_entry.set_text(gnome_menu_val)
+                broker.datemenu_switch.set_active(True)
+            else:
+                # If the file doesn't have it, reset to a safe default but don't clear it!
+                broker.datemenu_entry.set_text(
+                    self.get_scss_value(selected_theme, "primary")
+                )
+                broker.datemenu_switch.set_active(False)
 
-            # If you have the switch: self.topbar_switch.set_active(True)
+            nautilus_main_val = f"{self.get_scss_value(selected_theme, 'nautilus-start')},{self.get_scss_value(selected_theme, 'nautilus-end')}"
+            nautilus_main_custom = self.get_scss_value(
+                selected_theme, "CUSTOM_NAUTILUS_MAIN"
+            )
+            if "yes" in nautilus_main_custom:
+                broker.nautilusprimarycolor_entry.set_text(nautilus_main_val)
+                broker.nautilusprimarycolor_switch.set_active(True)
+            else:
+                # If the file doesn't have it, reset to a safe default but don't clear it!
+                broker.nautilusprimarycolor_entry.set_text(
+                    self.get_scss_value(selected_theme, "primary")
+                )
+                broker.nautilusprimarycolor_switch.set_active(False)
 
-    # Assuming 'selected' is the string from your dropdown/ComboRow
+            nautilus_second_val = (
+                f"{self.get_scss_value(selected_theme, 'nautilus-secondary')}"
+            )
+            nautilus_second_custom = self.get_scss_value(
+                selected_theme, "CUSTOM_NAUTILUS_SECOND"
+            )
+            if "yes" in nautilus_second_custom:
+                broker.nautilussecondarycolor_entry.set_text(nautilus_second_val)
+                broker.nautilussecondarycolor_switch.set_active(True)
+            else:
+                # If the file doesn't have it, reset to a safe default but don't clear it!
+                broker.nautilussecondarycolor_entry.set_text(
+                    self.get_scss_value(selected_theme, "secondary")
+                )
+                broker.nautilusprimarycolor_switch.set_active(False)
+            gradient_val = f"{self.get_scss_value(selected_theme, 'gnome-menu-end')}"
+            gradient_custom = self.get_scss_value(selected_theme, "CUSTOM_GRAD")
+            if "yes" in gradient_custom:
+                primary_val = self.get_scss_value(selected_theme, "primary")
+                self.ui.color_entries["primary"].set_text(
+                    f"{primary_val} , {gradient_val}"
+                )
+            else:
+                # If the file doesn't have it, reset to a safe default but don't clear it!
+                self.ui.color_entries["primary"].set_text(
+                    self.get_scss_value(selected_theme, "primary")
+                )
 
     # --- RUN BASH SCRIPT ---
     def on_configure_clicked(self, button):
@@ -1997,7 +1538,6 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
     # SECTION END FUNCTIONS }}}
     def on_run_build_clicked(self, button):
         from colormydesktop.config import get_default_color_map
-        import subprocess
 
         final_colors = get_default_color_map()
         print("\n=== [DEBUG] THEME BUILDER SEES MAP AT CLICK TIME ===")
@@ -2017,6 +1557,12 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
 
         topbar_start, topbar_end = extract_stops(
             final_colors.get("topbarcolor"), "#1a4d8c"
+        )
+        gnome_menu_start, gnome_menu_end = extract_stops(
+            final_colors.get("datemenucolor"), "#1a4d8c"
+        )
+        nautilus_start, nautilus_end = extract_stops(
+            final_colors.get("nautilusprimarycolor"), "#1a4d8c"
         )
 
         self.active_build_button = button
@@ -2056,38 +1602,22 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
                 ]  # Extracts the first color for st-mix/fallbacks
                 gradient_str = ", ".join(colors)
 
-        from colormydesktop.broker import ContextBroker
+        topbar_val = broker.gnome.get_color_value("topbarcolor", primary_color)
+        clock_val = broker.gnome.get_color_value("clockcolor", text_color)
+        datemenu_val = broker.gnome.get_color_value("datemenucolor", primary_color)
+        n_main_val = broker.nautilus.get_color_value(
+            "nautilusprimarycolor", primary_color
+        )
+        n_sec_val = broker.nautilus.get_color_value(
+            "nautilussecondarycolor", secondary_color
+        )
 
-        # Fetch the registered home view instance
-        gnome_options = ContextBroker.get_page("gnome_options")
-        topbar_switch = gnome_options.switches["topbarcolor"]
-        if topbar_switch.get_active():
-            topbar_val = str(gnome_options.color_entries["topbarcolor"].get_text())
-        else:
-            topbar_val = primary_color
+        topbar_str = broker.gnome.get_switch_string("topbarcolor")
+        clock_str = broker.gnome.get_switch_string("clockcolor")
+        gnome_menu_str = broker.gnome.get_switch_string("datemenucolor")
 
-            # if self.clock_switch.get_active():
-            # clock_val = str(self.clock_row.get_text())
-            # else:
-            # clock_val = text_color
-
-            #  Logic for Nautilus Main
-        # If the advanced toggle is OFF, fallback to Primary
-        # n_main_sw = getattr(self, "nautilus_custom_switch")
-        # n_naut_row = getattr(self, "nautilus_custom_entry")
-
-        # n_sec_sw = getattr(self, "nautilus_custom_sec_switch")
-        # n_naut_row_sec = getattr(self, "nautilus_custom_naut_row_sec")
-
-        # Get values: If active, take entry text. If not, take primary.
-        # n_main_val = n_naut_row.get_text() if n_main_sw.get_active() else primary_color
-        # n_sec_val = (
-        # n_naut_row_sec.get_text() if n_sec_sw.get_active() else secondary_color
-        # )
-
-        # if not topbar_val.strip():
-        # if not clock_val.strip():
-        clock_val = text_color
+        n_main_str = broker.nautilus.get_switch_string("nautilusprimarycolor")
+        n_sec_str = broker.nautilus.get_switch_string("nautilussecondarycolor")
 
         args = [
             self.ui.name_row.get_text(),
@@ -2096,16 +1626,16 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             self.ui.color_entries["accent"].get_text(),
             self.ui.color_entries["text"].get_text(),
             "1" if self.zen_switch.get_active() else "0",
-            "1" if gnome_options.switches["topbarcolor"].get_active() else "0",
+            topbar_str,
             topbar_val,  # topbar_val
-            "0",  # if self.clock_switch.get_active() else "0",
+            clock_str,  # if self.clock_switch.get_active() else "0",
             clock_val,  # clock_val
             "0",  # if self.trans_switch.get_active() else "0",
             "0.8",
-            "0",  # if self.papirus_switch.get_active() else "0",  # ${13}
-            solid_primary,  # n_main_val ($14)
+            "1" if self.papirus_switch.get_active() else "0",  # ${13}
+            n_main_val,  # n_main_val ($14)
             "#246cc5",  # $15 (Datemenu fallback)
-            self.ui.color_entries["secondary"].get_text(),  # n_sec_val ($16)
+            n_sec_val,  # n_sec_val ($16)
             "1" if self.ui.gnome_switch.get_active() else "0",  # $17
             "1" if self.gtk4_switch.get_active() else "0",  # $18
             "1" if self.plasma_switch.get_active() else "0",  # $19
@@ -2121,6 +1651,13 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             gradient_str,  # ${29}
             topbar_start,
             topbar_end,
+            gnome_menu_start,
+            gnome_menu_end,  # 33
+            gnome_menu_str,  # 34
+            nautilus_start,  # 35
+            nautilus_end,  # 36
+            n_main_str,  # 37
+            n_sec_str,  # 38
         ]
         self.log_container.set_visible(True)
         self.log_view.get_buffer().set_text("")
@@ -2133,9 +1670,9 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         button.set_sensitive(False)
 
     def execute_build(self, args):
+
         try:
             # Use 'stdbuf -oL' to force Bash to send output line-by-line immediately
-            # universal_newlines=True ensures text is handled as strings, not bytes
             process = subprocess.Popen(
                 ["stdbuf", "-oL", BASH_SCRIPT] + args,
                 stdout=subprocess.PIPE,
@@ -2143,7 +1680,15 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
                 text=True,
                 bufsize=1,
                 universal_newlines=True,
+                preexec_fn=os.setsid,  #  CRITICAL: Groups shell script + child commands together
             )
+
+            #  NEW: Attach the process instance to a tracking variable where on_window_close can read it
+            # (Adjust self.ui, self.window, or your current context reference to pass it to the exit function)
+            if hasattr(self, "ui") and self.ui:
+                self.ui.current_process = process
+            else:
+                self.current_process = process
 
             # Read output in real-time
             for line in iter(process.stdout.readline, ""):
@@ -2158,6 +1703,12 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         except Exception as e:
             GLib.idle_add(self.append_log, f"Error: {str(e)}\n")
         finally:
+            #  NEW: Clear tracking reference once the process naturally finishes
+            if hasattr(self, "ui") and self.ui:
+                self.ui.current_process = None
+            else:
+                self.current_process = None
+
             if args[0] == "config_only":
                 GLib.idle_add(self.config_finished_cleanup)
             else:
@@ -2230,46 +1781,36 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         dialog.choose(self, None, lambda *args: None)
 
     ### }}}
+    @staticmethod
+    def on_window_close(window):
+        import os
+        import signal
+        import subprocess
 
-
-class ColorMyDesktopApp(Adw.Application):
-    def __init__(self, **kwargs):
-        super().__init__(
-            application_id="io.github.schwarzen.colormydesktop",
-            flags=Gio.ApplicationFlags.DEFAULT_FLAGS,
-            **kwargs,
-        )
-        self.win = None
-
-    def do_startup(self):
-        Adw.Application.do_startup(self)
-
-    def do_activate(self):
-        # initialize window
-        if not self.win:
-            # Pass 'self' as the application
-            self.win = ThemeManager(application=self)
-
-            #  Connect the close signal to the WINDOW (ThemeManager)
-            self.win.connect("close-request", self.on_window_close)
-
-        self.win.present()
-
-    def on_window_close(self, window):
         print("Shutting down cleanly...")
 
-        # Clean up the subprocess if it is running
-
+        # Target the window object where we assigned the process group
         if hasattr(window, "current_process") and window.current_process:
-            print("Terminating active build process...")
-            window.current_process.terminate()
+            proc = window.current_process
+            if proc.poll() is None:  # Process is actively running
+                print("Terminating active shell script and all child processes...")
+                try:
+                    # Signals the group leader (the shell script) and kills all children at once
+                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
 
-        # Calling quit() ensures all background threads are signaled to stop.
-        self.quit()
+                    try:
+                        proc.wait(timeout=1.0)
+                    except subprocess.TimeoutExpired:
+                        print("Forcing group closure via SIGKILL...")
+                        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                        proc.wait()  # Reaps the zombie process completely
+                except Exception as e:
+                    print(f"Error handling process group shutdown: {e}")
+
+        app = window.get_application()
+        if app is not None:
+            print("closing application")
+            app.quit()
+        else:
+            window.close()
         return False
-
-
-if __name__ == "__main__":
-    app = ColorMyDesktopApp()
-
-    sys.exit(app.run([]))

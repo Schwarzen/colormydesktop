@@ -27,7 +27,7 @@ template $AdvancedPage : Gtk.Box {
       }
 
       Gtk.Label {
-        label: "This is the body text inside a Libadwaita-styled card component.";
+        label: "Advanced GNOME shell options";
         wrap: true;
       }
       Gtk.GestureClick {
@@ -49,13 +49,17 @@ template $AdvancedPage : Gtk.Box {
       spacing: 6;
 
       Gtk.Label {
-        label: "Card Title";
+        label: "Advanced GNOME-Files/Nautilus Options";
         styles ["heading"]
       }
 
       Gtk.Label {
-        label: "This is the body text inside a Libadwaita-styled card component.";
+        label: "More options for the gnome file browser";
         wrap: true;
+      }
+      Gtk.GestureClick {
+        // Blueprint signals cannot parse input strings. Use discrete callback names.
+        pressed => $on_nautilus_card_pressed();
       }
 
     }
@@ -73,13 +77,43 @@ template $AdvancedPage : Gtk.Box {
       spacing: 6;
 
       Gtk.Label {
-        label: "Card Title";
+        label: "KDE Options";
         styles ["heading"]
       }
 
       Gtk.Label {
-        label: "This is the body text inside a Libadwaita-styled card component.";
+        label: "View advanced KDE options";
         wrap: true;
+      }
+      Gtk.GestureClick {
+        // Blueprint signals cannot parse input strings. Use discrete callback names.
+        pressed => $on_kde_card_pressed();
+      }
+    }
+  }
+  Gtk.Frame {
+    styles ["card"]
+
+    Gtk.Box {
+      orientation: vertical;
+      margin-top: 12;
+      margin-bottom: 12;
+      margin-start: 12;
+      margin-end: 12;
+      spacing: 6;
+
+      Gtk.Label {
+        label: "Permissions Options";
+        styles ["heading"]
+      }
+
+      Gtk.Label {
+        label: "View options related to flatpak permissions";
+        wrap: true;
+      }
+      Gtk.GestureClick {
+        // Blueprint signals cannot parse input strings. Use discrete callback names.
+        pressed => $on_permissions_card_pressed();
       }
     }
   }

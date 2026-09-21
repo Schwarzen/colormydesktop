@@ -27,6 +27,7 @@ GUI_GTK4_TOGGLE="${18}"
 GUI_KDE_TOGGLE="${19}"
 GUI_YT_TOGGLE="${20}"
 GUI_VESKTOP_TOGGLE="${21}"
+GUI_GNOME_MENU_TOGGLE="${34}"
 
 #Global
 
@@ -381,7 +382,7 @@ configure_theme() {
 
 MODE=$1
 
-# 1. Check for the special flag at the START of the script
+#  Check for the special flag at the START of the script
 if [ "$MODE" == "config_only" ]; then
   echo "Mode: Configuration Only"
 
@@ -389,9 +390,9 @@ if [ "$MODE" == "config_only" ]; then
   # This makes the old $2 become the new $1
   shift
 
-  # 2. Call the function with the "shifted" arguments
+  #  Call the function with the "shifted" arguments
   # Now configure_theme sees $1 as the Profile Name
-  # 1. Determine the filename (from $1 or terminal prompt)
+  #  Determine the filename (from $1 or terminal prompt)
   if [ -n "$1" ]; then
     clean_name=$(echo "$1" | sed 's/^_//;s/\.scss$//')
   else
@@ -405,11 +406,13 @@ if [ "$MODE" == "config_only" ]; then
   B_PRIMARY_GRADIENT="${29:-$2}"
   B_TOPBAR_START="${30:-$2}"
   B_TOPBAR_END="${31:-$2}"
+  B_GNOME_MENU_START="${32:-$2}"
+  B_GNOME_MENU_END="${33:-$2}"
   B_SECONDARY="${3:-#241f31}"
   B_TERTIARY="${4:-#1e1e1e}"
   B_TEXT="${5:-#f9f9f9}"
   B_TOPBAR="${8:-$B_PRIMARY}" # Fallback to primary if empty
-  B_CLOCK="${10:-$B_TEXT}"    # Fallback to text if empty
+  B_CLOCK="${9:-$B_TEXT}"     # Fallback to text if empty
   # Capture the new arguments ($14 and $15)
   B_NAUTILUS="${14:-$3}" # Fallback to Primary ($2) if empty
   B_DATEMENU="${15:-$2}" # Fallback to Primary ($2) if empty
@@ -417,14 +420,33 @@ if [ "$MODE" == "config_only" ]; then
 
   # Check if our gradient variable has a comma separating colors
   if [[ "$B_PRIMARY_GRADIENT" == *","* ]]; then
+    CUSTOM_GRAD="yes"
+
     # Extract the first color before the comma
     GRAD_START=$(echo "$B_PRIMARY_GRADIENT" | cut -d',' -f1 | xargs)
     # Extract the second color after the comma
     GRAD_END=$(echo "$B_PRIMARY_GRADIENT" | cut -d',' -f2 | xargs)
   else
+    CUSTOM_GRAD="no"
     # Fallback to the same solid color if no comma is present
     GRAD_START="$B_PRIMARY"
     GRAD_END="$B_PRIMARY"
+  fi
+
+  if [[ "$GUI_TOPBAR_TOGGLE" == 1 ]]; then
+    CUSTOM_TOPBAR="yes"
+  else
+    CUSTOM_TOPBAR="no"
+  fi
+  if [[ "$GUI_CLOCK_TOGGLE" == 1 ]]; then
+    CUSTOM_CLOCK="yes"
+  else
+    CUSTOM_CLOCK="no"
+  fi
+  if [[ "$GUI_GNOME_MENU_TOGGLE" == 1 ]]; then
+    CUSTOM_GNOME_MENU="yes"
+  else
+    CUSTOM_GNOME_MENU="no"
   fi
 
   {
@@ -433,6 +455,8 @@ if [ "$MODE" == "config_only" ]; then
     printf '$panel-grad-end: %s;\n' "$GRAD_END"
     printf '$topbar-start: %s;\n' "$B_TOPBAR_START"
     printf '$topbar-end: %s;\n' "$B_TOPBAR_END"
+    printf '$gnome-menu-start: %s;\n' "$B_GNOME_MENU_START"
+    printf '$gnome-menu-end: %s;\n' "$B_GNOME_MENU_END"
     printf '$secondary: %s;\n' "$B_SECONDARY"
     printf '$tertiary: %s;\n' "$B_TERTIARY"
     printf '$tertiary-light: %s;\n' "rgba(\$tertiary, 0.25)"
@@ -443,9 +467,14 @@ if [ "$MODE" == "config_only" ]; then
     printf '$nautilus-main: %s;\n' "$B_NAUTILUS"
     printf '$nautilus-secondary: %s;\n' "$B_NAUT_SEC"
     printf '$system-datemenu: %s;\n' "$B_DATEMENU"
+    printf '/*%s;\n'
+    printf 'CUSTOM_TOPBAR:%s;\n' "$CUSTOM_TOPBAR"
+    printf 'CUSTOM_CLOCK:%s;\n' "$CUSTOM_CLOCK"
+    printf 'CUSTOM_GRAD:%s;\n' "$CUSTOM_GRAD"
+    printf '*/%s;\n'
   } >"$partial_file"
 
-  # 3. Exit so the rest of the build logic doesn't run
+  #  Exit so the rest of the build logic doesn't run
   exit 0
 fi
 
@@ -502,12 +531,14 @@ if [ "$choice" == "1" ]; then
     clean_name=$(echo "$filename" | sed 's/^_//;s/\.scss$//')
   fi
 
+  # SECTION: UPDATE PARTIAL AND COMPILE
   partial_file="${SCSS_DIR}/_${clean_name}.scss"
-  #  Map to clean, hyphen-free Bash variables
   B_PRIMARY="${2:-#3584e4}"
   B_PRIMARY_GRADIENT="${29:-$2}"
   B_TOPBAR_START="${30:-$2}"
   B_TOPBAR_END="${31:-$2}"
+  B_GNOME_MENU_START="${32:-$2}"
+  B_GNOME_MENU_END="${33:-$2}"
   B_SECONDARY="${3:-#241f31}"
   B_TERTIARY="${4:-#1e1e1e}"
   B_TEXT="${5:-#f9f9f9}"
@@ -517,8 +548,15 @@ if [ "$choice" == "1" ]; then
   B_NAUTILUS="${14:-$3}" # Fallback to Primary ($2) if empty
   B_DATEMENU="${15:-$2}" # Fallback to Primary ($2) if empty
   B_NAUT_SEC="${16:-$3}"
+  B_NAUTILUS_START="${35:-$2}"
+  B_NAUTILUS_END="${36:-$2}"
+  GUI_NAUTILUS_MAINTOGGLE="${37}"
+  GUI_NAUTILUS_SECONDTOGGLE="${38}"
+
   # Check if our gradient variable has a comma separating colors
   if [[ "$B_PRIMARY_GRADIENT" == *","* ]]; then
+    CUSTOM_GRAD="yes"
+
     # Extract the first color before the comma
     GRAD_START=$(echo "$B_PRIMARY_GRADIENT" | cut -d',' -f1 | xargs)
     # Extract the second color after the comma
@@ -527,6 +565,35 @@ if [ "$choice" == "1" ]; then
     # Fallback to the same solid color if no comma is present
     GRAD_START="$B_PRIMARY"
     GRAD_END="$B_PRIMARY"
+    CUSTOM_GRAD="no"
+  fi
+
+  if [[ "$GUI_TOPBAR_TOGGLE" == 1 ]]; then
+    CUSTOM_TOPBAR="yes"
+  else
+    CUSTOM_TOPBAR="no"
+  fi
+  if [[ "$GUI_CLOCK_TOGGLE" == 1 ]]; then
+    CUSTOM_CLOCK="yes"
+  else
+    CUSTOM_CLOCK="no"
+  fi
+  if [[ "$GUI_GNOME_MENU_TOGGLE" == 1 ]]; then
+    CUSTOM_GNOME_MENU="yes"
+  else
+    CUSTOM_GNOME_MENU="no"
+  fi
+
+  if [[ "$GUI_NAUTILUS_MAINTOGGLE" == 1 ]]; then
+    CUSTOM_NAUTILUS_MAIN="yes"
+  else
+    CUSTOM_NAUTILUS_MAIN="no"
+  fi
+
+  if [[ "$GUI_NAUTILUS_SECONDTOGGLE" == 1 ]]; then
+    CUSTOM_NAUTILUS_SECOND="yes"
+  else
+    CUSTOM_NAUTILUS_SECOND="no"
   fi
 
   {
@@ -535,6 +602,10 @@ if [ "$choice" == "1" ]; then
     printf '$panel-grad-end: %s;\n' "$GRAD_END"
     printf '$topbar-start: %s;\n' "$B_TOPBAR_START"
     printf '$topbar-end: %s;\n' "$B_TOPBAR_END"
+    printf '$gnome-menu-start: %s;\n' "$B_GNOME_MENU_START"
+    printf '$gnome-menu-end: %s;\n' "$B_GNOME_MENU_END"
+    printf '$nautilus-start: %s;\n' "$B_NAUTILUS_START"
+    printf '$nautilus-end: %s;\n' "$B_NAUTILUS_END"
     printf '$secondary: %s;\n' "$B_SECONDARY"
     printf '$tertiary: %s;\n' "$B_TERTIARY"
     printf '$tertiary-light: %s;\n' "rgba(\$tertiary, 0.25)"
@@ -545,6 +616,14 @@ if [ "$choice" == "1" ]; then
     printf '$nautilus-main: %s;\n' "$B_NAUTILUS"
     printf '$nautilus-secondary: %s;\n' "$B_NAUT_SEC"
     printf '$system-datemenu: %s;\n' "$B_DATEMENU"
+    printf '/*%s;\n'
+    printf 'CUSTOM_TOPBAR:%s;\n' "$CUSTOM_TOPBAR"
+    printf 'CUSTOM_GNOME_MENU:%s;\n' "$CUSTOM_GNOME_MENU"
+    printf 'CUSTOM_NAUTILUS_MAIN:%s;\n' "$CUSTOM_NAUTILUS_MAIN"
+    printf 'CUSTOM_NAUTILUS_SECOND:%s;\n' "$CUSTOM_NAUTILUS_SECOND"
+    printf 'CUSTOM_CLOCK:%s;\n' "$CUSTOM_CLOCK"
+    printf 'CUSTOM_GRAD:%s;\n' "$CUSTOM_GRAD"
+    printf '*/%s;\n'
   } >"$partial_file"
 
   echo "Status: Theme partial updated at $partial_file"
@@ -835,8 +914,6 @@ if [[ "$apply_gnome" =~ ^[Yy]$ ]]; then
     touch "$temp_scss"
   fi
   echo "$import_statement" | cat - "$temp_scss" >temp && mv temp "$temp_scss"
-
-  custom_top_bar_logic "$7" "$8" "$9" "${10}"
 
   echo "Compiling $temp_scss to $output_css..."
   $SASS "$temp_scss" "$output_css" --style expanded

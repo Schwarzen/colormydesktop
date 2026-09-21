@@ -6,12 +6,12 @@ LICENSE_DIR = $(DATA_DIR)/licenses/$(APP_ID)
 KDE_INSTALL_DIR = $(PREFIX)/share/color-my-desktop/KDE
 REFRESHER_DIR = $(DATA_DIR)/refresher
 install:
-	# 1. Install binaries
+	#  Install binaries
 	install -d $(BIN_DIR)
-	install -m 755 test-main.py $(BIN_DIR)/color-my-desktop
+	install -m 755 main.py $(BIN_DIR)/color-my-desktop
 	install -m 755 color-my-desktop.sh $(BIN_DIR)/color-my-desktop-backend
 
-	# 2. Install the subfolder package to /app/bin/
+	#  Install the subfolder package to /app/bin/
 	install -d  $(BIN_DIR)/colormydesktop
 	install -m 644 colormydesktop/*.py $(BIN_DIR)/colormydesktop/
 	install -m 644 colormydesktop/*.ui $(BIN_DIR)/colormydesktop/
@@ -22,18 +22,9 @@ install:
 	install -m 644 palettes/*.scss $(PREFIX)/share/color-my-desktop/palettes/
 
 
-
-
 	# Install refresh units
 	install -d $(REFRESHER_DIR)
-	install -m 644 plasma-refresher.path $(REFRESHER_DIR)/plasma-refresher.path
-	install -m 644 plasma-refresher.service $(REFRESHER_DIR)/plasma-refresher.service
-	install -m 644 gnome-refresher.path $(REFRESHER_DIR)/gnome-refresher.path
-	install -m 644 gnome-refresher.service $(REFRESHER_DIR)/gnome-refresher.service
-
-
-
-
+	install -m 644 autorefresh/*-refresher.* $(REFRESHER_DIR)/
 
 
 	# Install KDE themes
@@ -47,16 +38,15 @@ install:
 	find $(KDE_INSTALL_DIR) -type f -exec chmod 644 {} +
 
 
-
-	# 2. Install Desktop File (Makes it appear in menus)
+	#  Install Desktop File (Makes it appear in menus)
 	install -d $(DATA_DIR)/applications
 	install -m 644 $(APP_ID).desktop $(DATA_DIR)/applications/
 
-	# 3. Install AppStream MetaInfo (Required for app stores)
+	# Install AppStream MetaInfo (Required for app stores)
 	install -d $(DATA_DIR)/metainfo
 	install -m 644 $(APP_ID).metainfo.xml $(DATA_DIR)/metainfo/
 
-	# 4. Install Icon (Must be 128x128 PNG or scalable SVG)
+	#  Install Icon (Must be 128x128 PNG or scalable SVG)
 	install -d $(DATA_DIR)/icons/hicolor/128x128/apps
 	install -m 644 $(APP_ID).png $(DATA_DIR)/icons/hicolor/128x128/apps/
 

@@ -7,40 +7,55 @@ template $MyMainWindow : Adw.ApplicationWindow {
   default-height: 800;
   decorated: false;
 
-  Gtk.Box drag_frame {
-    vexpand: true;
-    hexpand: true;
+  Gtk.Box window_wrapper {
+    orientation: vertical;
 
-    Gtk.Overlay root_overlay {
-      child: Gtk.Box top_drag_bar {
-        orientation: vertical;
+    Gtk.WindowHandle custom_drag_handle {
+      margin-bottom: 0;
 
-        Adw.ToastOverlay toast_overlay {
-          child: Adw.NavigationView nav_view {
+      Gtk.Box title_header_bar {
+        orientation: horizontal;
+        styles ["ultra-slim-header"]
+
+        Gtk.Label {
+          label: "Color My Desktop";
+          hexpand: true;
+          halign: center;
+          margin-start: 36; // Offsets the close button width to keep text perfectly centered
+          styles ["slim-title"]
+        }
+
+        Gtk.Button close_btn { 
+          icon-name: "window-close-symbolic";
+          valign: center;
+          halign: end;
+          margin-end: 8;
+          styles ["flat", "circular", "slim-close"] 
+        }
+      }
+    }
+
+    Gtk.Box core_application_body {
+      orientation: vertical;
+      vexpand: true;
+      hexpand: true;
+      margin-top: 0; // Removes any leftover layout margins here
+      
+      styles ["core_application_body"] // Binds to our CSS rule above
+
+      Adw.ToastOverlay toast_overlay {
+        child: Adw.NavigationView nav_view {
+          vexpand: true;
+          hexpand: true;
+          
+          $PageHomeView home_view_panel {
             vexpand: true;
             hexpand: true;
-            
-            // DYNAMIC IMPORT: We drop your sub-page straight into the stack here!
-            $PageHomeView home_view_panel {
-              vexpand: true;
-              hexpand: true;
-            }
-          };
-        }
-      };
-
-      [overlay] 
-      Gtk.Button close_btn { 
-        icon-name: "window-close-symbolic";
-        halign: end;     // Replaces .set_halign(Gtk.Align.END) -> Pins to the right
-        valign: start;   // Replaces .set_valign(Gtk.Align.START) -> Pins to the top
-        margin-top: 6;   // Centered nicely inside your outer window frame padding
-        margin-end: 6;
-        styles ["flat", "circular"] // Standard sleek, modern GNOME circular button style
+          }
+        };
       }
-      
     }
   }
-
-  
 }
+
+

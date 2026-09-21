@@ -45,4 +45,50 @@ BASE_STYLE_SHEET = """
     padding: 0px; 
     min-height: 10px;
 }
+
+/* Strip away the default header bar styling */
+headerbar.integrated-header {
+    background: transparent;      /* Merges cleanly into your main app background */
+    background-color: transparent;
+    border-bottom: none;          /* Removes the stark separating line beneath it */
+    box-shadow: none;             /* Removes the 3D depth shadows */
+    max-height: 20px;             /* Slims down the vertical thickness */
+    padding-top: 2px;
+    padding-bottom: -2px;
+}
+
+headerbar.integrated-header > box {
+    min-height: 20px;
+    padding: 0;
+    margin: 0;
+}
+
+/* Ensure the header bar doesn't draw its own window container background */
+headerbar.integrated-header windowcontrols {
+    background: transparent;
+}
+
+/* Optional: Make the title label extra sleek and low-profile */
+headerbar.integrated-header label.heading {
+    font-size: 9.5pt;
+    font-weight: 600;
+    opacity: 0.85;                /* Gives it a slightly muted, integrated look */
+}
+
+/* Tighten the header container space */
+box.ultra-slim-header {
+    background-color: transparent;
+    min-height: 24px;
+    padding-top: 4px;
+    padding-bottom: 2px;
+    margin: 0;
+}
+
+/* Make the title text clean and subtle */
+box.ultra-slim-header label.slim-title {
+    font-size: 10pt;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
 """

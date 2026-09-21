@@ -42,7 +42,7 @@ install: setup
 	@mkdir -p $(BIN_DIR)
 	# 1. Install binaries
 	install -d $(BIN_DIR)
-	install -m 755 test-main.py $(BIN_DIR)/color-my-desktop
+	install -m 755 main.py $(BIN_DIR)/color-my-desktop
 	install -m 755 color-my-desktop.sh $(BIN_DIR)/color-my-desktop-backend
 
 	# 2. Install the subfolder package to /app/bin/

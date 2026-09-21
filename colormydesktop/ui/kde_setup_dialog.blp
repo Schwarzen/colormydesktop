@@ -1,7 +1,7 @@
 using Gtk 4.0;
 using Adw 1;
 
-template $GnomeSetupDialog : Gtk.Box {
+template $KDESetupDialog : Gtk.Box {
   orientation: vertical;
   
   // Center the clamp vertically inside the dialog window
@@ -102,7 +102,7 @@ template $GnomeSetupDialog : Gtk.Box {
           spacing: 6;
 
           Gtk.Label {
-            label: "systemctl --user daemon-reload && systemctl --user enable --now gnome-refresher.path";
+            label: "systemctl --user daemon-reload && systemctl --user enable --now kde-refresher.path";
             selectable: true;
             wrap: true;
             hexpand: true;

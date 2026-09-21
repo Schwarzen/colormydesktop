@@ -32,9 +32,29 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
           </object>
         </child>
         <child>
-          <object class="AdwSwitchRow" id="refresh_switch">
+          <object class="AdwSwitchRow" id="clock_toggle">
+            <property name="title">Unique Clock Color</property>
+            <signal name="notify::active" handler="on_clock_toggled"/>
+          </object>
+        </child>
+        <child>
+          <object class="AdwActionRow" id="refresh_row">
             <property name="title">Toggle GNOME auto refresh</property>
-            <signal name="notify::active" handler="on_refresh_toggled"/>
+            <child type="suffix">
+              <object class="GtkSwitch" id="refresh_switch">
+                <property name="valign">3</property>
+                <signal name="notify::active" handler="on_refresh_toggled"/>
+              </object>
+            </child>
+            <child type="suffix">
+              <object class="GtkButton" id="refresh_btn">
+                <property name="valign">3</property>
+                <property name="icon-name">emblem-system-symbolic</property>
+                <style>
+                  <class name="flat"/>
+                </style>
+              </object>
+            </child>
           </object>
         </child>
       </object>
@@ -56,6 +76,17 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
         <property name="transition-type">5</property>
         <child>
           <object class="AdwPreferencesGroup" id="datemenu_color_row">
+            <property name="title">Dynamic Sub-Settings</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkRevealer">
+        <property name="reveal-child" bind-source="clock_toggle" bind-property="active" bind-flags="sync-create"/>
+        <property name="transition-type">5</property>
+        <child>
+          <object class="AdwPreferencesGroup" id="clock_color_row">
             <property name="title">Dynamic Sub-Settings</property>
           </object>
         </child>

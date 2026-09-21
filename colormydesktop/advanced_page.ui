@@ -42,7 +42,7 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
             </child>
             <child>
               <object class="GtkLabel">
-                <property name="label">This is the body text inside a Libadwaita-styled card component.</property>
+                <property name="label">Advanced GNOME shell options</property>
                 <property name="wrap">true</property>
               </object>
             </child>
@@ -70,7 +70,7 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
             <property name="spacing">6</property>
             <child>
               <object class="GtkLabel">
-                <property name="label">Card Title</property>
+                <property name="label">Advanced GNOME-Files/Nautilus Options</property>
                 <style>
                   <class name="heading"/>
                 </style>
@@ -78,8 +78,13 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
             </child>
             <child>
               <object class="GtkLabel">
-                <property name="label">This is the body text inside a Libadwaita-styled card component.</property>
+                <property name="label">More options for the gnome file browser</property>
                 <property name="wrap">true</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkGestureClick">
+                <signal name="pressed" handler="on_nautilus_card_pressed"/>
               </object>
             </child>
           </object>
@@ -101,7 +106,7 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
             <property name="spacing">6</property>
             <child>
               <object class="GtkLabel">
-                <property name="label">Card Title</property>
+                <property name="label">KDE Options</property>
                 <style>
                   <class name="heading"/>
                 </style>
@@ -109,8 +114,49 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
             </child>
             <child>
               <object class="GtkLabel">
-                <property name="label">This is the body text inside a Libadwaita-styled card component.</property>
+                <property name="label">View advanced KDE options</property>
                 <property name="wrap">true</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkGestureClick">
+                <signal name="pressed" handler="on_kde_card_pressed"/>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkFrame">
+        <style>
+          <class name="card"/>
+        </style>
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">1</property>
+            <property name="margin-top">12</property>
+            <property name="margin-bottom">12</property>
+            <property name="margin-start">12</property>
+            <property name="margin-end">12</property>
+            <property name="spacing">6</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="label">Permissions Options</property>
+                <style>
+                  <class name="heading"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="label">View options related to flatpak permissions</property>
+                <property name="wrap">true</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkGestureClick">
+                <signal name="pressed" handler="on_permissions_card_pressed"/>
               </object>
             </child>
           </object>

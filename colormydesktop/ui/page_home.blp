@@ -34,7 +34,7 @@ template $PageHomeView : Adw.NavigationPage {
         spacing: 24;
         margin-start: 30;  // Controls padding from the left window edge
         margin-end: 30;    // Controls padding from the right window edge
-        margin-top: 40;
+        margin-top: 20;
         margin-bottom: 20;
 
         Adw.PreferencesGroup load_group {
@@ -51,24 +51,15 @@ template $PageHomeView : Adw.NavigationPage {
 
             // --- NEW PROFILE BUTTON ---
             [suffix]
-            Gtk.Button new_profile_btn {
-              icon-name: "list-add-symbolic";
-              valign: center;
-              tooltip-text: "Start New Profile";
-              margin-end: 4;
-              styles ["flat"]
-            }
-
-            // --- DELETE PROFILE BUTTON ---
-            [suffix]
             Gtk.Button delete_profile_btn {
               icon-name: "user-trash-symbolic";
               valign: center;
               tooltip-text: "Delete Selected Profile";
-              margin-end: 10;
-              visible: false; 
-              styles ["flat", "error"]
+              margin-end: 4;
+              styles ["flat"]
             }
+
+
           }
 
           // --- MAIN RESPONSIVE CONTAINER ---
@@ -118,11 +109,13 @@ template $PageHomeView : Adw.NavigationPage {
               spacing: 0;
               margin-top: 10;
 
-              Gtk.Image mockup_image {
-                name: "mockup-preview-image";
-                pixel-size: 425;
-                hexpand: true;
-              }
+
+            Gtk.Box preview_holder {
+              name: "preview_holder";
+              hexpand: true;
+              vexpand: true;
+            }
+
             }
           }
         }
@@ -132,31 +125,126 @@ template $PageHomeView : Adw.NavigationPage {
           Adw.ActionRow title_row {
             title: "Select themes to generate";
           }
-          Adw.SwitchRow gnome_switch {
+          Adw.ActionRow gnome_row {
             title: "Gnome-Shell";
             subtitle: "Refresh";
-            active: false;
+            
+            [suffix]
+            Button gnome_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind gnome_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch gnome_switch {
+              valign: center;
+              active: false;
+            }
           }
-          Adw.SwitchRow plasma_switch {
-            title: "KDEPlasma";
+          Adw.ActionRow plasma_row {
+            title: "KDE-Plasma";
             subtitle: "Refresh";
-            active: false;
+            
+            [suffix]
+            Button plasma_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind plasma_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch plasma_switch {
+              valign: center;
+              active: false;
+            }
           }
-          Adw.SwitchRow gtk4_switch {
+          Adw.ActionRow gtk4_row {
             title: "GTK4";
-            active: false;
+
+            [suffix]
+            Button gtk4_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind gtk4_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch gtk4_switch {
+              valign: center;
+              active: false;
+            }
           }
-          Adw.SwitchRow zen_switch {
-            title: "Zen Browser";
-            active: false;
+          Adw.ActionRow papirus_row {
+            title: "Papirus";
+            
+            [suffix]
+            Button papirus_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind papirus_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch papirus_switch {
+              valign: center;
+              active: false;
+            }
           }
-          Adw.SwitchRow youtube_switch {
-            title: "Youtube (Zen)";
-            active: false;
+          Adw.ActionRow zen_row {
+            title: "Zen-browser";
+            
+            [suffix]
+            Button zen_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind zen_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch zen_switch {
+              valign: center;
+              active: false;
+            }
           }
-          Adw.SwitchRow vesktop_switch {
+          Adw.ActionRow youtube_row {
+            title: "Youtube(Zen)";
+            
+            [suffix]
+            Button ytb_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind youtube_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch youtube_switch {
+              valign: center;
+              active: false;
+            }
+          }
+          Adw.ActionRow vesktop_row {
             title: "Vesktop";
-            active: false;
+            
+            [suffix]
+            Button vesktop_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind vesktop_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch vesktop_switch {
+              valign: center;
+              active: false;
+            }
           }
           Adw.ActionRow advanced_options_row {
             title: "Advanced Options";

@@ -1,7 +1,28 @@
 @use 'brown' as *;
-canvas {
-  background-color: #{$primary};
+/* main background */
+ytd-page-manager {
+  --yt-spec-base-background: #{$primary} !important;
+  --yt-spec-raised-background: #{$primary} !important;
+  background-color: #{$primary} !important; /* Safety fallback */
+}
 
+/* Update-Proof Chip Bar Resets */
+ytd-feed-filter-chip-bar-renderer,
+#chips-wrapper.ytd-feed-filter-chip-bar-renderer,
+#chips.ytd-feed-filter-chip-bar-renderer {
+  background-color: #{$primary} !important;
+  background: #{$primary} !important;
+}
+
+/* Safer layout positioning if you must alter width/padding padding */
+ytd-feed-filter-chip-bar-renderer {
+  max-width: calc(var(--ytd-rich-grid-content-max-width) + 48px) !important;
+  padding: 0 24px !important;
+}
+
+ytd-guide-renderer {
+  background-color: #{$primary} !important;
+  background: #{$primary} !important;
 }
 
 /* Only target these when they are inside a YouTube component */
@@ -15,8 +36,8 @@ ytd-app #video-title {
 }
 
 /* Universal text override for the entire YouTube app */
-ytd-app, 
-ytd-app *, 
+ytd-app,
+ytd-app *,
 ytd-browse,
 ytd-watch-flexy {
   color: #{$text} !important;
@@ -24,26 +45,13 @@ ytd-watch-flexy {
 }
 
 /* Fix for specific elements that often resist universal selectors */
-    ytd-app span, 
-    ytd-app a, 
-    ytd-app yt-formatted-string, 
-    ytd-app #video-title, 
-    ytd-app #content-text,
-    ytd-app .yt-core-attributed-string {
-      color: #{$text} !important;
-    }
-
-:root, html[dark], [dark] {
-  --yt-spec-base-background: #{$secondary} !important;
-  --yt-spec-raised-background: #{$primary} !important;
-  --yt-spec-menu-background: #{$primary} !important;
-  --yt-frosted-glass-desktop: #{$primary} !important;
-  --yt-spec-frosted-glass-desktop: #{$primary} !important;
-  --yt-spec-text-primary: #{$text} !important;
-  --yt-spec-text-secondary: #{$text} !important;
-  --yt-spec-text-disabled: #bf6056 !important;
-  --yt-spec-call-to-action: #{$text} !important;
-  --yt-spec-app-drawer: #{$primary} !important;
+ytd-app span,
+ytd-app a,
+ytd-app yt-formatted-string,
+ytd-app #video-title,
+ytd-app #content-text,
+ytd-app .yt-core-attributed-string {
+  color: #{$text} !important;
 }
 
 /* Targets the app-drawer content container */
@@ -51,15 +59,14 @@ ytd-watch-flexy {
   background-color: #{$primary} !important;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
-
+/* top bar */
 #masthead-container.ytd-app {
   background-color: #{$primary} !important;
-
 }
 
 ytd-mini-guide-renderer.style-scope.ytd-app {
   background-color: #{$primary} !important;
-  border-right: 1px solid #{$secondary} !important;
+  border-right: 1px solid #241f31 !important;
 }
 
 /* Explicitly restore the player text/icon colors */
@@ -70,7 +77,6 @@ ytd-mini-guide-renderer.style-scope.ytd-app {
   color: #ffffff !important;
   --iron-icon-fill-color: #ffffff !important;
 }
-
 
 /* Target the standard thumbnail overlay classes */
 ytd-thumbnail-overlay-time-status-renderer,
@@ -135,12 +141,7 @@ yt-thumbnail-overlay-badge-view-model * {
   --iron-icon-fill-color: #ffffff !important;
 }
 
-/* Specifically target the "Live" and "New" badges often found in thumbnails */
-.yt-core-attributed-string--white-text,
-.yt-spec-badge-shape--active,
-.yt-spec-badge-shape--default {
-  color: #ffffff !important;
-}
+
 
 ytd-app yt-thumbnail-view-model badge-shape {
   color: #ffffff !important;
@@ -153,26 +154,4 @@ ytd-app yt-thumbnail-view-model badge-shape {
   background-color: #{$primary} !important;
   color: #{$text} !important; /* Keep text brown for contrast */
   border: 1px solid rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Target the Suggestions Dropdown Container */
-.ytSearchboxComponentSuggestionsContainer,
-.sbdd_a, 
-.sbsb_a {
-  background-color: #{$primary} !important;
-  color: #{$text} !important;
-  border: none !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
-}
-
-/* Ensure the individual suggestion rows also take the color */
-.ytSearchboxComponentSuggestionItem:hover,
-.sbsb_c:hover,
-.sbsb_d {
-  background-color: #{$secondary} !important; /* Use your primary color for hover */
-}
-
-/* Fix for the magnifying glass icons in suggestions */
-.sbpqs_a, .sbic_sb {
-  filter: invert(1) brightness(0.2); /* Makes icons dark brown-ish */
 }

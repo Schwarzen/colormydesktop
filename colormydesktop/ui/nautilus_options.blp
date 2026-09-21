@@ -1,0 +1,43 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $NautilusOptions : Gtk.Box {
+  // Changed to vertical to let settings stack cleanly like a native system page
+  orientation: vertical;
+  spacing: 12;
+  margin-top: 16;
+  margin-bottom: 16;
+  margin-start: 16;
+  margin-end: 16;
+  styles ["advanced-page"]
+
+  Adw.PreferencesGroup {
+    title: "Nautilus Options";
+
+    Adw.SwitchRow nautilus_toggle {
+      title: "Unique main window color";
+      notify::active => $on_nautilus_primary_toggled();
+    }  
+    Adw.SwitchRow nautilus_second_toggle {
+      title: "Unique secondary window color";
+      notify::active => $on_nautilus_secondary_toggled();
+    } 
+  }
+  Gtk.Revealer {
+    reveal-child: bind nautilus_toggle.active;
+    transition-type: slide_down;
+    Adw.PreferencesGroup nautilus_primary_row {
+      title: "Dynamic Sub-Settings";
+      // ColorEntryRows are added here in lib_gui.py in the NautilusOptions Class
+    }
+  }
+  Gtk.Revealer {
+    reveal-child: bind nautilus_second_toggle.active;
+    transition-type: slide_down;
+    Adw.PreferencesGroup nautilus_secondary_row {
+      title: "Dynamic Sub-Settings";
+      // ColorEntryRows are added here in lib_gui.py in the NautilusOptions Class
+    }
+  }
+
+}

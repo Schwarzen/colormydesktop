@@ -1,0 +1,149 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $RequirementsPage : Box {
+  orientation: vertical;
+  spacing: 12;
+  margin-top: 16;
+  margin-bottom: 16;
+  margin-start: 16;
+  margin-end: 16;
+  styles ["advanced-page"]
+
+  Adw.PreferencesGroup {
+    title: "Platform Requirements";
+    description: "Expand a platform to view its setup instructions and prerequisites.";
+
+    // --- GNOME ---
+    Adw.ExpanderRow {
+      title: "GNOME";
+      subtitle: "Gnome-shell requirements";
+      icon-name: "preferences-desktop-theme-symbolic";
+
+      // The expanded content goes inside a child container
+      Box {
+        orientation: vertical;
+        spacing: 16; // Adds clean breathing room between steps
+        margin-top: 12;
+        margin-bottom: 12;
+        margin-start: 12;
+        margin-end: 12;
+
+        Label {
+          label: "<b>1.</b> Ensure the <b>UserThemes</b> Gnome extension is installed.";
+          wrap: true;
+          use-markup: true;
+          xalign: 0;
+        }
+
+        Label {
+          label: "<b>2.</b> Create the <b>~/.local/share/themes</b> folder if it does not exist.";
+          wrap: true;
+          use-markup: true;
+          xalign: 0;
+        }
+
+        Label {
+          label: "<b>3.</b> Follow the instructions when prompted to create portal access to the <b>~/.local/share/themes</b> folder, or allow direct access with the unseal command.";
+          wrap: true;
+          use-markup: true;
+          xalign: 0;
+        }
+
+        Label {
+          label: "<b>4.</b> If not using the auto-refresh, you will have to select the theme in the UserThemes extension manually <i>AFTER</i> theme compilation.";
+          wrap: true;
+          use-markup: true;
+          xalign: 0;
+        }
+      }
+    }
+
+    // --- KDE PLASMA ---
+    Adw.ExpanderRow {
+      title: "KDE Plasma";
+      subtitle: "Plasma workspace requirements";
+      icon-name: "preferences-desktop-display-symbolic";
+
+      Box {
+        orientation: vertical;
+        spacing: 16;
+        margin-top: 12;
+        margin-bottom: 12;
+        margin-start: 12;
+        margin-end: 12;
+
+        Label {
+          label: "<b>1.</b> Ensure <b>~/.local/share/plasma</b> and <b>~/.local/share/color-schemes</b> directories exist on your system.";
+          wrap: true;
+          use-markup: true;
+          xalign: 0;
+        }
+
+        Label {
+          label: "<b>2.</b> Grant portal access or unseal permissions for both paths when prompted.";
+          wrap: true;
+          use-markup: true;
+          xalign: 0;
+        }
+
+        Label {
+          label: "<b>3.</b> If auto-refresh is disabled, you must open System Settings and apply the generated Global Theme manually.";
+          wrap: true;
+          use-markup: true;
+          xalign: 0;
+        }
+      }
+    }
+    // --- ZEN BROWSER ---
+    Adw.ExpanderRow {
+      title: "Zen-browser";
+      subtitle: "Zen-browser requirements";
+      icon-name: "preferences-desktop-display-symbolic";
+
+      Box {
+        orientation: vertical;
+        spacing: 16;
+        margin-top: 12;
+        margin-bottom: 12;
+        margin-start: 12;
+        margin-end: 12;
+
+        Label {
+          label: "<b>1.</b> Open Zen-browser and enter <b>about:config</b> into the url bar, search for <b>toolkit.legacyUserProfileCustomizations.stylesheets</b> and click the arrow next to the result to set the value to <b>True</b>.";
+          wrap: true;
+          use-markup: true;
+          xalign: 0;
+        }
+
+        Label {
+          label: "<b>2.</b> To get your active profile's theme directory, enter <b>about:profiles</b> into the url bar and press enter. Look for the profile that is <b>currently in use</b> and click the <b>Open Directory</b> button.";
+          wrap: true;
+          use-markup: true;
+          xalign: 0;
+        }
+
+        Label {
+          label: "<b>3.</b> Look for the <b>chrome</b> folder and open it.";
+          wrap: true;
+          use-markup: true;
+          xalign: 0;
+        }
+
+        Label {
+          label: "<b>4.</b> Copy the path to that folder and paste it below.";
+          wrap: true;
+          use-markup: true;
+          xalign: 0;
+        }
+
+        Adw.EntryRow zen_manual_path {
+          title: "Chrome Profile Path";
+          show-apply-button: true;
+        }
+      }
+    }
+    
+    // You can continue adding Adw.ExpanderRow blocks for GTK4, Vesktop, Zen Browser, etc.
+  }
+}

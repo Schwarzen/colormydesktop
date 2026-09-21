@@ -22,10 +22,32 @@ template $GnomeOptions : Gtk.Box {
       title: "Unique datemenu color";
       notify::active => $on_datemenu_toggled();
     } 
-    Adw.SwitchRow refresh_switch {
-      title: "Toggle GNOME auto refresh";
-      notify::active => $on_refresh_toggled();
+    Adw.SwitchRow clock_toggle {
+      title: "Unique Clock Color";
+      notify::active => $on_clock_toggled();
     } 
+
+Adw.ActionRow refresh_row {
+  title: "Toggle GNOME auto refresh";
+
+  [suffix]
+  Gtk.Switch refresh_switch {
+    valign: center;
+    notify::active => $on_refresh_toggled();
+  }
+
+  [suffix]
+  Gtk.Button refresh_btn {
+    valign: center;
+    icon-name: "emblem-system-symbolic";
+    
+    styles [
+      "flat"
+    ]
+  }
+}
+
+
   }
   Gtk.Revealer {
     reveal-child: bind topbar_toggle.active;
@@ -39,6 +61,14 @@ template $GnomeOptions : Gtk.Box {
     reveal-child: bind datemenu_toggle.active;
     transition-type: slide_down;
     Adw.PreferencesGroup datemenu_color_row {
+      title: "Dynamic Sub-Settings";
+      // ColorEntryRows are added here in lib_gui.py in the GnomeOptions Class
+    }
+  }
+  Gtk.Revealer {
+    reveal-child: bind clock_toggle.active;
+    transition-type: slide_down;
+    Adw.PreferencesGroup clock_color_row {
       title: "Dynamic Sub-Settings";
       // ColorEntryRows are added here in lib_gui.py in the GnomeOptions Class
     }

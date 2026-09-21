@@ -4,23 +4,16 @@ runtime-version: '49' # GNOME ver
 sdk: org.gnome.Sdk
 command: color-my-desktop
 
+build-options:
+  env:
+    PYTHONDONTWRITEBYTECODE: '1'
+
 finish-args:
   - --share=ipc
   - --socket=fallback-x11
   - --socket=wayland
   - --device=dri
- 
-
-
-
-
-
-
-
 modules:
-
-
-
   - name: dart-sass
     buildsystem: simple
     build-commands:
@@ -38,10 +31,6 @@ modules:
         url: https://github.com/sass/dart-sass/releases/download/1.97.1/dart-sass-1.97.1-linux-arm64.tar.gz
         sha256: a8176dc31889977a2026895a35674dfabec01a9c3cc62f55f321fb67d9dbe971
 
-
-        
-        
-        
   - name: color-my-desktop
     buildsystem: simple
     build-commands:

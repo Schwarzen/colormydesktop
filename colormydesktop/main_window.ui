@@ -12,43 +12,68 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
     <property name="default-height">800</property>
     <property name="decorated">false</property>
     <child>
-      <object class="GtkBox" id="drag_frame">
-        <property name="vexpand">true</property>
-        <property name="hexpand">true</property>
+      <object class="GtkBox" id="window_wrapper">
+        <property name="orientation">1</property>
         <child>
-          <object class="GtkOverlay" id="root_overlay">
-            <property name="child">
-              <object class="GtkBox" id="top_drag_bar">
-                <property name="orientation">1</property>
+          <object class="GtkWindowHandle" id="custom_drag_handle">
+            <property name="margin-bottom">0</property>
+            <child>
+              <object class="GtkBox" id="title_header_bar">
+                <property name="orientation">0</property>
+                <style>
+                  <class name="ultra-slim-header"/>
+                </style>
                 <child>
-                  <object class="AdwToastOverlay" id="toast_overlay">
-                    <property name="child">
-                      <object class="AdwNavigationView" id="nav_view">
-                        <property name="vexpand">true</property>
-                        <property name="hexpand">true</property>
-                        <child>
-                          <object class="PageHomeView" id="home_view_panel">
-                            <property name="vexpand">true</property>
-                            <property name="hexpand">true</property>
-                          </object>
-                        </child>
-                      </object>
-                    </property>
+                  <object class="GtkLabel">
+                    <property name="label">Color My Desktop</property>
+                    <property name="hexpand">true</property>
+                    <property name="halign">3</property>
+                    <property name="margin-start">36</property>
+                    <style>
+                      <class name="slim-title"/>
+                    </style>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="close_btn">
+                    <property name="icon-name">window-close-symbolic</property>
+                    <property name="valign">3</property>
+                    <property name="halign">2</property>
+                    <property name="margin-end">8</property>
+                    <style>
+                      <class name="flat"/>
+                      <class name="circular"/>
+                      <class name="slim-close"/>
+                    </style>
                   </object>
                 </child>
               </object>
-            </property>
-            <child type="overlay">
-              <object class="GtkButton" id="close_btn">
-                <property name="icon-name">window-close-symbolic</property>
-                <property name="halign">2</property>
-                <property name="valign">1</property>
-                <property name="margin-top">6</property>
-                <property name="margin-end">6</property>
-                <style>
-                  <class name="flat"/>
-                  <class name="circular"/>
-                </style>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkBox" id="core_application_body">
+            <property name="orientation">1</property>
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+            <property name="margin-top">0</property>
+            <style>
+              <class name="core_application_body"/>
+            </style>
+            <child>
+              <object class="AdwToastOverlay" id="toast_overlay">
+                <property name="child">
+                  <object class="AdwNavigationView" id="nav_view">
+                    <property name="vexpand">true</property>
+                    <property name="hexpand">true</property>
+                    <child>
+                      <object class="PageHomeView" id="home_view_panel">
+                        <property name="vexpand">true</property>
+                        <property name="hexpand">true</property>
+                      </object>
+                    </child>
+                  </object>
+                </property>
               </object>
             </child>
           </object>
