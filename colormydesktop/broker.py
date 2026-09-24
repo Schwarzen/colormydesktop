@@ -1,6 +1,11 @@
 # /home/Warzen/Color-My-Desktop/colormydesktop/broker.py
 from colormydesktop.config import FEATURE_SWITCH_STATES, SWITCH_REVEAL_MAP
 from colormydesktop.dialogs import DynamicPopupWindow
+from colormydesktop.state_cache import (
+    init_cache,
+    load_all_switch_states,
+    save_switch_state,
+)
 
 
 class ContextBroker:
@@ -13,6 +18,14 @@ class ContextBroker:
     gnome_options_singleton = None
     kde_options_singleton = None
     nautilus_options_singleton = None
+    # --- 1. System/Broker Initialization (Run once on startup) ---
+    init_cache()
+
+    # Load all previously persistent states from disk directly into your in-memory container
+    FEATURE_SWITCH_STATES = load_all_switch_states()
+    print(
+        f"[BROKER INIT] Loaded {len(FEATURE_SWITCH_STATES)} switch states from hard database cache."
+    )
 
     @classmethod
     def register_page(cls, page_id, instance):
@@ -191,6 +204,7 @@ class ContextBroker:
         home_page = cls.get_page("home_view")
         gnome_page = cls.get_page("gnome_options")
         nautilus_page = cls.get_page("nautilus_options")
+        global FEATURE_SWITCH_STATES
 
         # --- HANDLE MOCKUP VECTOR CLICKS ---
         if action_type == "CLICKED_MOCKUP_ELEMENT":
@@ -282,6 +296,10 @@ class ContextBroker:
                 is_active = payload.get("is_active", False)
                 switch_widget = payload.get("widget")
                 gnome_options_page = payload.get("page")
+                save_switch_state(css_id, is_active)
+                print(
+                    f"[BROKER PERSISTENCE] Committed '{css_id}' to SQLite database storage."
+                )
 
                 cls.manager.initial_status(cls.get_page("home_view"), is_active)
                 cls.manager.on_gnome_refresh_toggled(
@@ -293,6 +311,10 @@ class ContextBroker:
                 is_active = payload.get("is_active", False)
                 switch_widget = payload.get("widget")
                 kde_options_page = payload.get("page")
+                save_switch_state(css_id, is_active)
+                print(
+                    f"[BROKER PERSISTENCE] Committed '{css_id}' to SQLite database storage."
+                )
 
                 cls.manager.initial_status(cls.get_page("home_view"), is_active)
                 cls.manager.on_plasma_refresh_toggled(

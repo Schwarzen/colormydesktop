@@ -7,6 +7,7 @@ from colormydesktop.advancedpref import AdvancedMixin
 from colormydesktop.dialogs import DialogMixin
 from colormydesktop.functions import ThemeManager
 from colormydesktop.broker import broker
+from colormydesktop.state_cache import load_all_switch_states
 from gi.repository import Gtk, Adw, Gio, Gdk
 
 gi.require_version("Gtk", "4.0")
@@ -707,11 +708,15 @@ class KDEOptions(Gtk.Box):
             "kde_refresh_switch": self.kde_refresh_switch,
         }
 
+        fresh_db_states = load_all_switch_states()
+
         from colormydesktop.broker import ContextBroker
 
         ContextBroker.register_page("kde_options", self)
 
         for css_id, switch_widget in self.switches.items():
+            is_active = fresh_db_states.get(css_id, False)
+            switch_widget.set_active(is_active)
             switch_widget.connect(
                 "notify::active",
                 lambda sw, pspec, cid=css_id: ContextBroker.translate_action(
@@ -789,6 +794,9 @@ class GnomeOptions(Gtk.Box):
         self.home_page = self
         from colormydesktop.broker import ContextBroker
 
+        # Fetch the absolute latest fresh values straight from the SQLite database file
+        fresh_db_states = load_all_switch_states()
+
         # Synchronize toggle states dynamically from your UI switches on startup
         advanced_gnome_configurations = [
             {
@@ -838,6 +846,10 @@ class GnomeOptions(Gtk.Box):
         }
 
         for css_id, switch_widget in self.switches.items():
+            is_active = fresh_db_states.get(css_id, False)
+
+            # Update the UI state silently BEFORE connecting the signal handler
+            switch_widget.set_active(is_active)
             switch_widget.connect(
                 "notify::active",
                 lambda sw, pspec, cid=css_id: ContextBroker.translate_action(

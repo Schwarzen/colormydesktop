@@ -628,7 +628,17 @@ if [ "$choice" == "1" ]; then
 
   echo "Status: Theme partial updated at $partial_file"
 
-  configure_theme "$@"
+  # =========================================================
+  # CONDITIONAL COMPILATION EVALUATION
+  # =========================================================
+  if [ "$PARTIAL_ONLY_FLAG" = "1" ]; then
+    echo "Partial mode detected. Bypassing asset builds."
+  else
+    # Only run full platform asset compiling when flag is NOT 1
+    configure_theme "$@"
+  fi
+
+  # Script finishes natively and exits gracefully here
 
   selected_import="$clean_name"
 

@@ -54,13 +54,27 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         self.status_labels = {}
 
         # Core data models are completely safe to allocate without UI visibility
+
         self.PALETTES = PALETTES
         self.SCSS_USR = SCSS_USR
+
+        # 1. Main theme list stays clean and pristine at the top
         self.theme_list = Gtk.StringList.new([])
+
+        # 2. Both utility actions live at the very bottom
+
+        self.test_list = Gtk.StringList.new(["Test"])
+        self.new_profile_list = Gtk.StringList.new(["Create New Profile"])
         self.install_item_list = Gtk.StringList.new(["Install Bundled Palettes"])
+
         self.model_store = Gio.ListStore.new(Gio.ListModel)
+
         self.model_store.append(self.theme_list)
-        self.model_store.append(self.install_item_list)
+
+        self.model_store.append(self.test_list)
+        self.model_store.append(self.new_profile_list)  # Flattened right under themes
+        self.model_store.append(self.install_item_list)  # Dynamic final item
+
         self.combined_model = Gtk.FlattenListModel.new(self.model_store)
 
     @property
@@ -343,30 +357,52 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
 
         label.set_text(text)
 
+        if text == "Test":
+            label.set_visible(False)
+        else:
+            label.set_visible(True)
+
         if text == "Install Bundled Palettes":
             # Apply the style to the BOX so the whole row turns blue/accented
-            box.add_css_class("accent")
+            box.add_css_class("primary")
         else:
-            box.remove_css_class("accent")
+            box.remove_css_class("primary")
 
     def on_combo_changed(self, combo, pspec):
-        # 1. Get the selected item object from the model
         selected_item = combo.get_selected_item()
         if not selected_item:
             return
 
-        # 2. Check if the item is a Gtk.StringObject (it should be)
-        # Then check the actual text string inside it
-        if selected_item.get_string() == "Install Bundled Palettes":
-            # --- RUN INSTALL LOGIC ---
-            self.on_refresh_palettes_clicked(None)
+        selected_text = selected_item.get_string()
 
-            # --- RESET SELECTION ---
-            # Jump back to 'Default' so the button doesn't stay 'Selected'
+        if selected_text == "Create New Profile":
+            # 1. Update entry UI text field
+            self.ui.name_row.set_text("New_Profile")
+
+            # 2. Directly call your existing build logic with the short-circuit flag
+            self.on_run_build_clicked(button=None, new_profile="1")
+
+            # 3. Reload data store and jump selection to the new file
+            new_profile_name = self.ui.name_row.get_text().strip() or "New_Profile"
+            self.refresh_theme_list()
+
+            for idx in range(self.theme_list.get_n_items()):
+                if self.theme_list.get_item(idx).get_string() == new_profile_name:
+                    combo.set_selected(idx)
+                    break
+
+        elif selected_text == "Install Bundled Palettes":
+            self.on_refresh_palettes_clicked(None)
             combo.set_selected(0)
-        else:
-            # --- RUN NORMAL THEME SELECTION ---
-            self.on_theme_select(combo, pspec)
+        elif selected_text == "Test":
+            self.on_refresh_palettes_clicked(None)
+            combo.set_selected(0)
+
+    def create_new_profile(self):
+
+        self.ui.name_row.set_text("New Profile")
+        # Wire your external logic right here
+        print("External function executed successfully!")
 
     def on_refresh_palettes_clicked(self, button):
         print("Refreshing palette data from bundle...")
@@ -1328,19 +1364,6 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
 
             return
 
-            # ---  RESET TO DEFAULT CASE ---
-        if is_default:
-            print("Resetting to Default theme values...")
-            self.name_row.set_text("Default")
-            self.ui.color_entries["primary"].set_text("#21233b")
-            self.ui.color_entries["secondary"].set_text("#241f31")
-            self.ui.color_entries["accent"].set_text("#1e1e1e")
-            self.ui.color_entries["text"].set_text("#f9f9f9")
-
-            broker.topbar_switch.set_active(False)
-            # Refresh mockup for default values
-            return
-
         selected_theme = self.theme_list.get_string(selected_index)
         if not selected_theme:
             return
@@ -1536,7 +1559,7 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         print(f"Refreshed dropdown. Selected: {newly_saved_name}")
 
     # SECTION END FUNCTIONS }}}
-    def on_run_build_clicked(self, button):
+    def on_run_build_clicked(self, button, new_profile="0"):
         from colormydesktop.config import get_default_color_map
 
         final_colors = get_default_color_map()
@@ -1566,7 +1589,9 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         )
 
         self.active_build_button = button
-        self.active_build_button.set_sensitive(False)
+        # Only disable the button UI if it was actually clicked/passed
+        if button and hasattr(self, "active_build_button") and self.active_build_button:
+            self.active_build_button.set_sensitive(False)
         # Get primary hex and ensure it is a string
         primary_color = str(self.ui.color_entries["primary"].get_text() or "#246cc5")
         secondary_color = str(
@@ -1658,6 +1683,7 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             nautilus_end,  # 36
             n_main_str,  # 37
             n_sec_str,  # 38
+            new_profile,  # 39
         ]
         self.log_container.set_visible(True)
         self.log_view.get_buffer().set_text("")
@@ -1667,7 +1693,6 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         thread = threading.Thread(target=self.execute_build, args=(args,))
         thread.daemon = True  # Closes thread if you exit the app
         thread.start()
-        button.set_sensitive(False)
 
     def execute_build(self, args):
 
