@@ -82,6 +82,12 @@ template $PageHomeView : Adw.NavigationPage {
                 hexpand: true; 
                 Adw.EntryRow name_row {
                   hexpand: true; 
+                  [suffix]
+                  Gtk.Button save_btn {
+                    icon-name: "document-save-symbolic";
+                    tooltip-text: _("Save Palette");
+                    styles ["flat", "circular"]
+                  }
                 }
               }
 

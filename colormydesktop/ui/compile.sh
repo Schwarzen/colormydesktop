@@ -47,4 +47,7 @@ echo "✓ Compiled folder_selection.ui"
 blueprint-compiler compile $PWD/colormydesktop/ui/requirements_checklist.blp --output $PWD/colormydesktop/requirements_checklist.ui
 echo "✓ Compiled requirements_checklist.ui"
 
+blueprint-compiler compile $PWD/colormydesktop/ui/save_dialog.blp --output $PWD/colormydesktop/save_dialog.ui
+echo "✓ Compiled save_dialog.ui"
+
 echo "✨ All UI files compiled successfully!"

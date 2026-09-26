@@ -114,6 +114,54 @@ class ColorEntryRow(Adw.EntryRow):
 # }}}
 
 
+# SECTION: SAVE DIALOG {{{
+@Gtk.Template(filename=f"{PYTHON_DIR}/save_dialog.ui")
+class SaveDialog(Gtk.Box):
+    __gtype_name__ = "SaveDialog"
+
+    save_dialog = Gtk.Template.Child()
+    internal_save_btn = Gtk.Template.Child()
+    close_dialog_btn = Gtk.Template.Child()
+    dialog_label = Gtk.Template.Child()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.connect("map", lambda widget: self.refresh_theme_label())
+        # Helper lambda to cleanly grab the active top-level window widget instance
+        get_popup_window = lambda: self.get_ancestor(Gtk.Window.__gtype__)
+
+        # "YES" Button: Saves the palette, then closes the window directly
+        self.internal_save_btn.connect(
+            "clicked",
+            lambda btn: (
+                broker.manager.save_palette(),
+                (win := get_popup_window()) and win.close(),
+            ),
+        )
+
+        # "NO" Button: Just closes the window directly
+        self.close_dialog_btn.connect(
+            "clicked", lambda btn: (win := get_popup_window()) and win.close()
+        )
+
+    def refresh_theme_label(self):
+        """Fetches the latest live theme value right when the dialog is shown."""
+        try:
+            from colormydesktop.config import LAST_SELECTED_THEME
+
+            original_name = LAST_SELECTED_THEME.get("last_theme", "none")
+            clean_theme_name = original_name.lstrip("_").replace(".scss", "")
+
+            self.dialog_label.set_label(f"Overwrite '{clean_theme_name}'?")
+        except Exception as e:
+            print(f"[ERROR] Failed to dynamically refresh label: {e}")
+            self.dialog_label.set_label("Overwrite selected theme?")
+
+
+# }}}
+
+
 # SECTION: REQUIREMENTS PAGE {{{
 @Gtk.Template(filename=f"{PYTHON_DIR}/requirements_checklist.ui")
 class RequirementsPage(Gtk.Box):
@@ -590,11 +638,19 @@ class PermissionSettings(Gtk.Box):
         super().__init__(**kwargs)
         self.portal_copy_btn.connect(
             "clicked",
-            lambda b: b.get_clipboard().set_text(self.portal_cmd_label.get_label()),
+            lambda b, p=self.portal_cmd_label.get_label(): broker.translate_action(
+                sender_id="flatpak_copy_btn",
+                action_type="COPY_PATH_CLICKED",
+                payload={"path": p},
+            ),
         )
         self.direct_copy_btn.connect(
             "clicked",
-            lambda b: b.get_clipboard().set_text(self.direct_cmd_label.get_label()),
+            lambda b, p=self.direct_cmd_label.get_label(): broker.translate_action(
+                sender_id="flatpak_copy_btn",
+                action_type="COPY_PATH_CLICKED",
+                payload={"path": p},
+            ),
         )
 
 
@@ -991,7 +1047,6 @@ class PageHomeView(Adw.NavigationPage):
     combo_row = Gtk.Template.Child()
     name_row = Gtk.Template.Child()
     advanced_options_action_btn = Gtk.Template.Child()
-    delete_profile_btn = Gtk.Template.Child()
     build_btn = Gtk.Template.Child()
     # MAIN ROWS
     gnome_row = Gtk.Template.Child()
@@ -1017,6 +1072,9 @@ class PageHomeView(Adw.NavigationPage):
     zen_folder_btn = Gtk.Template.Child()
     ytb_folder_btn = Gtk.Template.Child()
     vesktop_folder_btn = Gtk.Template.Child()
+    # FUNCTIONAL BUTTONS
+    save_btn = Gtk.Template.Child()
+    delete_profile_btn = Gtk.Template.Child()
 
     def __init__(self, themes_list_data=None, css_provider=None, **kwargs):
         # FIX A: Extract custom parameters before initializing the underlying GObject
@@ -1071,7 +1129,7 @@ class PageHomeView(Adw.NavigationPage):
                 "label": "Text",
                 "hex": "#e1251b",
                 "id": "text",
-                "magic": True,
+                "magic": False,
             },
         ]
 
@@ -1243,6 +1301,17 @@ class PageHomeView(Adw.NavigationPage):
 
         self.delete_profile_btn.connect(
             "clicked", lambda btn: self.manager.on_delete_clicked()
+        )
+        self.save_btn.connect("clicked", lambda btn: self.trigger_save_dialog())
+
+    def trigger_save_dialog(self):
+        from colormydesktop.lib_gui import SaveDialog
+        from colormydesktop.broker import ContextBroker
+
+        ContextBroker.navigate(
+            current_widget=self,
+            target_page_class=SaveDialog,
+            page_id="save_dialog",
         )
 
     def _on_switch_toggled(self, widget, data):

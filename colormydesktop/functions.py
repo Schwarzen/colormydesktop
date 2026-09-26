@@ -322,6 +322,16 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         dialog.connect("response", self.on_delete_confirm, selected_theme)
         dialog.present()
 
+    def save_palette(self):
+
+        from colormydesktop.config import LAST_SELECTED_THEME
+
+        original_name = LAST_SELECTED_THEME["last_theme"]
+        print(original_name)
+        self.on_run_build_clicked(
+            button=None, new_profile="1", save_palette="1", original_name=original_name
+        )
+
     def on_drag_pressed(self, gesture, n_press, x, y):
         # 1. Get the surface (must be a Gdk.Toplevel)
         surface = self.get_native().get_surface()
@@ -367,36 +377,6 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             box.add_css_class("primary")
         else:
             box.remove_css_class("primary")
-
-    def on_combo_changed(self, combo, pspec):
-        selected_item = combo.get_selected_item()
-        if not selected_item:
-            return
-
-        selected_text = selected_item.get_string()
-
-        if selected_text == "Create New Profile":
-            # 1. Update entry UI text field
-            self.ui.name_row.set_text("New_Profile")
-
-            # 2. Directly call your existing build logic with the short-circuit flag
-            self.on_run_build_clicked(button=None, new_profile="1")
-
-            # 3. Reload data store and jump selection to the new file
-            new_profile_name = self.ui.name_row.get_text().strip() or "New_Profile"
-            self.refresh_theme_list()
-
-            for idx in range(self.theme_list.get_n_items()):
-                if self.theme_list.get_item(idx).get_string() == new_profile_name:
-                    combo.set_selected(idx)
-                    break
-
-        elif selected_text == "Install Bundled Palettes":
-            self.on_refresh_palettes_clicked(None)
-            combo.set_selected(0)
-        elif selected_text == "Test":
-            self.on_refresh_palettes_clicked(None)
-            combo.set_selected(0)
 
     def create_new_profile(self):
 
@@ -1349,8 +1329,8 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
 
     def on_theme_select(self, combo_row, gparamspec):
         selected_index = combo_row.get_selected()
-        is_default = combo_row.get_selected() == 0
-        selected_index = combo_row.get_selected()
+
+        from colormydesktop.config import LAST_SELECTED_THEME
 
         #  Guard: Ignore index 0 ('Default') or errors
         if selected_index <= 0:
@@ -1358,13 +1338,29 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             self.ui.name_row.set_text("Default")
             self.ui.color_entries["primary"].set_text("#21233b")
             self.ui.color_entries["secondary"].set_text("#241f31")
-            self.ui.color_entries["accent"].set_text("#1e1e1e")
+            self.ui.color_entries["accent"].set_text("#047279")
             self.ui.color_entries["text"].set_text("#f9f9f9")
             broker.topbar_switch.set_active(False)
+
+            LAST_SELECTED_THEME["last_theme"] = "None"
+            print(f"[UI RUNTIME] Tracked active session theme adjustment: 'None'")
+            self.ui.save_btn.set_visible(False)
+            self.ui.delete_profile_btn.set_visible(False)
 
             return
 
         selected_theme = self.theme_list.get_string(selected_index)
+
+        if selected_theme:
+            # 3. Update the temporary in-memory dictionary cache directly
+
+            LAST_SELECTED_THEME["last_theme"] = selected_theme
+            print(
+                f"[UI RUNTIME] Tracked active session theme adjustment: '{selected_theme}'"
+            )
+
+            self.ui.save_btn.set_visible(True)
+            self.ui.delete_profile_btn.set_visible(True)
         if not selected_theme:
             return
 
@@ -1427,8 +1423,8 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             tb_val = self.get_scss_value(selected_theme, "topbar-color")
             tb_custom = self.get_scss_value(selected_theme, "CUSTOM_TOPBAR")
             if "yes" in tb_custom:
-                broker.topbar_entry.set_text(tb_val)
                 broker.topbar_switch.set_active(True)
+                broker.topbar_entry.set_text(tb_val)
             else:
                 # If the file doesn't have it, reset to a safe default but don't clear it!
                 broker.topbar_entry.set_text(
@@ -1439,8 +1435,8 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             clock_val = self.get_scss_value(selected_theme, "clock-color")
             clock_custom = self.get_scss_value(selected_theme, "CUSTOM_CLOCK")
             if "yes" in clock_custom:
-                broker.clock_entry.set_text(clock_val)
                 broker.clock_switch.set_active(True)
+                broker.clock_entry.set_text(clock_val)
             else:
                 # If the file doesn't have it, reset to a safe default but don't clear it!
                 broker.clock_entry.set_text(self.get_scss_value(selected_theme, "text"))
@@ -1500,28 +1496,37 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
                     self.get_scss_value(selected_theme, "primary")
                 )
 
-    # --- RUN BASH SCRIPT ---
-    def on_configure_clicked(self, button):
+    # --- RUN PALETTE SAVE BASH SCRIPT ---
 
-        self.active_build_button = button
-        self.active_build_button.set_sensitive(False)
+    def on_combo_changed(self, combo, pspec):
+        selected_item = combo.get_selected_item()
+        if not selected_item:
+            return
 
-        # We add "config_only" as the very first argument ($1)
-        args = [
-            "config_only",
-            self.name_row.get_text(),
-            self.primary_row.get_text(),
-            self.secondary_row.get_text(),
-            self.tertiary_row.get_text(),
-            self.text_row.get_text(),
-        ]
+        selected_text = selected_item.get_string()
 
-        # Use your existing threading logic
-        thread = threading.Thread(target=self.execute_build, args=(args,))
-        thread.daemon = True
-        thread.start()
+        if selected_text == "Create New Profile":
+            # 1. Update entry UI text field
+            self.ui.name_row.set_text("New_Profile")
 
-        button.set_sensitive(False)
+            # 2. Directly call your existing build logic with the short-circuit flag
+            self.on_run_build_clicked(button=None, new_profile="1")
+
+            # 3. Reload data store and jump selection to the new file
+            new_profile_name = self.ui.name_row.get_text().strip() or "New_Profile"
+            self.refresh_theme_list()
+
+            for idx in range(self.theme_list.get_n_items()):
+                if self.theme_list.get_item(idx).get_string() == new_profile_name:
+                    combo.set_selected(idx)
+                    break
+
+        elif selected_text == "Install Bundled Palettes":
+            self.on_refresh_palettes_clicked(None)
+            combo.set_selected(0)
+        elif selected_text == "Test":
+            self.on_refresh_palettes_clicked(None)
+            combo.set_selected(0)
 
     def refresh_theme_list(self):
         """Rescans SCSS_DIR, updates the model, and selects the new profile."""
@@ -1559,11 +1564,13 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         print(f"Refreshed dropdown. Selected: {newly_saved_name}")
 
     # SECTION END FUNCTIONS }}}
-    def on_run_build_clicked(self, button, new_profile="0"):
+    def on_run_build_clicked(
+        self, button, new_profile="0", save_palette="0", original_name="None"
+    ):
         from colormydesktop.config import get_default_color_map
 
         final_colors = get_default_color_map()
-        print("\n=== [DEBUG] THEME BUILDER SEES MAP AT CLICK TIME ===")
+        print("\n=== [DEBUG] THEME BUILDER FINAL MAP ===")
         print(json.dumps(final_colors, indent=4))
         print("===================================================\n")
 
@@ -1592,6 +1599,9 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         # Only disable the button UI if it was actually clicked/passed
         if button and hasattr(self, "active_build_button") and self.active_build_button:
             self.active_build_button.set_sensitive(False)
+        else:
+            pass
+
         # Get primary hex and ensure it is a string
         primary_color = str(self.ui.color_entries["primary"].get_text() or "#246cc5")
         secondary_color = str(
@@ -1684,6 +1694,8 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
             n_main_str,  # 37
             n_sec_str,  # 38
             new_profile,  # 39
+            save_palette,
+            original_name,  # 41
         ]
         self.log_container.set_visible(True)
         self.log_view.get_buffer().set_text("")
@@ -1738,6 +1750,7 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
                 GLib.idle_add(self.config_finished_cleanup)
             else:
                 # For standard builds, keep your existing logic
+                GLib.idle_add(self.refresh_theme_list)
                 GLib.idle_add(self.trigger_shell_refresh)
                 GLib.idle_add(self.trigger_refresh)
                 GLib.idle_add(self.build_finished)

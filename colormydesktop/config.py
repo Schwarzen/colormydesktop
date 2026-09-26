@@ -31,6 +31,9 @@ COLOR_REGISTRY_MAP = {
     "panelcolor": "__PANEL__",  # Example
 }
 
+LAST_SELECTED_THEME = {"last_theme": "none"}
+
+
 _RUNTIME_CACHE = {"custom_colors": {}}
 
 

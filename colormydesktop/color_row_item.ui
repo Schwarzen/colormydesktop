@@ -85,6 +85,7 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
       <object class="GtkButton" id="magic_btn">
         <property name="valign">3</property>
         <property name="icon-name">view-refresh-symbolic</property>
+        <property name="visible">false</property>
         <style>
           <class name="flat"/>
         </style>

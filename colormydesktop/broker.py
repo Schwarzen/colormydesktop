@@ -173,7 +173,13 @@ class ContextBroker:
 
             # Target the window directly to lock in desired dimensions
             if popup_window:
-                popup_window.set_size_request(350, 300)
+                # FIXED: Check if the incoming page is our tiny confirmation dialog
+                if page_id == "save_dialog":
+                    # Request a much shorter height (e.g., 350 wide by 160 tall)
+                    popup_window.set_size_request(350, 160)
+                else:
+                    # Fall back to your standard default size for regular advanced pages
+                    popup_window.set_size_request(350, 300)
         else:
             print(
                 f"   -> Active popup container detected. Swapping view layout tracks smoothly..."

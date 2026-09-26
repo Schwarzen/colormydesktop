@@ -1,0 +1,47 @@
+using Gtk 4.0;
+
+template $SaveDialog : Gtk.Box {
+  orientation: vertical;
+  spacing: 16;
+  margin-top: 24;
+  margin-bottom: 24;
+  margin-start: 24;
+  margin-end: 24;
+  halign: center;
+
+  valign: start; // FIXED: Forces the layout box to take up minimum height
+
+  // Primary bold text header
+  Gtk.Label {
+    label: "Overwrite Profile?";
+    styles ["heading"]
+    justify: center;
+  }
+
+  // Secondary descriptive message line containing the target profile name string
+  Gtk.Label dialog_label {
+    label: "Are you sure you want to overwrite 'Theme'?";
+    justify: center;
+  }
+
+  Gtk.Box {
+    orientation: horizontal;
+    spacing: 16;
+    halign: center;
+
+    Gtk.Button close_dialog_btn {
+      label: "Cancel";
+    }
+
+    Gtk.Button internal_save_btn {
+      label: "Save";   
+      styles ["suggested-action"]
+    }
+  }
+}
+
+
+
+
+
+

@@ -13,7 +13,28 @@ BASE_STYLE_SHEET = """
     opacity: 0.5;
 }
 
-/* --- HOVER PHYSICS MAPS LINKED TO YOUR BLUEPRINT ROW STYLE CLASS --- */
+
+
+/* Target the internal indicator button that holds the edit pencil and hide it */
+.color-row-css button.image-button.indicator {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0px !important;
+    min-width: 0px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+}
+
+/* Ensure the entry text extends nicely to fill any leftover space */
+.color-row-css entry {
+    margin-right: 0px !important;
+    padding-right: 0px !important;
+}
+
+
+
+/* --- HOVER  --- */
 .color-row-css:hover .color-preview-dot,
 .color-row-css:focus-within .color-preview-dot {
     transform: scale(1.18);
