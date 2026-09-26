@@ -1,0 +1,39 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $KDEOptions : Gtk.Box {
+  // Changed to vertical to let settings stack cleanly like a native system page
+  orientation: vertical;
+  spacing: 12;
+  margin-top: 16;
+  margin-bottom: 16;
+  margin-start: 16;
+  margin-end: 16;
+  styles ["advanced-page"]
+
+
+
+  Adw.ActionRow kde_refresh_row {
+    title: "Toggle KDE auto refresh";
+  
+    [suffix]
+    Gtk.Switch kde_refresh_switch {
+      valign: center;
+      notify::active => $on_kde_refresh_toggled();
+    }
+  
+    [suffix]
+    Gtk.Button kde_refresh_btn {
+      valign: center;
+      icon-name: "emblem-system-symbolic";
+     
+      styles [
+        "flat"
+      ]
+    }
+  }
+}
+
+
+
+

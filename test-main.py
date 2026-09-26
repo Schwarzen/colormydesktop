@@ -26,10 +26,10 @@ from colormydesktop.lib_gui import (
 from colormydesktop.css import BASE_STYLE_SHEET
 
 
-class ColorMyDesktop(Adw.Application):
+class TestColorApp(Adw.Application):
     def __init__(self):
         super().__init__(
-            application_id="io.github.schwarzen.colormydesktop",
+            application_id="io.github.schwarzen.colormydesktop.test",
             flags=Gio.ApplicationFlags.FLAGS_NONE,
         )
 
@@ -38,8 +38,8 @@ class ColorMyDesktop(Adw.Application):
         # PHASE 1: PRE-INITIALIZATION (Instantiate the real ThemeManager instantly)
         # =========================================================================
         # The manager registers safely into the central broker pool without a UI context yet
-        function_manager = ThemeManager(ui_context=None)
-        ContextBroker.manager = function_manager
+        real_manager = ThemeManager(ui_context=None)
+        ContextBroker.manager = real_manager
 
         # Instantiating layout options here is now completely immune to early event loops
         # because the broker already has a valid manager reference waiting for them!
@@ -84,10 +84,10 @@ class ColorMyDesktop(Adw.Application):
         )
         ContextBroker.register_page("home_view", home_page_view)
 
-        # CRITICAL REACTION TRIGGER: This exact property assignment activates the main functions layer
+        # CRITICAL REACTION TRIGGER: This exact property assignment activates your manager's
         # internal methods to cleanly attach drop-down factories, gestures, and signals.
-        function_manager.ui = home_page_view
-        home_page_view.manager = function_manager
+        real_manager.ui = home_page_view
+        home_page_view.manager = real_manager
 
         # =========================================================================
         # PHASE 4: COMPOSITION RENDER
@@ -97,7 +97,7 @@ class ColorMyDesktop(Adw.Application):
 
 
 def main():
-    app = ColorMyDesktop()
+    app = TestColorApp()
     return app.run(sys.argv)
 
 

@@ -1,0 +1,123 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $PermissionDialogPage : Box {
+  orientation: vertical;
+  width-request: 500;
+
+  Box {
+    orientation: vertical;
+    spacing: 18;
+    
+    margin-top: 24;
+    margin-bottom: 24;
+    margin-start: 24;
+    margin-end: 24;
+    // 🟢 Zen-specific warning label placed at the top (hidden by default)
+    Label zen_warning_label {
+      label: "Warning you MUST complete the one time setup in the <a href=\"requirements\">Requirements</a> to get your active profile folder for the\nTarget Chrome Profile\nfield below to populate or for the direct access commands to work";
+      use-markup: true;
+      wrap: true;
+      xalign: 0;
+      visible: false;
+    }
+
+    // Papirus warning box (remains shared or can go into stack)
+    Box papirus_box {
+      orientation: vertical;
+      visible: false; 
+
+      Label {
+        label: "Please ensure papirus is installed locally, to install papirus locally use this command :";
+        wrap: true;
+        xalign: 0;
+      }
+
+      Label {
+        label: "wget -qO- https://git.io/papirus-icon-theme-install | DESTDIR=\"$HOME/.local/share/icons\" sh";
+        selectable: true;
+        use-markup: true;
+        wrap: true;
+        styles ["card"]
+      }
+    }
+
+    // TOP TOGGLE BUTTONS (StackSwitcher styled as a pill/segmented control)
+    StackSwitcher {
+      stack: permission_stack;
+      halign: center;
+      styles ["linked"]
+    }
+
+    // STACK CONTENT CONTAINER
+    Stack permission_stack {
+      transition-type: slide_left_right;
+
+// --- SECTION 1: PORTAL ACCESS ---
+      StackPage {
+        name: "portal_section";
+        title: "Portal Access";
+        child: Box {
+          orientation: vertical;
+          spacing: 18;
+
+          Label instruction_label {
+            use-markup: true;
+            wrap: true;
+            xalign: 0;
+          }
+
+          Box folders_box {
+            orientation: vertical;
+            spacing: 18;
+          }
+
+          Box requirements_box {
+            orientation: vertical;
+            spacing: 18;
+
+            Label requirements_label {
+              label: "Make sure you check the <a href=\"requirements\">Requirements</a> for this platform to prevent unexpected issues";
+              use-markup: true;
+              wrap: true;
+              xalign: 0;
+            }
+          }
+        };
+      }
+
+      // --- SECTION 2: PERMANENT COMMANDS ---
+      StackPage {
+        name: "command_section";
+        title: "Direct Access";
+        child: Box {
+          orientation: vertical;
+          spacing: 18;
+
+          Label {
+            label: "Or use this command for direct unsealed access:";
+            use-markup: true;
+            wrap: true;
+            xalign: 0;
+          }
+
+          // Bound command label or container box
+          Label command_label {
+            selectable: true;
+            use-markup: true;
+            wrap: true;
+            styles ["card"]
+          }
+
+          Label {
+            label: "<b>Note: If using commands, you must restart the app to apply permissions.</b>";
+            use-markup: true;
+            wrap: true;
+            xalign: 0;
+            margin-top: 10;
+          }
+        };
+      }
+    }
+  }
+}

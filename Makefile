@@ -47,13 +47,11 @@ install: setup
 
 	# 2. Install the subfolder package to /app/bin/
 	install -d  $(BIN_DIR)/colormydesktop
-	install -m 644 colormydesktop/* $(BIN_DIR)/colormydesktop/
-
+	install -m 644 $(shell find colormydesktop/ -maxdepth 1 -type f) $(BIN_DIR)/colormydesktop/
 	# Copy files to the stable APP_DATA_DIR so they never disappear
-	cp main.py $(APP_DATA_DIR)/color-my-desktop
+	cp test-main.py $(APP_DATA_DIR)/color-my-desktop
 	mkdir -p $(APP_DATA_DIR)/colormydesktop/
-	cp colormydesktop/* $(APP_DATA_DIR)/colormydesktop/
-
+	cp $(shell find colormydesktop/ -maxdepth 1 -type f) $(APP_DATA_DIR)/colormydesktop/
 
 	# --- Update your icon install line ---
 	@echo "Installing Icon..."

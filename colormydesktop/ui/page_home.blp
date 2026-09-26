@@ -1,0 +1,292 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $PageHomeView : Adw.NavigationPage {
+  title: "Theme Dash";
+
+  // Wrap your layout in a BreakpointBin to handle page-level responsiveness
+  child: Adw.BreakpointBin {
+    width-request: 360;
+    height-request: 200;
+
+    [breakpoints] 
+      Adw.Breakpoint {
+        condition ("max-width: 900sp")
+
+        setters {
+          split_container.orientation: vertical;
+          mockup_wrapper.visible: false;
+          controls_column.halign: fill;
+          // Hide the spacer widget when in collapsed mobile view
+          layout_spacer.visible: false;
+          show_mockup_switch.visible: true;
+        }
+      }
+
+    child: Gtk.ScrolledWindow {
+      hexpand: true;
+      vexpand: true;
+      hscrollbar-policy: never; // Prevent ugly horizontal scrolling
+      
+      // Main layout vertical wrapper block
+      child: Gtk.Box {
+        orientation: vertical;
+        spacing: 24;
+        margin-start: 30;  // Controls padding from the left window edge
+        margin-end: 30;    // Controls padding from the right window edge
+        margin-top: 20;
+        margin-bottom: 20;
+
+        Adw.PreferencesGroup load_group {
+          name: "load-group-id"; 
+          margin-start: 0;
+          margin-end: 0;
+          margin-top: 0;
+          margin-bottom: 0;
+
+          // THE COMBO ROW
+          Adw.ComboRow combo_row {
+            title: "Load Existing Profile";
+            activatable-widget: combo_row; 
+
+            // --- DELETE PROFILE BUTTON ---
+            [suffix]
+            Gtk.Button delete_profile_btn {
+              icon-name: "user-trash-symbolic";
+              valign: center;
+              tooltip-text: "Delete Selected Profile";
+              margin-end: 4;
+              styles ["flat"]
+            }
+
+
+          }
+
+          // --- MAIN RESPONSIVE CONTAINER ---
+          Gtk.Box split_container {
+            orientation: horizontal;
+            spacing: 20;
+            hexpand: true;
+            vexpand: true;
+
+            // COLUMN A: THE SETTINGS GROUPS
+            Gtk.Box controls_column {
+              orientation: vertical;
+              spacing: 10;
+              hexpand: false;
+              halign: start;
+              width-request: 380;
+
+              Adw.PreferencesGroup color_rows_group {
+                margin-top: 20;
+                hexpand: true; 
+                Adw.EntryRow name_row {
+                  hexpand: true; 
+                  [suffix]
+                  Gtk.Button save_btn {
+                    icon-name: "document-save-symbolic";
+                    tooltip-text: _("Save Palette");
+                    styles ["flat", "circular"]
+                  }
+                }
+              }
+
+              Adw.PreferencesGroup visibility_group {
+                Adw.SwitchRow show_mockup_switch {
+                  title: "Show Mockup Preview";
+                  subtitle: "Toggle image mockup panel display";
+                  visible: false; 
+                }
+              }
+            }
+            
+            // THE EXPANDING SPACER
+            Gtk.Box layout_spacer {
+              spacing: 15;
+            }
+
+            // COLUMN B: THE MOCKUP WRAPPER
+            Gtk.Box mockup_wrapper {
+              orientation: vertical;
+              name: "mockup-wrapper";
+              width-request: 425;
+              height-request: 100;
+              overflow: hidden;
+              spacing: 0;
+              margin-top: 10;
+
+
+            Gtk.Box preview_holder {
+              name: "preview_holder";
+              hexpand: true;
+              vexpand: true;
+            }
+
+            }
+          }
+        }
+
+        // BOTTOM ROW: THE SWITCH GENERATION SELECTION GROUP
+        Adw.PreferencesGroup switch_group {
+          Adw.ActionRow title_row {
+            title: "Select themes to generate";
+          }
+          Adw.ActionRow gnome_row {
+            title: "Gnome-Shell";
+            subtitle: "Refresh";
+            
+            [suffix]
+            Button gnome_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind gnome_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch gnome_switch {
+              valign: center;
+              active: false;
+            }
+          }
+          Adw.ActionRow plasma_row {
+            title: "KDE-Plasma";
+            subtitle: "Refresh";
+            
+            [suffix]
+            Button plasma_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind plasma_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch plasma_switch {
+              valign: center;
+              active: false;
+            }
+          }
+          Adw.ActionRow gtk4_row {
+            title: "GTK4";
+
+            [suffix]
+            Button gtk4_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind gtk4_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch gtk4_switch {
+              valign: center;
+              active: false;
+            }
+          }
+          Adw.ActionRow papirus_row {
+            title: "Papirus";
+            
+            [suffix]
+            Button papirus_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind papirus_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch papirus_switch {
+              valign: center;
+              active: false;
+            }
+          }
+          Adw.ActionRow zen_row {
+            title: "Zen-browser";
+            
+            [suffix]
+            Button zen_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind zen_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch zen_switch {
+              valign: center;
+              active: false;
+            }
+          }
+          Adw.ActionRow youtube_row {
+            title: "Youtube(Zen)";
+            
+            [suffix]
+            Button ytb_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind youtube_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch youtube_switch {
+              valign: center;
+              active: false;
+            }
+          }
+          Adw.ActionRow vesktop_row {
+            title: "Vesktop";
+            
+            [suffix]
+            Button vesktop_folder_btn {
+              valign: center;
+              icon-name: "folder-symbolic";
+              visible: bind vesktop_switch.active; // Fixed binding
+              styles ["flat", "circular"] 
+            }
+              
+            [suffix]
+            Switch vesktop_switch {
+              valign: center;
+              active: false;
+            }
+          }
+          Adw.ActionRow advanced_options_row {
+            title: "Advanced Options";
+            subtitle: "extra options for platforms";
+            
+            // This property makes clicking anywhere on the row trigger the button
+            activatable-widget: advanced_options_action_btn;
+
+            // We embed our decorative plus button into the right-hand suffix area
+            [suffix]
+            Gtk.Button advanced_options_action_btn {
+              icon-name: "list-add-symbolic"; // Native system plus icon
+              valign: center;
+              tooltip-text: "Add New Configuration Extension";
+              styles ["flat", "circular"] // Keeps it integrated with the row nicely
+            }
+
+          }
+          Adw.ActionRow build_button_row {
+            title: "Build and Export themes";
+            
+            // This property makes clicking anywhere on the row trigger the button
+            activatable-widget: build_btn;
+            // We embed our decorative plus button into the right-hand suffix area
+            [suffix]
+            Gtk.Button build_btn {
+              icon-name: "list-add-symbolic"; // Native system plus icon
+              valign: center;
+              tooltip-text: "Build and export themes!";
+              styles ["flat:", "circular"] // Keeps it integrated with the row nicely
+            }
+          }
+        }
+      };
+    };
+  };
+}
+
+

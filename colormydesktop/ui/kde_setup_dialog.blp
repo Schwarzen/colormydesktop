@@ -1,0 +1,123 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $KDESetupDialog : Gtk.Box {
+  orientation: vertical;
+  
+  // Center the clamp vertically inside the dialog window
+  valign: center;
+
+  Adw.Clamp {
+    maximum-size: 450;
+    tightening-threshold: 400;
+
+    // Inner Box containing all your widgets and structural styling
+    Gtk.Box {
+      orientation: vertical;
+      spacing: 12;
+      margin-start: 16;
+      margin-end: 16;
+      margin-top: 16;
+      margin-bottom: 16;
+
+      // --- STATUS EXPANDER ---
+      Adw.PreferencesGroup {
+        Adw.ExpanderRow status_expander {
+          title: "System Status Check";
+          subtitle: "Expand to see setup details";
+          styles ["card"]
+        }
+      }
+
+      // --- INSTRUCTIONS ---
+      Gtk.Label {
+        label: "<b>To setup auto refresh:</b>\n• Copy the path below\n• Click the <b>Automated Installer</b> button\n• Paste the path into the folder selection dialog";
+        use-markup: true;
+        xalign: 0;
+        wrap: true;
+      }
+
+      // --- PATH COPY SECTION ---
+      Gtk.Box {
+        orientation: horizontal;
+        spacing: 8;
+        margin-start: 12;
+        styles ["card"]
+
+        Gtk.Label host_path_label {
+          label: "~/.config/systemd/user";
+          xalign: 0;
+          hexpand: true;
+          selectable: true;
+          styles ["dim-label"]
+        }
+
+        Gtk.Button {
+          icon-name: "edit-copy-symbolic";
+          tooltip-text: "Copy path to clipboard";
+          clicked => $on_copy_path_clicked();
+          styles ["flat"]
+        }
+      }
+
+      // --- ACTION BUTTON ---
+      Gtk.Button {
+        label: "Run Automated Installer";
+        clicked => $on_installer_clicked();
+        styles ["suggested-action"]
+      }
+
+      // --- WARNING EXPANDER ---
+      Adw.PreferencesGroup {
+        Adw.ExpanderRow {
+          title: "WARNING";
+          subtitle: "Security information";
+          styles ["card"]
+
+          Gtk.Label {
+            label: "<span size='large' weight='bold'>Security &amp; Background Service</span>\n\nThis setup installs a <b>systemd user unit</b> on your host system. This is a secure way to allow the sandbox to request a theme refresh without giving the app full control over your computer.\n\n<b>How it works:</b>\n• The app 'touches' a trigger file inside its sandbox.\n• Your host system detects this change and runs the refresh command.\n• You can inspect the exact command inside <b>gnome-refresher.service</b>.\n\n<span color='#999999' size='small'>Use with caution: This allows code execution on the host triggered by the sandbox.</span>";
+            use-markup: true;
+            xalign: 0;
+            wrap: true;
+            margin-bottom: 12;
+            margin-start: 12;
+            margin-end: 12;
+          }
+        }
+      }
+
+      // --- COMMAND SECTION ---
+      Gtk.Box {
+        orientation: vertical;
+        spacing: 8;
+
+        Gtk.Label {
+          label: "<b>Then run this command and restart the app</b>";
+          use-markup: true;
+          xalign: 0;
+        }
+
+        Gtk.Box {
+          orientation: horizontal;
+          spacing: 6;
+
+          Gtk.Label {
+            label: "systemctl --user daemon-reload && systemctl --user enable --now kde-refresher.path";
+            selectable: true;
+            wrap: true;
+            hexpand: true;
+            xalign: 0;
+            styles ["card"]
+          }
+
+          Gtk.Button {
+            icon-name: "edit-copy-symbolic";
+            clicked => $on_copy_cmd_clicked();
+            styles ["flat"]
+          }
+        }
+      }
+    }
+  }
+}
+

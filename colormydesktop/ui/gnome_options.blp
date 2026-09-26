@@ -1,0 +1,76 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $GnomeOptions : Gtk.Box {
+  // Changed to vertical to let settings stack cleanly like a native system page
+  orientation: vertical;
+  spacing: 12;
+  margin-top: 16;
+  margin-bottom: 16;
+  margin-start: 16;
+  margin-end: 16;
+  styles ["advanced-page"]
+
+  Adw.PreferencesGroup {
+    title: "Desktop Options";
+
+    Adw.SwitchRow topbar_toggle {
+      title: "Unique topbar color";
+      notify::active => $on_topbar_toggled();
+    }  
+    Adw.SwitchRow datemenu_toggle {
+      title: "Unique datemenu color";
+      notify::active => $on_datemenu_toggled();
+    } 
+    Adw.SwitchRow clock_toggle {
+      title: "Unique Clock Color";
+      notify::active => $on_clock_toggled();
+    } 
+
+Adw.ActionRow refresh_row {
+  title: "Toggle GNOME auto refresh";
+
+  [suffix]
+  Gtk.Switch refresh_switch {
+    valign: center;
+    notify::active => $on_refresh_toggled();
+  }
+
+  [suffix]
+  Gtk.Button refresh_btn {
+    valign: center;
+    icon-name: "emblem-system-symbolic";
+    
+    styles [
+      "flat"
+    ]
+  }
+}
+
+
+  }
+  Gtk.Revealer {
+    reveal-child: bind topbar_toggle.active;
+    transition-type: slide_down;
+    Adw.PreferencesGroup topbar_color_row {
+      title: "Dynamic Sub-Settings";
+      // ColorEntryRows are added here in lib_gui.py in the GnomeOptions Class
+    }
+  }
+  Gtk.Revealer {
+    reveal-child: bind datemenu_toggle.active;
+    transition-type: slide_down;
+    Adw.PreferencesGroup datemenu_color_row {
+      title: "Dynamic Sub-Settings";
+      // ColorEntryRows are added here in lib_gui.py in the GnomeOptions Class
+    }
+  }
+  Gtk.Revealer {
+    reveal-child: bind clock_toggle.active;
+    transition-type: slide_down;
+    Adw.PreferencesGroup clock_color_row {
+      title: "Dynamic Sub-Settings";
+      // ColorEntryRows are added here in lib_gui.py in the GnomeOptions Class
+    }
+  }
+}

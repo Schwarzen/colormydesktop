@@ -1,0 +1,66 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $ColorEntryRow : Adw.EntryRow {
+  styles ["color-row-css"]
+  // --- PREFIX WIDGET A: ADVANCED PICKER ---
+  [prefix] Gtk.Overlay advanced_btn {
+    valign: center;
+    width-request: 26;
+    height-request: 26;
+    styles [ "color-preview-container" ]
+
+    child: Gtk.Label advanced_bg_box {
+      width-request: 26;
+      height-request: 26;
+      styles [ "color-preview-dot" ]
+    };
+
+    // Correct Blueprint tag syntax for overlay children
+    [overlay] Gtk.Image advanced_icon {
+      icon-name: "color-select-symbolic";
+      styles [ "preview-dropper-icon" ]
+    }
+  }
+
+  // --- PREFIX WIDGET B: QUICK PICKER ---
+  [prefix] Gtk.Overlay quick_btn {
+    valign: center;
+    width-request: 26;
+    height-request: 26;
+    styles [ "color-preview-container" ]
+
+    child: Gtk.Label quick_bg_box {
+      width-request: 26;
+      height-request: 26;
+      styles [ "color-preview-dot" ]
+    };
+
+    // Correct Blueprint tag syntax for overlay children
+    [overlay] Gtk.Image quick_icon {
+      icon-name: "applications-graphics-symbolic";
+      styles [ "preview-dropper-icon" ]
+    }
+  }
+
+
+
+  // --- EXTRA SUFFIX STATUS TRACKERS ---
+  [suffix] Gtk.Label status_label {
+    margin-end: 6;
+    styles [ "caption" ]
+  }
+
+  [suffix] Gtk.Button fix_btn {
+    valign: center;
+    visible: false;
+    styles [ "flat" ]
+  }
+
+  [suffix] Gtk.Button magic_btn {
+    valign: center;
+    icon-name: "view-refresh-symbolic";
+    visible: false;
+    styles [ "flat" ]
+  }
+}

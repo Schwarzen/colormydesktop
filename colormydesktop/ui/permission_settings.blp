@@ -1,0 +1,87 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $PermissionSettings : Gtk.Box {
+  orientation: vertical;
+  spacing: 16;
+  margin-top: 12;
+  margin-bottom: 12;
+  margin-start: 12;
+  margin-end: 12;
+
+  // Main Instruction
+  Label {
+    label: "These commands reset access granted to any folders.";
+    wrap: true;
+    use-markup: true;
+    xalign: 0;
+  }
+
+  // --- 1. Flatpak Portal Override ---
+  Box {
+    orientation: vertical;
+    spacing: 6;
+
+    Label {
+      label: "<b>Flatpak portal override</b>";
+      use-markup: true;
+      xalign: 0;
+    }
+
+    Box {
+      orientation: horizontal;
+      spacing: 8;
+      styles ["card"]
+
+      Label portal_cmd_label {
+        label: "flatpak documents io.github.schwarzen.colormydesktop | awk '{print $1}' | xargs -n1 flatpak document-unexport --doc-id";
+        selectable: true;
+        wrap: true;
+        xalign: 0;
+        hexpand: true;
+        styles ["monospace"]
+      }
+
+      Button portal_copy_btn {
+        icon-name: "edit-copy-symbolic";
+        valign: center;
+        tooltip-text: "Copy command";
+        styles ["flat"]
+      }
+    }
+  }
+
+  // --- 2. Flatpak Direct Access Override ---
+  Box {
+    orientation: vertical;
+    spacing: 6;
+
+    Label {
+      label: "<b>Flatpak direct access override</b>";
+      use-markup: true;
+      xalign: 0;
+    }
+
+    Box {
+      orientation: horizontal;
+      spacing: 8;
+      styles ["card"]
+
+      Label direct_cmd_label {
+        label: "flatpak override --user --reset io.github.schwarzen.colormydesktop";
+        selectable: true;
+        wrap: true;
+        xalign: 0;
+        hexpand: true;
+        styles ["monospace"]
+      }
+
+      Button direct_copy_btn {
+        icon-name: "edit-copy-symbolic";
+        valign: center;
+        tooltip-text: "Copy command";
+        styles ["flat"]
+      }
+    }
+  }
+}

@@ -102,7 +102,7 @@ rubberband, .content-view rubberband, .content-view columnview.view > rubberband
 treeview.view > rubberband,
 .content-view treeview.view > .rubberband, gridview > rubberband, flowbox > rubberband {
   border: 1px solid $secondary;
-  background-color: $tertiary-light;
+  background-color: $secondary;
 }
 
 flowbox > flowboxchild {
@@ -119,6 +119,7 @@ gridview > child {
 }
 
 gridview > child:selected {
+
   background-color: $nautilus-main;
   outline-color: $text;
 }
@@ -131,7 +132,7 @@ gridview > child box {
 /* 1. Target the viewcell when selected */
 .nautilus-window .view nautilusviewcell:selected,
 .nautilus-window gridview child:selected nautilusviewcell {
-    background-color: $nautilus-main ;
+    background-color: transparent ;
     background-image: none ; /* Kills the default Adwaita blue gradient */
     outline: 1px solid $text ;
     border-radius: 8px;
@@ -184,7 +185,7 @@ row label.subtitle {
 }
 
 .accent {
-  color: $secondary;
+  color: $tertiary;
 }
 
 .success {
@@ -2597,7 +2598,7 @@ treeview.view header.button.dnd {
   box-shadow: none;
   background-color: $secondary;
   background-clip: border-box;
-  color: $secondary;
+  color: $text;
 }
 
 columnview.view acceleditor > label,
@@ -2812,7 +2813,7 @@ popover modelbutton {
 popover modelbutton:hover {
   transition: none;
 background-color: $secondary;
-  color: $secondary;
+  color: $text;
 }
 
 popover modelbutton:hover accelerator {
@@ -4532,7 +4533,7 @@ row.expander:checked image.expander-row-arrow {
 }
 
 row.expander:checked image.expander-row-arrow:not(:disabled) {
-  color: $secondary;
+  color: $tertiary;
 }
 
 .osd row.expander:checked image.expander-row-arrow:not(:disabled) {
@@ -4601,7 +4602,7 @@ columnview row:not(:selected) cell editablelabel.editing text selection {
 }
 
 .app-notification button.text-button:not(:disabled) {
-  color: $secondary;
+  color: $tertiary;
 }
 
 .app-notification > box > label {
@@ -4915,7 +4916,7 @@ background-color: $secondary;
 
 .navigation-sidebar > row:selected label,
 .navigation-sidebar > row:selected image {
-  color: $secondary;
+  color: $tertiary;
   font-weight: 700;
 }
 
@@ -5017,11 +5018,11 @@ placessidebar list.navigation-sidebar > row.sidebar-placeholder-row {
 }
 
 placessidebar list.navigation-sidebar > row.sidebar-new-bookmark-row {
-  color: $secondary;
+  color: $tertiary;
 }
 
 placessidebar list.navigation-sidebar > row.sidebar-new-bookmark-row image.sidebar-icon {
-  color: $secondary;
+  color: $tertiary;
 }
 
 placessidebar list.navigation-sidebar > row:drop(active) {
@@ -5139,7 +5140,7 @@ infobar.info > revealer > box button.text-button:not(:disabled):not(.suggested-a
 ), infobar.info:backdrop > revealer > box button.text-button:not(:disabled):not(.suggested-action):not(
 .destructive-action
 ) {
-  color: $secondary;
+  color: $tertiary;
 }
 
 infobar.action > revealer > box, infobar.action:backdrop > revealer > box, infobar.question > revealer > box, infobar.question:backdrop > revealer > box {
@@ -5482,6 +5483,22 @@ textview gutter {
   background-color: $secondary;
   color: $text;
 }
+texteditor, 
+.gnome-text-editor,
+window.editor-window {
+    background-color: #{$secondary}; /* Or use your custom color variables */
+}
+
+/* 2. Target the actual source code/text display canvas */
+textview.editor,
+textview.sourceview,
+.editor textview {
+    // This overrides the main writing canvas block background
+    background-color: #{$secondary};
+    
+    // Ensure the text itself remains legible against your background
+    color: #{$text}; 
+}
 
 
 /* .monospace { */
@@ -5668,19 +5685,57 @@ popover.entry-completion > contents {
   padding: 0;
 }
 
+/* SECTION: NAUTILUS COLORS*/
 .nautilus-window.view {
-  background-color: $nautilus-main;
+    background-color: transparent; 
 }
 
 .nautilus-window headerbar > widget > windowtitle {
+
+  background-color: transparent;
   padding: 0;
-  margin: 6px;
+  margin: 3px;
 }
 
+/* Target the navigation button containers inside the Nautilus headerbar */
 .nautilus-window headerbar {
-    background-color: $nautilus-main; /* nautilus top bar*/
-    color: $text  ;
+    // 1. Strip backgrounds off the button grouping containers so the gradient shines through
+    .linked, .navigation-sidebar, box.horizontal {
+        background: transparent;
+        background-color: transparent;
+        background-image: none;
+        box-shadow: none;
+    }
+
+    // 2. Target the actual back and forward arrow buttons
+    button {
+        // Force the buttons to match the height of standard headerbar text labels
+        min-height: 22px; 
+        height: 22px;
+        padding-top: 2px;
+        padding-bottom: 2px;
+        margin-top: auto;
+        margin-bottom: auto;
+
+        // Make the button backgrounds transparent so they don't block the gradient
+        background: transparent;
+        background-color: transparent;
+        background-image: none;
+        box-shadow: none;
+        border: none;
+
+        // Subtle hover state so the user still knows they are clickable
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+        }
+
+        &:active {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+    }
 }
+
 
 /* Highlight the current folder text so it stays visible */
 .nautilus-window pathbar button:last-child label {
@@ -5690,18 +5745,69 @@ popover.entry-completion > contents {
 }
 
 
-.nautilus-window headerbar windowhandle {
-    background-color: $nautilus-main;
+
+/* 1. LEFT COLUMN HEADER (Sidebar Area) */
+
+/* 1. Calculate a very soft destination color (85% Start Color + 15% End Color) */
+$soft-end-color: mix($nautilus-end, $nautilus-start, 65%);
+
+/* 2. LEFT COLUMN HEADER (Sidebar Area) */
+.nautilus-window .sidebar headerbar {
+    // Blends smoothly from the start color to our newly calculated soft color
+    background-image: linear-gradient(to right, #{$nautilus-start}, #{$soft-end-color});
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    color: $text;
+
+    windowhandle, .linked, box, widget {
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+    }
 }
 
+/* 3. RIGHT COLUMN HEADER (Navbar & Main View Area) */
+.nautilus-window .main-page headerbar {
+    // Continues the seamless flow into the soft end color using the offset math
+    background-image: linear-gradient(to right, #{$nautilus-start} -33%, #{$soft-end-color});
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    color: $text;
+
+    windowhandle, .linked, box, widget, button {
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+    }
+
+    button {
+        min-height: 24px;
+        height: 24px;
+        margin-top: auto;
+        margin-bottom: auto;
+        border: none !important;
+
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            border-radius: 6px;
+        }
+        &:active {
+            background-color: rgba(255, 255, 255, 0.15) !important;
+        }
+    }
+}
+
+/* NAUTILUS BUTTONS */
 .nautilus-window headerbar .linked button,
 .nautilus-window headerbar button {
-    background-color: rgba($nautilus-main, 0.5); /* Use a shade of your secondary color */
+
+    background-color: transparent;
     color: $text;
 }
 
 .nautilus-window .sidebar-pane {
-  background-color: $nautilus-main; /* nautilus main top */
+    background-image: linear-gradient(to right, #{$nautilus-start} -33%, #{$soft-end-color});
+    background-color: transparent; /* nautilus main top */
   color: $text;
 }
 
@@ -5825,10 +5931,11 @@ background-color: $nautilus-secondary;
 #NautilusPathBar {
   background-color: $nautilus-secondary;
   border-radius: 10px;
-  margin: 6px 0;
+  margin: 0px 0;
 }
 
 #NautilusPathButton {
+  background-color: transparent;
   margin: 0 3px;
   border-radius: 12px;
 }
@@ -5941,7 +6048,7 @@ label.primary-label, label.month-name, label.secondary-label {
 }
 
 label.primary-label, label.month-name {
-  color: $secondary;
+  color: $tertiary;
 }
 
 label.secondary-label {
@@ -5960,7 +6067,7 @@ calendar-view {
 }
 
 calendar-view:selected {
-  color: $secondary;
+  color: $tertiary;
   font-weight: bold;
 }
 
@@ -6149,7 +6256,7 @@ datechooser button.day:selected dot, datechooser button.day.today:selected dot {
 }
 
 datechooser button.day.today {
-  color: $secondary;
+  color: $tertiary;
 }
 
 datechooser button.day.today dot {
@@ -7084,7 +7191,7 @@ WeatherThermometer > label.high {
 
 WeatherThermometer > label.low {
   font-weight: bold;
-  color: $secondary;
+  color: $text;
 }
 
 .forecast-button {
@@ -7197,7 +7304,7 @@ image.circular {
 
 .running-stopwatch .seconds-label,
 .running-stopwatch .miliseconds-label {
-  color: $secondary;
+  color: $text;
 }
 
 .stopped-stopwatch .miliseconds-label,
@@ -7369,9 +7476,9 @@ notebook scrolledwindow treeview.treeview-spacing {
 .account-switcher-row label.dim-label {
   color: $text;
 }
-
+/*SECTION: NAUTILUS SIDEBAR */
 .nautilus-window placessidebar > scrolledwindow {
-  background-color: $nautilus-main; /* nautilus main color */
+  background-color: transparent;/* nautilus main color */
   color: $text;
   border-radius: 0;
   /* margin: 0 6px 0 0; */
@@ -7401,7 +7508,7 @@ notebook scrolledwindow treeview.treeview-spacing {
 
 /* 3. The Separator between sidebar and main content */
 .nautilus-window overlaysplitview > separator {
-  background-color: $nautilus-main;
+  background-color: transparent;
   background-image: none;
   min-width: 1px;
 }
@@ -7700,7 +7807,7 @@ avatar.image {
   color: $text;
   box-shadow: none;
   outline: none;
-  background-color: $tertiary-light;
+  background-color: $secondary;
   color: $text;
 }
 
@@ -7961,7 +8068,7 @@ preferencesgroup > box button.accent-button:checked {
 }
 
 preferencesgroup > box button.accent-button.blue, preferencesgroup > box button.accent-button.teal, preferencesgroup > box button.accent-button.green, preferencesgroup > box button.accent-button.yellow, preferencesgroup > box button.accent-button.orange, preferencesgroup > box button.accent-button.red, preferencesgroup > box button.accent-button.pink, preferencesgroup > box button.accent-button.purple, preferencesgroup > box button.accent-button.slate {
-  --accent-color: $secondary;
+  --accent-color: $tertiary;
 }
 
 preferencesgroup > box button.accent-button.blue {
@@ -7969,11 +8076,11 @@ preferencesgroup > box button.accent-button.blue {
 }
 
 preferencesgroup > box button.accent-button.teal {
-  color: $secondary;
+  color: $tertiary;
 }
 
 preferencesgroup > box button.accent-button.green {
-  color: $secondary;
+  color: $tertiary;
 }
 
 preferencesgroup > box button.accent-button.yellow {
@@ -8044,7 +8151,7 @@ window.about .main-page > viewport > clamp > box > box {
 
 window.about .main-page .app-version {
   padding: 3px 18px;
-  color: $secondary;
+  color: $text;
   border-radius: 12px;
   margin-top: 3px;
 }
@@ -8193,9 +8300,10 @@ overlay-split-view > shadow.down {
   background-color: transparent;
   transition: none;
 }
-
+/* NAUTILUS FRAME */
 .content-pane {
-  background-color: $nautilus-main;
+  background-image: linear-gradient(to left, #{$nautilus-start}, #{$soft-end-color});
+  background-color: transparent;
   color: $text;
   border-top-right-radius: 12px;
   box-shadow: inset 0 1px rgba(251, 241, 199, 0.15);

@@ -1,0 +1,61 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $MyMainWindow : Adw.ApplicationWindow {
+  title: "Color My Desktop";
+  default-width: 1200;
+  default-height: 800;
+  decorated: false;
+
+  Gtk.Box window_wrapper {
+    orientation: vertical;
+
+    Gtk.WindowHandle custom_drag_handle {
+      margin-bottom: 0;
+
+      Gtk.Box title_header_bar {
+        orientation: horizontal;
+        styles ["ultra-slim-header"]
+
+        Gtk.Label {
+          label: "Color My Desktop";
+          hexpand: true;
+          halign: center;
+          margin-start: 36; // Offsets the close button width to keep text perfectly centered
+          styles ["slim-title"]
+        }
+
+        Gtk.Button close_btn { 
+          icon-name: "window-close-symbolic";
+          valign: center;
+          halign: end;
+          margin-end: 8;
+          styles ["flat", "circular", "slim-close"] 
+        }
+      }
+    }
+
+    Gtk.Box core_application_body {
+      orientation: vertical;
+      vexpand: true;
+      hexpand: true;
+      margin-top: 0; // Removes any leftover layout margins here
+      
+      styles ["core_application_body"] // Binds to our CSS rule above
+
+      Adw.ToastOverlay toast_overlay {
+        child: Adw.NavigationView nav_view {
+          vexpand: true;
+          hexpand: true;
+          
+          $PageHomeView home_view_panel {
+            vexpand: true;
+            hexpand: true;
+          }
+        };
+      }
+    }
+  }
+}
+
+

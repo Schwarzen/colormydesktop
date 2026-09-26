@@ -1,0 +1,123 @@
+using Gtk 4.0;
+
+template $AdvancedPage : Gtk.Box {
+  orientation: horizontal;
+  spacing: 12;
+  margin-top: 16;
+  margin-bottom: 16;
+  margin-start: 16;
+  margin-end: 16;
+  styles ["advanced-page"]
+
+  Gtk.Frame {
+    styles ["card"]
+
+    Gtk.Box gnome_options {
+      styles ["gnome-options"]
+      orientation: vertical;
+      margin-top: 12;
+      margin-bottom: 12;
+      margin-start: 12;
+      margin-end: 12;
+      spacing: 6;
+
+      Gtk.Label {
+        label: "GNOME options";
+        styles ["heading"]
+      }
+
+      Gtk.Label {
+        label: "Advanced GNOME shell options";
+        wrap: true;
+      }
+      Gtk.GestureClick {
+        // Blueprint signals cannot parse input strings. Use discrete callback names.
+        pressed => $on_gnome_card_pressed();
+      }
+    }
+  }
+
+  Gtk.Frame {
+    styles ["card"]
+
+    Gtk.Box {
+      orientation: vertical;
+      margin-top: 12;
+      margin-bottom: 12;
+      margin-start: 12;
+      margin-end: 12;
+      spacing: 6;
+
+      Gtk.Label {
+        label: "Advanced GNOME-Files/Nautilus Options";
+        styles ["heading"]
+      }
+
+      Gtk.Label {
+        label: "More options for the gnome file browser";
+        wrap: true;
+      }
+      Gtk.GestureClick {
+        // Blueprint signals cannot parse input strings. Use discrete callback names.
+        pressed => $on_nautilus_card_pressed();
+      }
+
+    }
+  }
+
+  Gtk.Frame {
+    styles ["card"]
+
+    Gtk.Box {
+      orientation: vertical;
+      margin-top: 12;
+      margin-bottom: 12;
+      margin-start: 12;
+      margin-end: 12;
+      spacing: 6;
+
+      Gtk.Label {
+        label: "KDE Options";
+        styles ["heading"]
+      }
+
+      Gtk.Label {
+        label: "View advanced KDE options";
+        wrap: true;
+      }
+      Gtk.GestureClick {
+        // Blueprint signals cannot parse input strings. Use discrete callback names.
+        pressed => $on_kde_card_pressed();
+      }
+    }
+  }
+  Gtk.Frame {
+    styles ["card"]
+
+    Gtk.Box {
+      orientation: vertical;
+      margin-top: 12;
+      margin-bottom: 12;
+      margin-start: 12;
+      margin-end: 12;
+      spacing: 6;
+
+      Gtk.Label {
+        label: "Permissions Options";
+        styles ["heading"]
+      }
+
+      Gtk.Label {
+        label: "View options related to flatpak permissions";
+        wrap: true;
+      }
+      Gtk.GestureClick {
+        // Blueprint signals cannot parse input strings. Use discrete callback names.
+        pressed => $on_permissions_card_pressed();
+      }
+    }
+  }
+}
+
+
+

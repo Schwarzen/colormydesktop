@@ -1,0 +1,107 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $FolderSelectionBox : Box {
+  orientation: vertical;
+  spacing: 8;
+
+  // --- Vesktop-Specific Header & Rows (Hidden by default) ---
+  Label vesktop_header {
+    use-markup: true;
+    xalign: 0;
+    visible: false; 
+  }
+
+  Box vesktop_rows {
+    orientation: vertical;
+    spacing: 8;
+    visible: false;
+
+    // Flatpak Row
+    Box {
+      orientation: horizontal;
+      spacing: 8;
+      margin-start: 12;
+      Label { label: "<b>Flatpak:</b>"; use-markup: true; }
+      Label flatpak_path_label { selectable: true; xalign: 0; hexpand: true; styles ["dim-label"] }
+      Button flatpak_copy_btn { icon-name: "edit-copy-symbolic"; styles ["flat"] }
+    }
+
+    // Regular Row
+    Box {
+      orientation: horizontal;
+      spacing: 8;
+      margin-start: 12;
+      Label { label: "<b>Regular:</b>"; use-markup: true; }
+      Label regular_path_label { selectable: true; xalign: 0; hexpand: true; styles ["dim-label"] }
+      Button regular_copy_btn { icon-name: "edit-copy-symbolic"; styles ["flat"] }
+    }
+  }
+  // --- Zen-Specific Header & Rows (Hidden by default) ---
+  Label zen_header {
+    label: "<b>Target Chrome Profile Directory:</b>";
+    use-markup: true;
+    xalign: 0;
+    visible: false; 
+  }
+
+  Box zen_rows {
+    orientation: horizontal;
+    spacing: 8;
+    visible: false;
+    
+    Label zen_path_label { 
+      selectable: true; 
+      xalign: 0; 
+      hexpand: true; 
+    }
+    
+    Button zen_copy_btn { 
+      icon-name: "edit-copy-symbolic"; 
+      styles ["flat"] 
+      tooltip-text: "Copy path to clipboard to paste in the Portal dialog";
+    }
+  }
+
+  // --- Standard Header & Row (Visible by default) ---
+  Label standard_header {
+    use-markup: true;
+    xalign: 0;
+  }
+
+
+  Adw.ActionRow standard_row {
+    title: _("Required Folder");
+    subtitle: _("Folder Path");
+  
+    Button standard_copy_btn { 
+      icon-name: "edit-copy-symbolic"; 
+      styles ["flat"] 
+    }
+  }
+
+
+  // --- Shared Interaction Controls ---
+  Label selected_path_header {
+    use-markup: true;
+    xalign: 0;
+  }
+
+  Entry path_entry {
+    editable: false;
+    can-focus: false;
+    placeholder-text: "No folder selected yet...";
+  }
+
+  Label warning_label {
+    use-markup: true;
+    xalign: 0;
+    visible: false;
+    styles ["error"]
+  }
+
+  Button select_btn {
+    styles ["suggested-action"]
+  }
+
+}

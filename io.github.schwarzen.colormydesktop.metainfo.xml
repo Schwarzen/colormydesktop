@@ -90,6 +90,18 @@
   </provides>
   
 <releases>
+  <release version="0.11" date="2026-09-25">
+    <description>
+      <p>Version 0.11 includes the following updates:</p>
+      <ul>
+        <li>Added support for a primary color gradient</li>
+        <li>Added interactive mockup, click elements to choose their colors easily</li>
+        <li>Updated permission dialogs to be more minimal</li>
+        <li>Updated UI to blueprint files</li>
+        <li>Fixed out of date Youtube theme targets</li>
+      </ul>
+    </description>
+  </release>
   <release version="0.10.5" date="2026-02-15">
     <description>
       <p>Version 0.10.5 includes the following updates:</p>
