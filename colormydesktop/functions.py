@@ -301,17 +301,25 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         ## }}}
 
     # {{{ SECTION : FUNCTIONS
+
     def on_delete_clicked(self):
         selected_index = self.ui.combo_row.get_selected()
         selected_theme = self.theme_list.get_string(selected_index)
+        home_view = broker.get_page("home_view")
+        root_window = home_view.get_root() if home_view else None
+        if not root_window:
+            print(
+                "[ERROR] Failed to discover a valid Gtk.Window instance for transient matching."
+            )
+            return
         if selected_index == 0 or selected_theme == "Default":
             # Don't delete the factory default
             return
 
-            # Create a confirmation dialog
+        # Create a confirmation dialog bound directly to the root window layout
         dialog = Adw.MessageDialog(
-            transient_for=self,
-            heading=f"Delete Profile?",
+            transient_for=root_window,
+            heading="Delete Profile?",
             body=f"Are you sure you want to permanently delete '{selected_theme}'?",
         )
         dialog.add_response("cancel", "Cancel")
@@ -320,7 +328,18 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         dialog.set_default_response("cancel")
 
         dialog.connect("response", self.on_delete_confirm, selected_theme)
+
+        # Present it cleanly over the root interface
         dialog.present()
+
+    def _handle_delete_response(self, result, selected_theme):
+        """Processes the exact button response string clicked inside the native modal layout."""
+        if result == "delete":
+            print(f"[ACTION] User confirmed deletion for profile: {selected_theme}")
+            # Explicitly execute your existing mutation pipeline here
+            self.on_delete_confirm(None, "delete", selected_theme)
+        else:
+            print("[ACTION] Deletion canceled by user.")
 
     def save_palette(self):
 
@@ -1225,9 +1244,18 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
                 self.dynamic_color_provider.load_from_string(full_css)
 
     def on_advanced_picker_clicked(self, gesture, n_press, x, y, entry_row):
-        # Create the dialog
+        # FIXED: Extract the true top-level GtkWindow framework component
+        home_view = broker.get_page("home_view")
+        root_window = home_view.get_root() if home_view else None
+        if not root_window:
+            print(
+                "[ERROR] Failed to discover a valid Gtk.Window instance for transient matching."
+            )
+            return
+        # Create the dialog bound to the true window context
         dialog = Gtk.ColorChooserDialog(
-            title="Advanced Color Editor", transient_for=self
+            title="Advanced Color Editor",
+            transient_for=root_window,
         )
 
         # Force the sliders/custom menu to be the first thing visible
@@ -1243,13 +1271,25 @@ class ThemeManager(Adw.ApplicationWindow, DialogMixin, AdvancedMixin):
         dialog.present()
 
     def on_quick_picker_clicked(self, gesture, n_press, x, y, entry_row):
-        #  Create the dialog
-        dialog = Gtk.ColorChooserDialog(title="Select Color", transient_for=self)
+        # FIXED: Extract the true top-level GtkWindow framework component
+        home_view = broker.get_page("home_view")
+        root_window = home_view.get_root() if home_view else None
+        if not root_window:
+            print(
+                "[ERROR] Failed to discover a valid Gtk.Window instance for transient matching."
+            )
+            return
 
-        #  FORCE GRID VIEW: Ensure the editor/sliders are hidden by default
+        # Create the dialog bound to the true window context
+        dialog = Gtk.ColorChooserDialog(
+            title="Select Color",
+            transient_for=root_window,
+        )
+
+        # FORCE GRID VIEW: Ensure the editor/sliders are hidden by default
         dialog.set_property("show-editor", False)
 
-        #  Pre-set the current color
+        # Pre-set the current color
         rgba = Gdk.RGBA()
         current_text = entry_row.get_text().strip()
         if rgba.parse(
