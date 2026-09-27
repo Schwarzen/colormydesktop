@@ -2,43 +2,49 @@ using Gtk 4.0;
 
 template $SaveDialog : Gtk.Box {
   orientation: vertical;
-  spacing: 16;
+  spacing: 12; // Tightened to mimic the native alert layout proportions
+  
+  // Outer padding surrounding the message context
   margin-top: 24;
   margin-bottom: 24;
   margin-start: 24;
   margin-end: 24;
+  
   halign: center;
-
-  valign: start; // FIXED: Forces the layout box to take up minimum height
+  valign: center;
 
   // Primary bold text header
   Gtk.Label {
     label: "Overwrite Profile?";
-    styles ["heading"]
+    styles ["title-1", "bold"] // FIXED: Sets text to be larger and bold matching native styles
     justify: center;
   }
 
   // Secondary descriptive message line containing the target profile name string
   Gtk.Label dialog_label {
-    label: "Are you sure you want to overwrite 'Theme'?";
+    label: "Overwrite 'Theme'?";
     justify: center;
+    styles ["dim-label"] // Gives it the muted gray look seen in native prompts
   }
 
+  // Action Buttons Container
   Gtk.Box {
     orientation: horizontal;
     spacing: 16;
     halign: center;
+    margin-top: 16; // Adds vertical space separating buttons from messages
 
     Gtk.Button close_dialog_btn {
       label: "Cancel";
     }
 
     Gtk.Button internal_save_btn {
-      label: "Save";   
-      styles ["suggested-action"]
+      label: "Save";
+      styles ["suggested-action"] 
     }
   }
 }
+
 
 
 

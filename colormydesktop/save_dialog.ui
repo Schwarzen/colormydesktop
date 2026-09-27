@@ -8,26 +8,30 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
   <requires lib="gtk" version="4.0"/>
   <template class="SaveDialog" parent="GtkBox">
     <property name="orientation">1</property>
-    <property name="spacing">16</property>
+    <property name="spacing">12</property>
     <property name="margin-top">24</property>
     <property name="margin-bottom">24</property>
     <property name="margin-start">24</property>
     <property name="margin-end">24</property>
     <property name="halign">3</property>
-    <property name="valign">1</property>
+    <property name="valign">3</property>
     <child>
       <object class="GtkLabel">
         <property name="label">Overwrite Profile?</property>
         <style>
-          <class name="heading"/>
+          <class name="title-1"/>
+          <class name="bold"/>
         </style>
         <property name="justify">2</property>
       </object>
     </child>
     <child>
       <object class="GtkLabel" id="dialog_label">
-        <property name="label">Are you sure you want to overwrite 'Theme'?</property>
+        <property name="label">Overwrite 'Theme'?</property>
         <property name="justify">2</property>
+        <style>
+          <class name="dim-label"/>
+        </style>
       </object>
     </child>
     <child>
@@ -35,6 +39,7 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
         <property name="orientation">0</property>
         <property name="spacing">16</property>
         <property name="halign">3</property>
+        <property name="margin-top">16</property>
         <child>
           <object class="GtkButton" id="close_dialog_btn">
             <property name="label">Cancel</property>

@@ -175,6 +175,11 @@ class ContextBroker:
             if popup_window:
                 # FIXED: Check if the incoming page is our tiny confirmation dialog
                 if page_id == "save_dialog":
+                    if hasattr(popup_window, "header_bar") and popup_window.header_bar:
+                        popup_window.header_bar.set_visible(False)
+                    elif hasattr(popup_window, "titlebar") and popup_window.titlebar:
+                        popup_window.titlebar.set_visible(False)
+
                     # Request a much shorter height (e.g., 350 wide by 160 tall)
                     popup_window.set_size_request(350, 160)
                 else:
